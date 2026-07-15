@@ -4,56 +4,311 @@
   <meta charset="UTF-8">
   <title>Kitty URLoaf</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg:      #120a0f;
+      --surface: #1f0d18;
+      --deep:    #2d1220;
+      --pink:    #ff44bb;
+      --pink-lo: #8c1f4e;
+      --glow:    rgba(255,68,187,0.22);
+      --text:    #ffd6ec;
+      --muted:   #7a5568;
+      --spring:  cubic-bezier(0.34,1.56,0.64,1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 264px;
+      width: 300px;
+      background:
+        radial-gradient(ellipse at 50% -10%, rgba(255,68,187,0.13) 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* header */
+    .w-head {
+      text-align: center;
+      padding: 22px 20px 10px;
+    }
+    .w-head h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+    .w-head p  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* dots */
+    .dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 12px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 99px;
+      background: var(--deep);
+      transition: all 0.35s var(--spring);
+      flex-shrink: 0;
+    }
+    .dot.on {
+      width: 20px;
+      background: var(--pink);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    /* slide track */
+    .clip { overflow: hidden; }
+    .track {
+      display: flex;
+      transition: transform 0.42s var(--spring);
+      will-change: transform;
+    }
+    .page {
+      width: 300px;
+      flex-shrink: 0;
+      padding: 0 18px 20px;
+      height: 268px;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .page::-webkit-scrollbar { display: none; }
+
+    /* os grid */
+    .os-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .os-btn {
+      background: var(--surface);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 13px 6px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
       display: flex;
       flex-direction: column;
-      font-family: sans-serif;
-      background: transparent;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.22s var(--spring);
     }
-    .row {
+    .os-btn .ico { font-size: 26px; line-height: 1; }
+    .os-btn:hover { border-color: var(--pink-lo); background: var(--deep); }
+    .os-btn.on {
+      border-color: var(--pink);
+      background: var(--deep);
+      box-shadow: 0 0 14px var(--glow), inset 0 0 10px rgba(255,68,187,0.06);
+    }
+
+    /* download box */
+    .dl-box {
+      background: var(--surface);
+      border: 1px solid rgba(255,68,187,0.14);
+      border-radius: 18px;
+      padding: 26px 20px;
+      text-align: center;
+      margin-bottom: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,68,187,0.08);
+    }
+    .dl-box .ico  { font-size: 42px; line-height: 1; }
+    .dl-box .lbl  { font-size: 13px; font-weight: 700; margin-top: 10px; }
+    .dl-box .sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* steps */
+    .steps { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+    .step  { display: flex; gap: 9px; align-items: flex-start; font-size: 11.5px; line-height: 1.55; }
+    .sn {
+      background: var(--pink-lo);
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 800;
+      min-width: 17px; height: 17px;
+      border-radius: 99px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step code {
+      background: var(--deep);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 10.5px;
+      color: var(--pink);
+      font-family: monospace;
+    }
+    .step b { color: #fff; }
+
+    /* done */
+    .done {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+      padding: 8px 0 16px;
+    }
+    .done .big { font-size: 54px; line-height: 1; }
+    .done h2   { font-size: 20px; font-weight: 800; }
+    .done p    { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+    /* buttons */
+    .row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+    .row.c { justify-content: center; }
+    .btn {
+      border: none;
+      border-radius: 99px;
+      padding: 9px 20px;
+      font-size: 12.5px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.18s var(--spring);
+    }
+    .p {
+      background: linear-gradient(135deg, var(--pink) 0%, var(--pink-lo) 120%);
+      color: #fff;
+      box-shadow: 0 3px 14px var(--glow);
+    }
+    .p:hover  { transform: translateY(-2px) scale(1.04); box-shadow: 0 6px 22px var(--glow); }
+    .p:active { transform: scale(0.97); }
+    .p:disabled { opacity: 0.28; pointer-events: none; }
+    .g { background: transparent; color: var(--muted); }
+    .g:hover { color: var(--text); }
+
+    /* ─── main view ─── */
+    #main { padding: 20px; }
+    .brand {
+      text-align: center;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid rgba(255,68,187,0.1);
+    }
+    .brand .name { font-size: 15px; font-weight: 700; }
+    .brand .tag  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .tog-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
-      background: rgba(128,128,128,0.15);
-      backdrop-filter: blur(4px);
-      flex-shrink: 0;
-      z-index: 1;
+      font-size: 14px;
+      font-weight: 600;
     }
-    label.lbl { font-size: 13px; font-weight: 600; }
-    .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .slider {
+    .tog { position: relative; width: 44px; height: 26px; cursor: pointer; }
+    .tog input { opacity: 0; width: 0; height: 0; }
+    .sl {
       position: absolute; inset: 0;
-      background: #555; border-radius: 24px; transition: background 0.2s;
+      background: #2a1a22; border-radius: 99px;
+      border: 1px solid rgba(255,68,187,0.18);
+      transition: background 0.25s;
     }
-    .slider::before {
+    .sl::before {
       content: ""; position: absolute;
-      width: 18px; height: 18px; left: 3px; top: 3px;
-      background: white; border-radius: 50%; transition: transform 0.2s;
+      width: 20px; height: 20px; left: 3px; top: 2px;
+      background: #fff; border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      transition: transform 0.28s var(--spring);
     }
-    input:checked + .slider { background: #33dd77; }
-    input:checked + .slider::before { transform: translateX(18px); }
-    #grid {
-      display: flex;
-      flex-wrap: wrap;
-      overflow: hidden;
-      line-height: 0;
+    input:checked + .sl { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 10px var(--glow); }
+    input:checked + .sl::before { transform: translateX(18px); }
+
+    .revisit { margin-top: 14px; text-align: center; }
+    .revisit button {
+      background: none; border: none;
+      color: var(--muted); font-size: 11px;
+      cursor: pointer; font-family: inherit;
+      text-decoration: underline; text-underline-offset: 2px;
     }
-    #grid img { width: 24px; height: 24px; display: block; }
+    .revisit button:hover { color: var(--pink); }
   </style>
 </head>
 <body>
-  <div class="row">
-    <label class="lbl" for="toggle">Enabled</label>
-    <label class="toggle">
-      <input type="checkbox" id="toggle">
-      <span class="slider"></span>
+
+<!-- WIZARD -->
+<div id="wizard">
+  <div class="w-head">
+    <h1>🐾 kitty urloaf</h1>
+    <p>let's get you set up~</p>
+  </div>
+  <div class="dots">
+    <span class="dot on" id="d0"></span>
+    <span class="dot"    id="d1"></span>
+    <span class="dot"    id="d2"></span>
+    <span class="dot"    id="d3"></span>
+  </div>
+  <div class="clip">
+    <div class="track" id="track">
+
+      <!-- page 1: os -->
+      <div class="page">
+        <div class="os-grid">
+          <button class="os-btn" data-os="windows"><span class="ico">🪟</span>windows</button>
+          <button class="os-btn" data-os="macos"  ><span class="ico">🍎</span>macos</button>
+          <button class="os-btn" data-os="linux"  ><span class="ico">🐧</span>linux</button>
+        </div>
+        <div class="row">
+          <button class="btn p" id="next1" disabled>next →</button>
+        </div>
+      </div>
+
+      <!-- page 2: download -->
+      <div class="page">
+        <div class="dl-box">
+          <div class="ico">🎀</div>
+          <div class="lbl">userChrome.css</div>
+          <div class="sub">your plushy toolbar magic~</div>
+        </div>
+        <div class="row">
+          <button class="btn g" id="back2">← back</button>
+          <button class="btn p" id="dlBtn">download ↓</button>
+        </div>
+      </div>
+
+      <!-- page 3: instructions -->
+      <div class="page">
+        <div class="steps" id="steps"></div>
+        <div class="row">
+          <button class="btn g" id="back3">← back</button>
+          <button class="btn p" id="next3">next →</button>
+        </div>
+      </div>
+
+      <!-- page 4: done -->
+      <div class="page">
+        <div class="done">
+          <div class="big">✨</div>
+          <h2>you did it! ♡</h2>
+          <p>close firefox and reopen it<br>to see the plushy magic~</p>
+          <button class="btn p" id="finishBtn" style="margin-top:6px">done! 🐾</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main" style="display:none">
+  <div class="brand">
+    <div class="name">🐾 kitty urloaf</div>
+    <div class="tag">plushy mode~</div>
+  </div>
+  <div class="tog-row">
+    <span>enabled</span>
+    <label class="tog">
+      <input type="checkbox" id="tog">
+      <span class="sl"></span>
     </label>
   </div>
-  <div id="grid"></div>
-  <script src="popup.js"></script>
+  <div class="revisit">
+    <button id="revisitBtn">view setup guide again</button>
+  </div>
+</div>
+
+<script src="popup.js"></script>
 </body>
 </html>

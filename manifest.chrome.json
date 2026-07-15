@@ -15,29 +15,5 @@
   "background": {
     "service_worker": "src/background/background.js"
   },
-  "omnibox": {
-    "keyword": "+"
-  },
-  "devtools_page": "src/devtools/devtools.html",
-  "side_panel": {
-    "default_path": "src/sidepanel/sidepanel.html"
-  },
-  "permissions": ["storage", "contextMenus", "sidePanel", "notifications"],
-  "host_permissions": [],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "static/plus.svg",
-        "static/plus-red.svg",
-        "static/plus-orange.svg",
-        "static/plus-yellow.svg",
-        "static/plus-green.svg",
-        "static/plus-cyan.svg",
-        "static/plus-blue.svg",
-        "static/plus-purple.svg",
-        "static/plus-pink.svg"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  "permissions": ["storage"]
 }
