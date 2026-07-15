@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>URLoaf</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100%; height: 100vh; background: #111; display: grid; place-items: center; overflow: hidden; }
+    #bg { position: fixed; inset: 0; background: url('../../static/plus.svg') repeat; background-size: 50px 50px; transition: opacity 0.3s; }
+    #center { position: relative; z-index: 1; }
+    #center img { width: 80px; height: 80px; filter: invert(1); transition: opacity 0.3s; }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div id="center"><img src="../../static/plus.svg" id="plus" alt="+"></div>
+  <script>
+    const bg = document.getElementById("bg");
+    const plus = document.getElementById("plus");
+    function apply(enabled) {
+      bg.style.opacity = enabled ? "0.1" : "0";
+      plus.style.opacity = enabled ? "0.5" : "0.05";
+    }
+    chrome.storage.local.get({ enabled: true }, ({ enabled }) => apply(enabled));
+    chrome.storage.onChanged.addListener(({ enabled }) => { if (enabled) apply(enabled.newValue); });
+  </script>
+</body>
+</html>

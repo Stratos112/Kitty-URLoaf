@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>+</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; background: #111; display: grid; place-items: center; overflow: hidden; }
+    #bg { position: fixed; inset: 0; background: url('../../static/plus.svg') repeat; background-size: 80px 80px; transition: opacity 0.3s; }
+    #center { position: relative; z-index: 1; text-align: center; }
+    #center img { width: 200px; height: 200px; filter: invert(1); transition: opacity 0.3s; }
+    #status { color: #555; font-family: sans-serif; font-size: 12px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div id="center">
+    <img src="../../static/plus.svg" id="main-plus" alt="+">
+    <div id="status"></div>
+  </div>
+  <script>
+    const bg = document.getElementById("bg");
+    const plus = document.getElementById("main-plus");
+    const status = document.getElementById("status");
+
+    function apply(enabled) {
+      bg.style.opacity = enabled ? "0.08" : "0";
+      plus.style.opacity = enabled ? "0.6" : "0.08";
+      status.textContent = enabled ? "enabled" : "disabled";
+    }
+
+    chrome.storage.local.get({ enabled: true }, ({ enabled }) => apply(enabled));
+    chrome.storage.onChanged.addListener(({ enabled }) => { if (enabled) apply(enabled.newValue); });
+  </script>
+</body>
+</html>
