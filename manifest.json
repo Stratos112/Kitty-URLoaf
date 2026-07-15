@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Kitty URLoaf",
+  "version": "0.1.0",
+  "description": "",
+  "icons": {
+    "16": "static/plus.svg",
+    "48": "static/plus.svg",
+    "128": "static/plus.svg"
+  },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": "static/plus.svg"
+  },
+  "background": {
+    "service_worker": "src/background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.js"]
+    }
+  ],
+  "permissions": [],
+  "host_permissions": []
+}
