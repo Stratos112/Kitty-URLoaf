@@ -18,13 +18,6 @@
   "omnibox": {
     "keyword": "+"
   },
-  "chrome_url_overrides": {
-    "newtab": "src/newtab/newtab.html"
-  },
-  "options_ui": {
-    "page": "src/options/options.html",
-    "open_in_tab": true
-  },
   "devtools_page": "src/devtools/devtools.html",
   "side_panel": {
     "default_path": "src/sidepanel/sidepanel.html"
@@ -33,7 +26,17 @@
   "host_permissions": [],
   "web_accessible_resources": [
     {
-      "resources": ["static/plus.svg"],
+      "resources": [
+        "static/plus.svg",
+        "static/plus-red.svg",
+        "static/plus-orange.svg",
+        "static/plus-yellow.svg",
+        "static/plus-green.svg",
+        "static/plus-cyan.svg",
+        "static/plus-blue.svg",
+        "static/plus-purple.svg",
+        "static/plus-pink.svg"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

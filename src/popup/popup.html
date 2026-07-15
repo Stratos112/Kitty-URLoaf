@@ -4,41 +4,56 @@
   <meta charset="UTF-8">
   <title>Kitty URLoaf</title>
   <style>
-    body { width: 180px; padding: 16px; font-family: sans-serif; margin: 0; }
-    .row {
-      display: flex; align-items: center;
-      justify-content: space-between; margin-bottom: 14px;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 264px;
+      display: flex;
+      flex-direction: column;
+      font-family: sans-serif;
+      background: transparent;
     }
-    label { font-size: 14px; font-weight: 600; cursor: pointer; }
-    .toggle { position: relative; width: 42px; height: 24px; }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: rgba(128,128,128,0.15);
+      backdrop-filter: blur(4px);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    label.lbl { font-size: 13px; font-weight: 600; }
+    .toggle { position: relative; width: 42px; height: 24px; cursor: pointer; }
     .toggle input { opacity: 0; width: 0; height: 0; }
     .slider {
       position: absolute; inset: 0;
-      background: #ccc; border-radius: 24px;
-      cursor: pointer; transition: background 0.2s;
+      background: #555; border-radius: 24px; transition: background 0.2s;
     }
     .slider::before {
       content: ""; position: absolute;
       width: 18px; height: 18px; left: 3px; top: 3px;
       background: white; border-radius: 50%; transition: transform 0.2s;
     }
-    input:checked + .slider { background: #4c9; }
+    input:checked + .slider { background: #33dd77; }
     input:checked + .slider::before { transform: translateX(18px); }
-    #plus-display { display: flex; justify-content: center; padding-top: 4px; }
-    #plus-display img { width: 100px; height: 100px; opacity: 0.15; }
+    #grid {
+      display: flex;
+      flex-wrap: wrap;
+      overflow: hidden;
+      line-height: 0;
+    }
+    #grid img { width: 24px; height: 24px; display: block; }
   </style>
 </head>
 <body>
   <div class="row">
-    <label for="toggle">Enabled</label>
+    <label class="lbl" for="toggle">Enabled</label>
     <label class="toggle">
       <input type="checkbox" id="toggle">
       <span class="slider"></span>
     </label>
   </div>
-  <div id="plus-display">
-    <img src="../../static/plus.svg" alt="+">
-  </div>
+  <div id="grid"></div>
   <script src="popup.js"></script>
 </body>
 </html>

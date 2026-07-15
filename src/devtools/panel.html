@@ -3,22 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    * { margin: 0; padding: 0; }
-    body { width: 100%; height: 100vh; overflow: hidden; background: #fff; }
-    #bg {
-      width: 100%; height: 100%;
-      background: url('../../static/plus.svg') repeat;
-      background-size: 60px 60px;
-      transition: opacity 0.3s;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #1a1a1a; }
+    #grid { display: flex; flex-wrap: wrap; width: 100%; height: 100%; align-content: flex-start; line-height: 0; }
+    #grid img { width: 28px; height: 28px; display: block; }
   </style>
 </head>
 <body>
-  <div id="bg"></div>
+  <div id="grid"></div>
   <script>
-    const bg = document.getElementById("bg");
-    chrome.storage.local.get({ enabled: true }, ({ enabled }) => { bg.style.opacity = enabled ? "0.12" : "0"; });
-    chrome.storage.onChanged.addListener(({ enabled }) => { if (enabled) bg.style.opacity = enabled.newValue ? "0.12" : "0"; });
+    const COLORS = ['red','orange','yellow','green','cyan','blue','purple','pink'];
+    const grid = document.getElementById("grid");
+
+    function fill(enabled) {
+      grid.innerHTML = "";
+      if (!enabled) return;
+      const cols = Math.ceil(window.innerWidth / 28);
+      const rows = Math.ceil(window.innerHeight / 28);
+      for (let i = 0; i < cols * rows; i++) {
+        const img = document.createElement("img");
+        img.src = `../../static/plus-${COLORS[i % 8]}.svg`;
+        grid.appendChild(img);
+      }
+    }
+
+    chrome.storage.local.get({ enabled: true }, ({ enabled }) => fill(enabled));
+    chrome.storage.onChanged.addListener(({ enabled }) => { if (enabled) fill(enabled.newValue); });
+    window.addEventListener("resize", () => {
+      chrome.storage.local.get({ enabled: true }, ({ enabled }) => fill(enabled));
+    });
   </script>
 </body>
 </html>

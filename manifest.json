@@ -25,13 +25,6 @@
   "omnibox": {
     "keyword": "+"
   },
-  "chrome_url_overrides": {
-    "newtab": "src/newtab/newtab.html"
-  },
-  "options_ui": {
-    "page": "src/options/options.html",
-    "open_in_tab": true
-  },
   "devtools_page": "src/devtools/devtools.html",
   "sidebar_action": {
     "default_panel": "src/sidepanel/sidepanel.html",
@@ -39,5 +32,15 @@
     "default_title": "Kitty URLoaf"
   },
   "permissions": ["storage", "contextMenus", "notifications"],
-  "web_accessible_resources": ["static/plus.svg"]
+  "web_accessible_resources": [
+    "static/plus.svg",
+    "static/plus-red.svg",
+    "static/plus-orange.svg",
+    "static/plus-yellow.svg",
+    "static/plus-green.svg",
+    "static/plus-cyan.svg",
+    "static/plus-blue.svg",
+    "static/plus-purple.svg",
+    "static/plus-pink.svg"
+  ]
 }
