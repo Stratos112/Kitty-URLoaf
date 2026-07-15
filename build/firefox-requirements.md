@@ -1,36 +1,53 @@
 # Firefox Extension Dev Requirements
 
-## Manifest
-- [ ] `manifest_version: 2` (MV3 supported but MV2 is still primary for AMO)
-- [ ] `browser_specific_settings.gecko.id` set (e.g. `ext@domain.com`)
-- [ ] `browser_specific_settings.gecko.strict_min_version` if using newer APIs
+## Manifest version
+- Use `manifest.firefox.json` (MV2) — load this file when installing via `about:debugging`
+- MV3 `background.service_worker` is disabled by default in Firefox; MV3 support is partial and behind flags even in Firefox 128+
+- Use `web-ext build --config=manifest.firefox.json` to package for Firefox
 
-## Permissions
-- [ ] Use `browser.*` APIs (or `chrome.*` via webextension-polyfill)
-- [ ] `tabs` permission required for `tabs.query` with `url`
-- [ ] Avoid `clipboardRead`/`clipboardWrite` unless essential (flagged in review)
+## Required fields (MV2)
+- [ ] `manifest_version: 2`
+- [ ] `browser_specific_settings.gecko.id` — required for AMO; format: `name@domain.com`
+- [ ] `browser_specific_settings.gecko.strict_min_version` — set to `"109.0"` or higher
+- [ ] `name`, `version`, `description`
 
 ## Background
-- [ ] MV2: `"background": { "scripts": [...] }` (persistent optional)
-- [ ] MV3: `"background": { "service_worker": "..." }` (Firefox 121+)
-- [ ] Prefer non-persistent background for battery/performance
+- [ ] `"background": { "scripts": [...], "persistent": false }` — non-persistent (event page)
+- [ ] Do NOT use `background.service_worker` — Firefox disables it unless MV3 flag is on
+- [ ] Use `const action = chrome.action ?? chrome.browserAction` for cross-browser compat
 
-## Content Scripts
-- [ ] `matches` uses valid match patterns
-- [ ] `web_accessible_resources` declared for any injected assets
+## Actions / toolbar
+- [ ] MV2 uses `browser_action`, not `action`
+- [ ] SVG icons are supported in Firefox (not all Chrome APIs accept SVG)
 
-## Build / Packaging
-- [ ] Zip extension root (not parent folder)
-- [ ] Source code submission may be required if build tools used
-- [ ] Include `source_code_url` or upload sources separately on AMO
+## Sidebar
+- [ ] Firefox uses `sidebar_action` (not Chrome's `side_panel`)
+- [ ] `sidebar_action.default_panel` — the HTML page
+- [ ] No JS API needed — Firefox adds a toolbar button automatically; user clicks to open
+- [ ] `sidePanel` permission does NOT exist in Firefox — omit it
 
-## Firefox Add-on Submission (AMO)
+## Web accessible resources
+- [ ] MV2 format: `"web_accessible_resources": ["static/plus.svg"]` — plain array, no `matches`
+
+## Permissions
+- [ ] `contextMenus` — works (also aliased as `menus`)
+- [ ] `storage` — works
+- [ ] `notifications` — works
+- [ ] `omnibox` — declared via `"omnibox": { "keyword": "..." }`, not under permissions
+
+## Other supported APIs
+- [ ] `chrome_url_overrides.newtab` — supported
+- [ ] `devtools_page` — supported
+- [ ] `options_ui` — supported
+- [ ] `omnibox` — supported
+
+## Testing (temporary install)
+- [ ] Go to `about:debugging` > This Firefox > Load Temporary Add-on
+- [ ] Select `manifest.firefox.json` directly (Firefox lets you pick the manifest file)
+- [ ] For live reload: `web-ext run --config=manifest.firefox.json`
+
+## AMO submission
 - [ ] Firefox account required (free)
-- [ ] All JS must be reviewable — no minified-only submissions without source
-- [ ] Self-distributed XPI option available (bypasses AMO review for unlisted)
-- [ ] Store listing: name, summary (250 chars), description, icon, screenshots
-
-## Testing
-- [ ] Load temporary add-on via `about:debugging` > This Firefox
-- [ ] For permanent install: sign via AMO or use Firefox Developer Edition
-- [ ] Test with `web-ext run` for live reload during development
+- [ ] All JS must be reviewable — minified code requires source upload
+- [ ] Self-distributed XPI: sign via AMO as "unlisted" to skip review queue
+- [ ] Store listing: name, summary ≤250 chars, icon, screenshots

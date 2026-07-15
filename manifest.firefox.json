@@ -1,0 +1,43 @@
+{
+  "manifest_version": 2,
+  "name": "Kitty URLoaf",
+  "version": "0.1.0",
+  "description": "",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "urloaf@kitty",
+      "strict_min_version": "109.0"
+    }
+  },
+  "icons": {
+    "16": "static/plus.svg",
+    "48": "static/plus.svg",
+    "128": "static/plus.svg"
+  },
+  "browser_action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": "static/plus.svg"
+  },
+  "background": {
+    "scripts": ["src/background/background.js"],
+    "persistent": false
+  },
+  "omnibox": {
+    "keyword": "+"
+  },
+  "chrome_url_overrides": {
+    "newtab": "src/newtab/newtab.html"
+  },
+  "options_ui": {
+    "page": "src/options/options.html",
+    "open_in_tab": true
+  },
+  "devtools_page": "src/devtools/devtools.html",
+  "sidebar_action": {
+    "default_panel": "src/sidepanel/sidepanel.html",
+    "default_icon": "static/plus.svg",
+    "default_title": "Kitty URLoaf"
+  },
+  "permissions": ["storage", "contextMenus", "notifications"],
+  "web_accessible_resources": ["static/plus.svg"]
+}
