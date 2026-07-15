@@ -21,6 +21,6 @@
       "js": ["src/content/content.js"]
     }
   ],
-  "permissions": [],
+  "permissions": ["storage"],
   "host_permissions": []
 }
