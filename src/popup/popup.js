@@ -61,9 +61,11 @@ document.getElementById('finishBtn').addEventListener('click', () => {
 
 document.getElementById('revisitBtn').addEventListener('click', () => {
   document.querySelectorAll('.os-btn').forEach(b => b.classList.remove('on'));
+  dlBtn.textContent = 'download ↓';
+  delete dlBtn.dataset.ready;
   next1.disabled = true;
   selectedOS = null;
-  chrome.storage.local.set({ wizardPage: 0, selectedOS: null });
+  chrome.storage.local.set({ wizardPage: 0, selectedOS: null, downloaded: false, seenSetup: false });
   track.style.transition = 'none';
   goTo(0, false);
   requestAnimationFrame(() => { track.style.transition = ''; });
@@ -102,7 +104,7 @@ chrome.storage.local.get(
 
 function renderSteps() {
   const steps = [
-    `open <code>about:profiles</code> in the address bar`,
+    `open <button class="lnk" id="profLink">about:profiles</button> in the address bar`,
     `your profiles live in <code>${PATH[selectedOS]}</code>`,
     `click <b>Open Directory</b> next to Root Directory`,
     `create a folder named <code>chrome</code> inside it if one doesn't exist`,
@@ -112,6 +114,9 @@ function renderSteps() {
   document.getElementById('steps').innerHTML = steps
     .map((t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`)
     .join('');
+  document.getElementById('profLink')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'about:profiles' });
+  });
   document.getElementById('cfgLink')?.addEventListener('click', () => {
     chrome.tabs.create({ url: 'about:config' });
   });
