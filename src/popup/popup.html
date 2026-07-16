@@ -180,6 +180,12 @@
     .p:disabled { opacity: 0.28; pointer-events: none; }
     .g { background: transparent; color: var(--muted); }
     .g:hover { color: var(--text); }
+    .lnk {
+      background: none; border: none; padding: 0;
+      color: var(--pink); font-size: inherit; font-family: inherit;
+      font-weight: 600; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
 
     /* ─── main view ─── */
     #main { padding: 20px; }
@@ -216,7 +222,11 @@
     input:checked + .sl { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 10px var(--glow); }
     input:checked + .sl::before { transform: translateX(18px); }
 
-    .revisit { margin-top: 14px; text-align: center; }
+    .tog-note {
+      font-size: 10px; color: var(--muted);
+      margin-top: 10px; text-align: center; line-height: 1.5;
+    }
+    .revisit { margin-top: 12px; text-align: center; }
     .revisit button {
       background: none; border: none;
       color: var(--muted); font-size: 11px;
@@ -304,6 +314,7 @@
       <span class="sl"></span>
     </label>
   </div>
+  <div class="tog-note">the css is always active once installed<br>browser restart required for any changes</div>
   <div class="revisit">
     <button id="revisitBtn">view setup guide again</button>
   </div>

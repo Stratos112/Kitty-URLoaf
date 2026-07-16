@@ -8,17 +8,18 @@ const PATH = {
 
 let selectedOS = null;
 
-const track    = document.getElementById('track');
-const dots     = [0,1,2,3].map(i => document.getElementById(`d${i}`));
-const next1    = document.getElementById('next1');
-const dlBtn    = document.getElementById('dlBtn');
-const wizard   = document.getElementById('wizard');
-const main     = document.getElementById('main');
-const tog      = document.getElementById('tog');
+const track  = document.getElementById('track');
+const dots   = [0,1,2,3].map(i => document.getElementById(`d${i}`));
+const next1  = document.getElementById('next1');
+const dlBtn  = document.getElementById('dlBtn');
+const wizard = document.getElementById('wizard');
+const main   = document.getElementById('main');
+const tog    = document.getElementById('tog');
 
-function goTo(n) {
+function goTo(n, save = true) {
   track.style.transform = `translateX(-${n * 300}px)`;
   dots.forEach((d, i) => d.classList.toggle('on', i === n));
+  if (save) chrome.storage.local.set({ wizardPage: n });
 }
 
 function showMain()   { wizard.style.display = 'none';  main.style.display = 'block'; }
@@ -30,22 +31,24 @@ document.querySelectorAll('.os-btn').forEach(btn => {
     btn.classList.add('on');
     selectedOS = btn.dataset.os;
     next1.disabled = false;
+    chrome.storage.local.set({ selectedOS });
   });
 });
 
-document.getElementById('next1').addEventListener('click', () => goTo(1));
+next1.addEventListener('click', () => goTo(1));
 
-document.getElementById('back2').addEventListener('click', () => {
-  dlBtn.textContent = 'download ↓';
-  delete dlBtn.dataset.ready;
-  goTo(0);
-});
+document.getElementById('back2').addEventListener('click', () => goTo(0));
 
 dlBtn.addEventListener('click', () => {
-  if (dlBtn.dataset.ready) { renderSteps(); goTo(2); return; }
+  if (dlBtn.dataset.ready) {
+    renderSteps();
+    goTo(2);
+    return;
+  }
   downloadCSS();
   dlBtn.textContent = 'next →';
   dlBtn.dataset.ready = '1';
+  chrome.storage.local.set({ downloaded: true });
 });
 
 document.getElementById('back3').addEventListener('click', () => goTo(1));
@@ -58,34 +61,60 @@ document.getElementById('finishBtn').addEventListener('click', () => {
 
 document.getElementById('revisitBtn').addEventListener('click', () => {
   document.querySelectorAll('.os-btn').forEach(b => b.classList.remove('on'));
-  dlBtn.textContent = 'download ↓';
-  delete dlBtn.dataset.ready;
   next1.disabled = true;
   selectedOS = null;
-  goTo(0);
+  chrome.storage.local.set({ wizardPage: 0, selectedOS: null });
+  track.style.transition = 'none';
+  goTo(0, false);
+  requestAnimationFrame(() => { track.style.transition = ''; });
   showWizard();
 });
 
-chrome.storage.local.get({ enabled: true }, ({ enabled }) => { tog.checked = enabled; });
 tog.addEventListener('change', () => chrome.storage.local.set({ enabled: tog.checked }));
 
-chrome.storage.local.get({ seenSetup: false }, ({ seenSetup }) => {
-  seenSetup ? showMain() : showWizard();
-});
+chrome.storage.local.get(
+  { seenSetup: false, wizardPage: 0, downloaded: false, selectedOS: null, enabled: true },
+  (data) => {
+    tog.checked = data.enabled;
+
+    if (data.seenSetup) { showMain(); return; }
+
+    showWizard();
+    selectedOS = data.selectedOS;
+
+    if (selectedOS) {
+      document.querySelector(`[data-os="${selectedOS}"]`)?.classList.add('on');
+      next1.disabled = false;
+    }
+
+    if (data.downloaded) {
+      dlBtn.textContent = 'next →';
+      dlBtn.dataset.ready = '1';
+    }
+
+    if (data.wizardPage >= 2 && selectedOS) renderSteps();
+
+    track.style.transition = 'none';
+    goTo(data.wizardPage, false);
+    requestAnimationFrame(() => { track.style.transition = ''; });
+  }
+);
 
 function renderSteps() {
-  const path = PATH[selectedOS];
   const steps = [
     `open <code>about:profiles</code> in the address bar`,
-    `your profiles live in <code>${path}</code>`,
+    `your profiles live in <code>${PATH[selectedOS]}</code>`,
     `click <b>Open Directory</b> next to Root Directory`,
-    `create a folder named <code>chrome</code> inside it if it doesn't exist`,
-    `place <code>userChrome.css</code> inside that <code>chrome</code> folder`,
-    `go to <code>about:config</code>, search <code>legacyUserProfileCustomizations</code>, double-click to set it to <b>true</b>`,
+    `create a folder named <code>chrome</code> inside it if one doesn't exist`,
+    `place <code>userChrome.css</code> into that <code>chrome</code> folder`,
+    `open <button class="lnk" id="cfgLink">about:config</button>, then type <code>LegacyUserProfile</code> in the search bar at the top — double-click the result to set it to <b>true</b>`,
   ];
   document.getElementById('steps').innerHTML = steps
     .map((t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`)
     .join('');
+  document.getElementById('cfgLink')?.addEventListener('click', () => {
+    chrome.tabs.create({ url: 'about:config' });
+  });
 }
 
 function svgUri(c) {
@@ -99,7 +128,8 @@ function generateCSS() {
   const sizes = COLORS.map(() => '20px 20px').join(', ');
   const pos   = ['0px 0px','20px 0px','10px 20px','30px 20px',
                   '5px 10px','25px 10px','15px 30px','35px 30px'].join(', ');
-  const block = (sel) => `${sel} {\n  background-image:\n    ${imgs};\n  background-size: ${sizes};\n  background-repeat: repeat;\n  background-position: ${pos};\n}`;
+  const block = sel =>
+    `${sel} {\n  background-image:\n    ${imgs};\n  background-size: ${sizes};\n  background-repeat: repeat;\n  background-position: ${pos};\n}`;
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
