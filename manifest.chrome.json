@@ -15,5 +15,26 @@
   "background": {
     "service_worker": "src/background/background.js"
   },
-  "permissions": ["storage"]
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.js"]
+    }
+  ],
+  "permissions": ["storage"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "static/plus-red.svg",
+        "static/plus-orange.svg",
+        "static/plus-yellow.svg",
+        "static/plus-green.svg",
+        "static/plus-cyan.svg",
+        "static/plus-blue.svg",
+        "static/plus-purple.svg",
+        "static/plus-pink.svg"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
