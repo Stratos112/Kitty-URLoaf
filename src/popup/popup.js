@@ -89,18 +89,16 @@ chrome.storage.local.get(
 
 function renderSteps() {
   const steps = [
-    `open <button class="lnk" id="profLink">about:profiles</button> in the address bar`,
+    `type <code>about:profiles</code> in the address bar`,
     `your profiles live in <code>${PATH[selectedOS]}</code>`,
     `click <b>Open Directory</b> next to Root Directory`,
     `create a folder named <code>chrome</code> inside it if one doesn't exist`,
     `place <code>userChrome.css</code> into that <code>chrome</code> folder`,
-    `open <button class="lnk" id="cfgLink">about:config</button>, then type <code>LegacyUserProfile</code> in the search bar at the top — double-click the result to set it to <b>true</b>`,
+    `type <code>about:config</code> in the address bar, search <code>LegacyUserProfile</code> — double-click to set it to <b>true</b>`,
   ];
   const row = (t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`;
   document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map((t, i) => row(t, i)).join('');
   document.getElementById('steps-b').innerHTML = steps.slice(3).map((t, i) => row(t, i + 3)).join('');
-  document.getElementById('profLink')?.addEventListener('click', () => chrome.tabs.create({ url: 'about:profiles' }));
-  document.getElementById('cfgLink')?.addEventListener('click',  () => chrome.tabs.create({ url: 'about:config' }));
 }
 
 function svgUri(c) {
