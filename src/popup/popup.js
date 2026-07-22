@@ -89,16 +89,17 @@ chrome.storage.local.get(
 
 function renderSteps() {
   const steps = [
-    `type <code>about:profiles</code> in the address bar`,
-    `your profiles live in <code>${PATH[selectedOS]}</code>`,
-    `click <b>Open Directory</b> next to Root Directory`,
+    `type <code>about:profiles</code> in your Firefox address bar and press Enter`,
+    `find the profile marked <b>This is the profile in use</b> — there may be several listed`,
+    `under that profile, look for the <b>Root Directory</b> row — the path next to it is your profile folder (e.g. <code>${PATH[selectedOS]}xxxxxxxx.default</code>)`,
+    `click <b>Open Directory</b> next to Root Directory to open that folder`,
     `create a folder named <code>chrome</code> inside it if one doesn't exist`,
     `place <code>userChrome.css</code> into that <code>chrome</code> folder`,
     `type <code>about:config</code> in the address bar, search <code>LegacyUserProfile</code> — double-click to set it to <b>true</b>`,
   ];
   const row = (t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`;
-  document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map((t, i) => row(t, i)).join('');
-  document.getElementById('steps-b').innerHTML = steps.slice(3).map((t, i) => row(t, i + 3)).join('');
+  document.getElementById('steps-a').innerHTML = steps.slice(0, 4).map((t, i) => row(t, i)).join('');
+  document.getElementById('steps-b').innerHTML = steps.slice(4).map((t, i) => row(t, i + 4)).join('');
 }
 
 function svgUri(c) {
