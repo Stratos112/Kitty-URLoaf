@@ -43,6 +43,8 @@ dlBtn.addEventListener('click', () => {
   chrome.storage.local.set({ downloaded: true });
 });
 
+document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(2); });
+
 document.getElementById('back3').addEventListener('click', () => goTo(1));
 document.getElementById('next3').addEventListener('click', () => goTo(3));
 
