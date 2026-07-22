@@ -7,7 +7,7 @@ const PATH = {
 let selectedOS = null;
 
 const track = document.getElementById('track');
-const dots  = [0,1,2,3].map(i => document.getElementById(`d${i}`));
+const dots  = [0,1,2,3,4].map(i => document.getElementById(`d${i}`));
 const next1 = document.getElementById('next1');
 const dlBtn = document.getElementById('dlBtn');
 
@@ -48,6 +48,9 @@ document.getElementById('skipDl').addEventListener('click', () => { renderSteps(
 document.getElementById('back3').addEventListener('click', () => goTo(1));
 document.getElementById('next3').addEventListener('click', () => goTo(3));
 
+document.getElementById('back4').addEventListener('click', () => goTo(2));
+document.getElementById('next4').addEventListener('click', () => goTo(4));
+
 document.getElementById('startOverBtn').addEventListener('click', () => {
   document.querySelectorAll('.os-btn').forEach(b => b.classList.remove('on'));
   dlBtn.textContent = 'download ↓';
@@ -77,6 +80,7 @@ chrome.storage.local.get(
 
     if (data.wizardPage >= 2 && selectedOS) renderSteps();
 
+
     track.style.transition = 'none';
     goTo(data.wizardPage, false);
     requestAnimationFrame(() => { track.style.transition = ''; });
@@ -92,9 +96,9 @@ function renderSteps() {
     `place <code>userChrome.css</code> into that <code>chrome</code> folder`,
     `open <button class="lnk" id="cfgLink">about:config</button>, then type <code>LegacyUserProfile</code> in the search bar at the top — double-click the result to set it to <b>true</b>`,
   ];
-  document.getElementById('steps').innerHTML = steps
-    .map((t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`)
-    .join('');
+  const row = (t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`;
+  document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map((t, i) => row(t, i)).join('');
+  document.getElementById('steps-b').innerHTML = steps.slice(3).map((t, i) => row(t, i + 3)).join('');
   document.getElementById('profLink')?.addEventListener('click', () => chrome.tabs.create({ url: 'about:profiles' }));
   document.getElementById('cfgLink')?.addEventListener('click',  () => chrome.tabs.create({ url: 'about:config' }));
 }
