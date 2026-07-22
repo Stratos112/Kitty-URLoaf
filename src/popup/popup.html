@@ -186,54 +186,6 @@
       font-weight: 600; cursor: pointer;
       text-decoration: underline; text-underline-offset: 2px;
     }
-
-    /* ─── main view ─── */
-    #main { padding: 20px; }
-    .brand {
-      text-align: center;
-      padding-bottom: 15px;
-      margin-bottom: 15px;
-      border-bottom: 1px solid rgba(255,68,187,0.1);
-    }
-    .brand .name { font-size: 15px; font-weight: 700; }
-    .brand .tag  { font-size: 11px; color: var(--muted); margin-top: 3px; }
-    .tog-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .tog { position: relative; width: 44px; height: 26px; cursor: pointer; }
-    .tog input { opacity: 0; width: 0; height: 0; }
-    .sl {
-      position: absolute; inset: 0;
-      background: #2a1a22; border-radius: 99px;
-      border: 1px solid rgba(255,68,187,0.18);
-      transition: background 0.25s;
-    }
-    .sl::before {
-      content: ""; position: absolute;
-      width: 20px; height: 20px; left: 3px; top: 2px;
-      background: #fff; border-radius: 50%;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-      transition: transform 0.28s var(--spring);
-    }
-    input:checked + .sl { background: var(--pink); border-color: var(--pink); box-shadow: 0 0 10px var(--glow); }
-    input:checked + .sl::before { transform: translateX(18px); }
-
-    .tog-note {
-      font-size: 10px; color: var(--muted);
-      margin-top: 10px; text-align: center; line-height: 1.5;
-    }
-    .revisit { margin-top: 12px; text-align: center; }
-    .revisit button {
-      background: none; border: none;
-      color: var(--muted); font-size: 11px;
-      cursor: pointer; font-family: inherit;
-      text-decoration: underline; text-underline-offset: 2px;
-    }
-    .revisit button:hover { color: var(--pink); }
   </style>
 </head>
 <body>
@@ -291,32 +243,12 @@
       <div class="page">
         <div class="done">
           <div class="big">🐾</div>
-          <h2>you did it! ♡</h2>
-          <p>close firefox and reopen it<br>to see the plushy magic~</p>
-          <button class="btn p" id="finishBtn" style="margin-top:6px">done! 🐾</button>
+          <h2>Meow</h2>
+          <button class="btn p" id="startOverBtn" style="margin-top:6px">start over ↩</button>
         </div>
       </div>
 
     </div>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div id="main" style="display:none">
-  <div class="brand">
-    <div class="name">🐾 kitty urloaf</div>
-    <div class="tag">plushy mode~</div>
-  </div>
-  <div class="tog-row">
-    <span>enabled</span>
-    <label class="tog">
-      <input type="checkbox" id="tog">
-      <span class="sl"></span>
-    </label>
-  </div>
-  <div class="tog-note">toolbar css requires a browser restart<br>page overlay toggles instantly</div>
-  <div class="revisit">
-    <button id="revisitBtn">view setup guide again</button>
   </div>
 </div>
 

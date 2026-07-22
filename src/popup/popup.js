@@ -1,5 +1,3 @@
-const COLORS = ['ff44bb','ff3355','00ccff','aa44ff','ff7722','33dd77','ffcc00','3399ff'];
-
 const PATH = {
   windows: '%APPDATA%\\Mozilla\\Firefox\\Profiles\\',
   macos:   '~/Library/Application Support/Firefox/Profiles/',
@@ -8,22 +6,16 @@ const PATH = {
 
 let selectedOS = null;
 
-const track  = document.getElementById('track');
-const dots   = [0,1,2,3].map(i => document.getElementById(`d${i}`));
-const next1  = document.getElementById('next1');
-const dlBtn  = document.getElementById('dlBtn');
-const wizard = document.getElementById('wizard');
-const main   = document.getElementById('main');
-const tog    = document.getElementById('tog');
+const track = document.getElementById('track');
+const dots  = [0,1,2,3].map(i => document.getElementById(`d${i}`));
+const next1 = document.getElementById('next1');
+const dlBtn = document.getElementById('dlBtn');
 
 function goTo(n, save = true) {
   track.style.transform = `translateX(-${n * 300}px)`;
   dots.forEach((d, i) => d.classList.toggle('on', i === n));
   if (save) chrome.storage.local.set({ wizardPage: n });
 }
-
-function showMain()   { wizard.style.display = 'none';  main.style.display = 'block'; }
-function showWizard() { wizard.style.display = 'block'; main.style.display = 'none';  }
 
 document.querySelectorAll('.os-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -54,34 +46,21 @@ dlBtn.addEventListener('click', () => {
 document.getElementById('back3').addEventListener('click', () => goTo(1));
 document.getElementById('next3').addEventListener('click', () => goTo(3));
 
-document.getElementById('finishBtn').addEventListener('click', () => {
-  chrome.storage.local.set({ seenSetup: true });
-  showMain();
-});
-
-document.getElementById('revisitBtn').addEventListener('click', () => {
+document.getElementById('startOverBtn').addEventListener('click', () => {
   document.querySelectorAll('.os-btn').forEach(b => b.classList.remove('on'));
   dlBtn.textContent = 'download ↓';
   delete dlBtn.dataset.ready;
   next1.disabled = true;
   selectedOS = null;
-  chrome.storage.local.set({ wizardPage: 0, selectedOS: null, downloaded: false, seenSetup: false });
+  chrome.storage.local.set({ wizardPage: 0, selectedOS: null, downloaded: false });
   track.style.transition = 'none';
   goTo(0, false);
   requestAnimationFrame(() => { track.style.transition = ''; });
-  showWizard();
 });
 
-tog.addEventListener('change', () => chrome.storage.local.set({ enabled: tog.checked }));
-
 chrome.storage.local.get(
-  { seenSetup: false, wizardPage: 0, downloaded: false, selectedOS: null, enabled: true },
+  { wizardPage: 0, downloaded: false, selectedOS: null },
   (data) => {
-    tog.checked = data.enabled;
-
-    if (data.seenSetup) { showMain(); return; }
-
-    showWizard();
     selectedOS = data.selectedOS;
 
     if (selectedOS) {
@@ -114,12 +93,8 @@ function renderSteps() {
   document.getElementById('steps').innerHTML = steps
     .map((t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`)
     .join('');
-  document.getElementById('profLink')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'about:profiles' });
-  });
-  document.getElementById('cfgLink')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'about:config' });
-  });
+  document.getElementById('profLink')?.addEventListener('click', () => chrome.tabs.create({ url: 'about:profiles' }));
+  document.getElementById('cfgLink')?.addEventListener('click',  () => chrome.tabs.create({ url: 'about:config' }));
 }
 
 function svgUri(c) {
@@ -129,13 +104,13 @@ function svgUri(c) {
 }
 
 function generateCSS() {
+  const COLORS = ['ff44bb','ff3355','00ccff','aa44ff','ff7722','33dd77','ffcc00','3399ff'];
   const imgs  = COLORS.map(svgUri).join(',\n    ');
   const sizes = COLORS.map(() => '20px 20px').join(', ');
   const pos   = ['0px 0px','20px 0px','10px 20px','30px 20px',
                   '5px 10px','25px 10px','15px 30px','35px 30px'].join(', ');
   const block = sel =>
     `${sel} {\n  background-image:\n    ${imgs};\n  background-size: ${sizes};\n  background-repeat: repeat;\n  background-position: ${pos};\n}`;
-
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
