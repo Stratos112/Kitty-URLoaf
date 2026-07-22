@@ -102,10 +102,10 @@ function renderSteps() {
     `search <code>LegacyUserProfile</code>`,
     `double-click the result to set it to <b>true</b>`,
   ];
-  const row = (t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`;
-  document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map((t, i) => row(t, i)).join('');
-  document.getElementById('steps-b').innerHTML = steps.slice(3, 6).map((t, i) => row(t, i + 3)).join('');
-  document.getElementById('steps-c').innerHTML = steps.slice(6).map((t, i) => row(t, i + 6)).join('');
+  const row = t => `<div class="bullet">${t}</div>`;
+  document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map(row).join('');
+  document.getElementById('steps-b').innerHTML = steps.slice(3, 6).map(row).join('');
+  document.getElementById('steps-c').innerHTML = steps.slice(6).map(row).join('');
 }
 
 function svgUri(c) {
