@@ -18,9 +18,5 @@
     "default_popup": "src/popup/popup.html",
     "default_icon": "static/plus.svg"
   },
-  "background": {
-    "scripts": ["src/background/background.js"],
-    "persistent": false
-  },
   "permissions": ["storage"]
 }

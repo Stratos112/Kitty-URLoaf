@@ -73,37 +73,6 @@
     }
     .page::-webkit-scrollbar { display: none; }
 
-    /* os grid */
-    .os-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .os-btn {
-      background: var(--surface);
-      border: 2px solid transparent;
-      border-radius: 14px;
-      padding: 13px 6px;
-      cursor: pointer;
-      color: var(--text);
-      font-size: 11px;
-      font-weight: 600;
-      font-family: inherit;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.22s var(--spring);
-    }
-    .os-btn .ico { font-size: 26px; line-height: 1; }
-    .os-btn:hover { border-color: var(--pink-lo); background: var(--deep); }
-    .os-btn.on {
-      border-color: var(--pink);
-      background: var(--deep);
-      box-shadow: 0 0 14px var(--glow), inset 0 0 10px rgba(255,68,187,0.06);
-    }
-
     /* download box */
     .dl-box {
       background: var(--surface);
@@ -193,24 +162,11 @@
     <span class="dot"    id="d2"></span>
     <span class="dot"    id="d3"></span>
     <span class="dot"    id="d4"></span>
-    <span class="dot"    id="d5"></span>
   </div>
   <div class="clip">
     <div class="track" id="track">
 
-      <!-- page 1: os -->
-      <div class="page">
-        <div class="os-grid">
-          <button class="os-btn" data-os="windows"><span class="ico">🪟</span>windows</button>
-          <button class="os-btn" data-os="macos"  ><span class="ico">🍎</span>macos</button>
-          <button class="os-btn" data-os="linux"  ><span class="ico">🐧</span>linux</button>
-        </div>
-        <div class="row">
-          <button class="btn p" id="next1" disabled>next →</button>
-        </div>
-      </div>
-
-      <!-- page 2: download -->
+      <!-- page 0: download -->
       <div class="page">
         <div class="dl-box">
           <div class="ico">🎀</div>
@@ -218,7 +174,6 @@
           <div class="sub">your plushy toolbar magic~</div>
         </div>
         <div class="row">
-          <button class="btn g" id="back2">← back</button>
           <button class="btn p" id="dlBtn">download ↓</button>
         </div>
         <div style="text-align:center;margin-top:8px">
