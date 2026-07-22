@@ -7,7 +7,7 @@ const PATH = {
 let selectedOS = null;
 
 const track = document.getElementById('track');
-const dots  = [0,1,2,3,4].map(i => document.getElementById(`d${i}`));
+const dots  = [0,1,2,3,4,5].map(i => document.getElementById(`d${i}`));
 const next1 = document.getElementById('next1');
 const dlBtn = document.getElementById('dlBtn');
 
@@ -51,6 +51,9 @@ document.getElementById('next3').addEventListener('click', () => goTo(3));
 document.getElementById('back4').addEventListener('click', () => goTo(2));
 document.getElementById('next4').addEventListener('click', () => goTo(4));
 
+document.getElementById('back5').addEventListener('click', () => goTo(3));
+document.getElementById('next5').addEventListener('click', () => goTo(5));
+
 document.getElementById('startOverBtn').addEventListener('click', () => {
   document.querySelectorAll('.os-btn').forEach(b => b.classList.remove('on'));
   dlBtn.textContent = 'download ↓';
@@ -91,15 +94,18 @@ function renderSteps() {
   const steps = [
     `type <code>about:profiles</code> in your Firefox address bar and press Enter`,
     `find the profile marked <b>This is the profile in use</b> — there may be several listed`,
-    `under that profile, look for the <b>Root Directory</b> row — the path next to it is your profile folder (e.g. <code>${PATH[selectedOS]}xxxxxxxx.default</code>)`,
-    `click <b>Open Directory</b> next to Root Directory to open that folder`,
-    `create a folder named <code>chrome</code> inside it if one doesn't exist`,
+    `under that profile, look for the <b>Root Directory</b> row — the path next to it is your profile folder`,
+    `click <b>Open Directory</b> next to Root Directory`,
+    `in the window that opens, create a new folder named <code>chrome</code>`,
     `place <code>userChrome.css</code> into that <code>chrome</code> folder`,
-    `type <code>about:config</code> in the address bar, search <code>LegacyUserProfile</code> — double-click to set it to <b>true</b>`,
+    `type <code>about:config</code> in your Firefox address bar`,
+    `search <code>LegacyUserProfile</code>`,
+    `double-click the result to set it to <b>true</b>`,
   ];
   const row = (t, i) => `<div class="step"><div class="sn">${i + 1}</div><div>${t}</div></div>`;
-  document.getElementById('steps-a').innerHTML = steps.slice(0, 4).map((t, i) => row(t, i)).join('');
-  document.getElementById('steps-b').innerHTML = steps.slice(4).map((t, i) => row(t, i + 4)).join('');
+  document.getElementById('steps-a').innerHTML = steps.slice(0, 3).map((t, i) => row(t, i)).join('');
+  document.getElementById('steps-b').innerHTML = steps.slice(3, 6).map((t, i) => row(t, i + 3)).join('');
+  document.getElementById('steps-c').innerHTML = steps.slice(6).map((t, i) => row(t, i + 6)).join('');
 }
 
 function svgUri(c) {
