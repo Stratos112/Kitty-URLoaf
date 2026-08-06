@@ -8,13 +8,16 @@ function goTo(n, save = true) {
   if (save) chrome.storage.local.set({ wizardPage: n });
 }
 
-dlBtn.addEventListener('click', () => {
+dlBtn.addEventListener('click', async () => {
   if (dlBtn.dataset.ready) {
     renderSteps();
     goTo(1);
     return;
   }
-  downloadCSS();
+  dlBtn.disabled = true;
+  dlBtn.textContent = 'building…';
+  await downloadCSS();
+  dlBtn.disabled = false;
   dlBtn.textContent = 'next →';
   dlBtn.dataset.ready = '1';
   chrome.storage.local.set({ downloaded: true });
@@ -69,22 +72,35 @@ function renderSteps() {
   document.getElementById('steps-c').innerHTML = steps.slice(6).map(row).join('');
 }
 
-function generateCSS() {
-  const EXT  = 'moz-extension://urloaf@kitty';
-  const IMGS = [
+async function toDataUri(path) {
+  const blob = await fetch(path).then(r => r.blob());
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function generateCSS() {
+  const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    `${EXT}/static/Pants/Head/Eyes/eyes_open.png`,
-    `${EXT}/static/Pants/Head/head_bas8c.png`,
-    `${EXT}/static/Pants/Limbs/tail_base.png`,
-    `${EXT}/static/Pants/Limbs/right_front_paw.png`,
-    `${EXT}/static/Pants/Limbs/right_back_paw.png`,
-    `${EXT}/static/Pants/Body/body_basic.png`,
-    `${EXT}/static/Pants/Limbs/left_front_paw.png`,
-    `${EXT}/static/Pants/Limbs/left_back_paw.png`,
+    '../../static/Pants/Head/Eyes/eyes_open.png',
+    '../../static/Pants/Head/head_bas8c.png',
+    '../../static/Pants/Limbs/tail_base.png',
+    '../../static/Pants/Limbs/right_front_paw.png',
+    '../../static/Pants/Limbs/right_back_paw.png',
+    '../../static/Pants/Body/body_basic.png',
+    '../../static/Pants/Limbs/left_front_paw.png',
+    '../../static/Pants/Limbs/left_back_paw.png',
   ];
-  const W   = '300px';
-  const H   = '220px';
-  const POS = '90px 0px';
+
+  const uris  = await Promise.all(PATHS.map(toDataUri));
+  const imgs  = uris.map(u => `url("${u}")`).join(',\n    ');
+  const W     = '150px';
+  const H     = '110px';
+  const sizes = PATHS.map(() => `${W} ${H}`).join(', ');
+  const rpts  = PATHS.map(() => 'no-repeat').join(', ');
+  const pos   = PATHS.map(() => 'right 8px center').join(', ');
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -92,18 +108,19 @@ function generateCSS() {
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    `#navigator-toolbox {`,
+    `/* Images are embedded as data URIs so this file is fully self-contained. */`,
+    `#TabsToolbar {`,
     `  overflow: visible !important;`,
-    `  background-image: ${IMGS.map(u => `url("${u}")`).join(', ')};`,
-    `  background-size:     ${IMGS.map(() => `${W} ${H}`).join(', ')};`,
-    `  background-repeat:   ${IMGS.map(() => 'no-repeat').join(', ')};`,
-    `  background-position: ${IMGS.map(() => POS).join(', ')};`,
+    `  background-image:\n    ${imgs};`,
+    `  background-size:     ${sizes};`,
+    `  background-repeat:   ${rpts};`,
+    `  background-position: ${pos};`,
     `}`,
   ].join('\n');
 }
 
-function downloadCSS() {
-  const blob = new Blob([generateCSS()], { type: 'text/css' });
+async function downloadCSS() {
+  const blob = new Blob([await generateCSS()], { type: 'text/css' });
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css'
