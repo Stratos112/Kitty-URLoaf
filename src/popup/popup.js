@@ -103,11 +103,13 @@ async function toDataUri(path) {
 async function generateCSS() {
   const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    '../../static/Pants/Anim/head-eyes.apng',      // head + eyes: bob + blink in one layer
-    '../../static/Pants/Anim/tail-flick.apng',     // tail       (~11s rest)
-    '../../static/Pants/Anim/breath-rpaw.apng',    // right paw  (1px bob, 2 frames behind)
+    '../../static/Pants/Anim/blink-overlay.apng',  // transparent hold; blink on head backing
+    '../../static/Pants/Anim/breath-eyes.apng',    // eyes_open, same shifts/delays as head
+    '../../static/Pants/Anim/breath-head.apng',    // head only, bobs with breath
+    '../../static/Pants/Anim/tail-flick.apng',
+    '../../static/Pants/Anim/breath-rpaw.apng',    // right paw, 1px bob, 2 frames behind
     '../../static/Pants/Limbs/right_back_paw.png',
-    '../../static/Pants/Anim/breath.apng',         // body       (~2.1s breath)
+    '../../static/Pants/Anim/breath.apng',
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
