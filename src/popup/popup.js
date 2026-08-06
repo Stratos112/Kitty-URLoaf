@@ -128,27 +128,45 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
-    `/* ── breathing bob: head (layer 2) leads, right paw (layer 4) follows ── */`,
-    `/* layers: eyes · HEAD · tail · R-PAW · r-back · body · l-front · l-back */`,
-    `@keyframes breathe-bob {`,
-    `  0%   { background-position-y: 50%, 50%,             50%, 50%,             50%, 50%, 50%, 50%; }`,
-    `  40%  { background-position-y: 50%, calc(50% - 3px), 50%, 50%,             50%, 50%, 50%, 50%; }`,
-    `  50%  { background-position-y: 50%, calc(50% - 3px), 50%, calc(50% - 2px), 50%, 50%, 50%, 50%; }`,
-    `  60%  { background-position-y: 50%, calc(50% - 1px), 50%, calc(50% - 2px), 50%, 50%, 50%, 50%; }`,
-    `  70%  { background-position-y: 50%, 50%,             50%, calc(50% - 1px), 50%, 50%, 50%, 50%; }`,
-    `  100% { background-position-y: 50%, 50%,             50%, 50%,             50%, 50%, 50%, 50%; }`,
-    `}`,
+    /* build @keyframes that animate background-position (full shorthand) so
+       each location's X offset is baked in — avoids the background-position-y
+       longhand which doesn't fire reliably on XUL elements.
+       Layer order: eyes(1) HEAD(2) tail(3) R-FRONT-PAW(4) r-back(5) body(6) l-front(7) l-back(8)
+       Head leads; right paw follows ~10% behind. */
+    ...(() => {
+      const bob = (name, x) => {
+        const p = (hy, py) => [
+          `${x} 50%`, `${x} ${hy}`, `${x} 50%`, `${x} ${py}`,
+          `${x} 50%`, `${x} 50%`,   `${x} 50%`, `${x} 50%`,
+        ].join(', ');
+        return [
+          `@keyframes ${name} {`,
+          `  0%   { background-position: ${p('50%',              '50%'             )}; }`,
+          `  40%  { background-position: ${p('calc(50% - 6px)', '50%'             )}; }`,
+          `  50%  { background-position: ${p('calc(50% - 6px)', 'calc(50% - 4px)')}; }`,
+          `  60%  { background-position: ${p('calc(50% - 2px)', 'calc(50% - 4px)')}; }`,
+          `  70%  { background-position: ${p('50%',              'calc(50% - 2px)')}; }`,
+          `  100% { background-position: ${p('50%',              '50%'             )}; }`,
+          `}`,
+        ].join('\n');
+      };
+      return [
+        bob('breathe-bob-a', 'right 170px'),
+        ``,
+        bob('breathe-bob-c', 'left 180px'),
+      ];
+    })(),
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
     block('#TabsToolbar', 'right 170px center', [
       '  min-height: 150px !important;',
-      '  animation: breathe-bob 2.13s ease-in-out infinite;',
+      '  animation: breathe-bob-a 2.13s ease-in-out infinite;',
     ]),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 300px center', [
+    block('#nav-bar', 'left 180px center', [
       '  min-height: 120px !important;',
-      '  animation: breathe-bob 2.13s ease-in-out infinite;',
+      '  animation: breathe-bob-c 2.13s ease-in-out infinite;',
     ]),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
