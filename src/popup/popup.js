@@ -43,7 +43,13 @@ document.getElementById('startOverBtn').addEventListener('click', () => {
   requestAnimationFrame(() => { track.style.transition = ''; });
 });
 
-chrome.storage.local.get({ wizardPage: 0, downloaded: false }, (data) => {
+chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '' }, (data) => {
+  const currentVersion = chrome.runtime.getManifest().version;
+  if (data.version !== currentVersion) {
+    chrome.storage.local.set({ wizardPage: 0, downloaded: false, version: currentVersion });
+    data.wizardPage = 0;
+    data.downloaded = false;
+  }
   if (data.downloaded) {
     dlBtn.textContent = 'next →';
     dlBtn.dataset.ready = '1';
@@ -123,18 +129,19 @@ async function generateCSS() {
     `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
     block('#nav-bar', 'left 90px center', ['  min-height: 120px !important;']),
     ``,
-    `/* ── B: tab bar · right end, sibling of the scroll box ──── */`,
-    `/*   #alltabs-button is a sibling of tabbrowser-arrowscrollbox, */`,
-    `/*   not a parent — so its background renders at tab level,  */`,
-    `/*   not behind the scroll box containing the tabs.          */`,
-    block('#alltabs-button', 'right 0 center', ['  min-height: 150px !important;']),
+    `/* ── B: tab bar · right side of toolbar ─────────────────── */`,
+    `/*   XUL backgrounds paint behind children — she'll be       */`,
+    `/*   partially visible in the open space right of the tabs.  */`,
+    block('#TabsToolbar', 'right 150px center', ['  min-height: 150px !important;']),
     ``,
     `/* ── C: tab bar · far left on the tab strip ────────────── */`,
     block('#tabbrowser-tabs', 'left 5px center'),
     ``,
-    `/* ── D: sidebar · correct selector from DOM inspection ───── */`,
+    `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
     block('#sidebar-container', 'center bottom'),
+    `/* widen the icon launcher strip only (not the content panel) */`,
+    `sidebar-main { min-width: 150px !important; max-width: 150px !important; }`,
   ].join('\n');
 }
 
