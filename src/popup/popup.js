@@ -70,18 +70,46 @@ function renderSteps() {
 }
 
 function generateCSS() {
+  const EXT  = 'moz-extension://urloaf@kitty';
+  const IMGS = [
+    /* top → bottom z-order: first listed = topmost */
+    `${EXT}/static/Pants/Head/Eyes/eyes_open.png`,
+    `${EXT}/static/Pants/Head/head_bas8c.png`,
+    `${EXT}/static/Pants/Limbs/tail_base.png`,
+    `${EXT}/static/Pants/Limbs/right_front_paw.png`,
+    `${EXT}/static/Pants/Limbs/right_back_paw.png`,
+    `${EXT}/static/Pants/Body/body_basic.png`,
+    `${EXT}/static/Pants/Limbs/left_front_paw.png`,
+    `${EXT}/static/Pants/Limbs/left_back_paw.png`,
+  ];
+  const SIZE = '100px';
+
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
+    `/* Pants lives here — all layers share a 4400×4400 canvas so`,
+    `   stacking them at the same size + position makes them overlap. */`,
     `#navigator-toolbox {`,
+    `  overflow: visible;`,
+    `  position: relative;`,
     `}`,
     ``,
-    `#sidebar-main,`,
-    `.sidebar-launcher,`,
-    `#sidebar-box {`,
+    `#navigator-toolbox::after {`,
+    `  content: '';`,
+    `  position: absolute;`,
+    `  top:  4px;`,
+    `  left: 90px;`,
+    `  width:  ${SIZE};`,
+    `  height: ${SIZE};`,
+    `  background-image: ${IMGS.map(u => `url("${u}")`).join(',\n    ')};`,
+    `  background-size:     ${IMGS.map(() => `${SIZE} ${SIZE}`).join(', ')};`,
+    `  background-repeat:   ${IMGS.map(() => 'no-repeat').join(', ')};`,
+    `  background-position: ${IMGS.map(() => '0 0').join(', ')};`,
+    `  pointer-events: none;`,
+    `  z-index: 9999;`,
     `}`,
   ].join('\n');
 }
