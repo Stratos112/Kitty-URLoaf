@@ -82,39 +82,31 @@ async function toDataUri(path) {
 }
 
 async function generateCSS() {
-  const LAYERS = [
+  const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    { name: 'eyes',   path: '../../static/Pants/Head/Eyes/eyes_open.png'      },
-    { name: 'head',   path: '../../static/Pants/Head/head_bas8c.png'           },
-    { name: 'tail',   path: '../../static/Pants/Limbs/tail_base.png'           },
-    { name: 'paw-fr', path: '../../static/Pants/Limbs/right_front_paw.png'     },
-    { name: 'paw-br', path: '../../static/Pants/Limbs/right_back_paw.png'      },
-    { name: 'body',   path: '../../static/Pants/Body/body_basic.png'           },
-    { name: 'paw-fl', path: '../../static/Pants/Limbs/left_front_paw.png'      },
-    { name: 'paw-bl', path: '../../static/Pants/Limbs/left_back_paw.png'       },
+    '../../static/Pants/Head/Eyes/eyes_open.png',
+    '../../static/Pants/Head/head_bas8c.png',
+    '../../static/Pants/Limbs/tail_base.png',
+    '../../static/Pants/Limbs/right_front_paw.png',
+    '../../static/Pants/Limbs/right_back_paw.png',
+    '../../static/Pants/Body/body_basic.png',
+    '../../static/Pants/Limbs/left_front_paw.png',
+    '../../static/Pants/Limbs/left_back_paw.png',
   ];
 
-  const uris = await Promise.all(LAYERS.map(l => toDataUri(l.path)));
-  const N    = LAYERS.length;
-  const W    = '150px';
-  const H    = '110px';
-
-  /* define images once as CSS vars — avoids repeating huge base64 blobs */
-  const varBlock = [
-    `:root {`,
-    ...LAYERS.map((l, i) => `  --pants-${l.name}: url("${uris[i]}");`),
-    `}`,
-  ].join('\n');
-
-  const refs  = LAYERS.map(l => `var(--pants-${l.name})`).join(', ');
+  const uris  = await Promise.all(PATHS.map(toDataUri));
+  const N     = PATHS.length;
+  const W     = '150px';
+  const H     = '110px';
+  const imgs  = uris.map(u => `url("${u}")`).join(', ');
   const sizes = Array(N).fill(`${W} ${H}`).join(', ');
   const rpts  = Array(N).fill('no-repeat').join(', ');
 
-  const block = (selector, pos, extra = []) => [
+  /* CSS vars don't propagate to XUL — inline the data URIs directly per block */
+  const block = (selector, pos) => [
     `${selector} {`,
     `  overflow: visible !important;`,
-    ...extra,
-    `  background-image: ${refs};`,
+    `  background-image: ${imgs};`,
     `  background-size:     ${sizes};`,
     `  background-repeat:   ${rpts};`,
     `  background-position: ${Array(N).fill(pos).join(', ')};`,
@@ -127,8 +119,6 @@ async function generateCSS() {
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    varBlock,
-    ``,
     `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
     block('#nav-bar', 'left 90px center'),
     ``,
@@ -136,12 +126,9 @@ async function generateCSS() {
     block('#TabsToolbar', 'right 150px center'),
     ``,
     `/* ── C: tab bar · far left on the tab strip ────────────── */`,
-    `/*   Uses #tabbrowser-tabs (the actual tab container) so   */`,
-    `/*   she's scoped to the tab area, not the whole toolbar.  */`,
-    `/*   Pure CSS: she won't push right as tabs are added.     */`,
     block('#tabbrowser-tabs', 'left 5px center'),
     ``,
-    `/* ── D: sidebar ─────────────────────────────────────────  */`,
+    `/* ── D: sidebar ──────────────────────────────────────────  */`,
     `#sidebar-box { min-width: 300px !important; }`,
     block('#sidebar-main', 'center bottom'),
   ].join('\n');
