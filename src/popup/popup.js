@@ -82,7 +82,8 @@ function generateCSS() {
     `${EXT}/static/Pants/Limbs/left_front_paw.png`,
     `${EXT}/static/Pants/Limbs/left_back_paw.png`,
   ];
-  const SIZE = '100px';
+  const SIZE = '150px';
+  const urls = IMGS.map(u => `url("${u}")`).join(', ');
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -90,26 +91,15 @@ function generateCSS() {
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    `/* Pants lives here — all layers share a 4400×4400 canvas so`,
-    `   stacking them at the same size + position makes them overlap. */`,
-    `#navigator-toolbox {`,
-    `  overflow: visible;`,
-    `  position: relative;`,
-    `}`,
-    ``,
-    `#navigator-toolbox::after {`,
-    `  content: '';`,
-    `  position: absolute;`,
-    `  top:  4px;`,
-    `  left: 90px;`,
-    `  width:  ${SIZE};`,
-    `  height: ${SIZE};`,
-    `  background-image: ${IMGS.map(u => `url("${u}")`).join(',\n    ')};`,
+    `/* Applying directly to #home-button — all layers share a 4400×4400 canvas`,
+    `   so the same size + position keeps them registered. overflow:visible lets`,
+    `   her spill outside the button bounds. */`,
+    `#home-button {`,
+    `  overflow: visible !important;`,
+    `  background-image: ${urls};`,
     `  background-size:     ${IMGS.map(() => `${SIZE} ${SIZE}`).join(', ')};`,
     `  background-repeat:   ${IMGS.map(() => 'no-repeat').join(', ')};`,
     `  background-position: ${IMGS.map(() => '0 0').join(', ')};`,
-    `  pointer-events: none;`,
-    `  z-index: 9999;`,
     `}`,
   ].join('\n');
 }
