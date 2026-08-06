@@ -90,12 +90,13 @@ async function toDataUri(path) {
 async function generateCSS() {
   const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    '../../static/Pants/Head/Eyes/eyes_open.png',
+    /* animated layers use pre-scaled APNGs (150×110) */
+    '../../static/Pants/Anim/blink.apng',              // eyes  (blink cycle ~4.5s)
     '../../static/Pants/Head/head_bas8c.png',
-    '../../static/Pants/Limbs/tail_base.png',
+    '../../static/Pants/Anim/tail-flick.apng',         // tail  (flick cycle ~2.5s)
     '../../static/Pants/Limbs/right_front_paw.png',
     '../../static/Pants/Limbs/right_back_paw.png',
-    '../../static/Pants/Body/body_basic.png',
+    '../../static/Pants/Anim/breath.apng',             // body  (breath cycle ~2s)
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
@@ -130,16 +131,8 @@ async function generateCSS() {
     `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
     block('#nav-bar', 'left 90px center', ['  min-height: 120px !important;']),
     ``,
-    `/* ── B: tab bar · right side of toolbar ─────────────────── */`,
-    `/*   XUL backgrounds paint behind children — she'll be       */`,
-    `/*   partially visible in the open space right of the tabs.  */`,
-    block('#TabsToolbar', 'right 150px center', ['  min-height: 150px !important;']),
-    ``,
-    `/* give the toolbox enough room to show both A and B at full height */`,
-    `#navigator-toolbox { min-height: 280px !important; }`,
-    ``,
-    `/* ── C: tab bar · far left on the tab strip ────────────── */`,
-    block('#tabbrowser-tabs', 'left 5px center'),
+    `/* ── C: tab strip · shifted right so she's more centred ─── */`,
+    block('#tabbrowser-tabs', 'left 80px center'),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
