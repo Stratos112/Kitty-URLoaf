@@ -3,29 +3,41 @@
    ============================================================
    Anchor hierarchy
    ----------------
-   #pants                 →  master anchor. move this, the
-                              whole cat moves. zero-size point,
-                              position: fixed in the toolbar.
+   #pants                →  master anchor. zero-size, fixed.
+                             change top/left here to move everything.
 
-   #pants > .pants-*      →  one zero-size anchor per body part,
-                              all sharing the same origin (top:0
-                              left:0).  assets were drawn to
-                              overlap, so this is intentional.
-                              move a part's anchor to offset just
-                              that layer without disturbing others.
+   #pants > .pants-*     →  per-part anchor. all share the same
+                             origin (top:0 left:0) because assets
+                             were drawn on a shared 4400×4400 canvas
+                             and are meant to overlap exactly.
 
-   #pants > .pants-* > *  →  actual image layers (frames).
-                              position: absolute off the part anchor.
+   .pants-*::before      →  the visible image layer for that part.
+                             position: absolute off the part anchor.
+
+   Z-order (bottom → top)
+   ----------------------
+   pants-paw-bl   left back paw    1
+   pants-paw-fl   left front paw   2
+   pants-body     torso            3
+   pants-paw-br   right back paw   4
+   pants-paw-fr   right front paw  5
+   pants-tail     tail             6
+   pants-head     head             7
+   pants-eyes     eyes             8
    ============================================================ */
 
 
-/* ── master anchor ──────────────────────────────────────────
-   Sits between the refresh button and the home button in
-   Firefox's nav-bar.  Approximate x: just past the three
-   nav buttons (~90px).  Approximate y: vertically centered
-   in the ~35px toolbar (~4px from top).
+/* ── scale ──────────────────────────────────────────────────
+   All assets share a 4400×4400 canvas. Change --pants-size
+   to scale the whole cat uniformly.                          */
+:root {
+  --pants-size: 100px;
+}
 
-   To relocate the whole cat: change only these two values.   */
+
+/* ── master anchor ──────────────────────────────────────────
+   Sits between the refresh button and the home button.
+   To relocate the whole cat: change top and left only.       */
 #pants {
   position: fixed;
   top:  4px;
@@ -39,16 +51,16 @@
 
 
 /* ── per-part anchors ───────────────────────────────────────
-   All start at the same origin as #pants (top:0 left:0).
-   To shift a single part, add an offset to its rule below.   */
-.pants-body,
-.pants-head,
-.pants-eyes,
-.pants-tail,
-.pants-paw-fl,
-.pants-paw-fr,
+   All start at the same origin. To offset one part without
+   moving others, add top/left to that part's rule.          */
 .pants-paw-bl,
-.pants-paw-br {
+.pants-paw-fl,
+.pants-body,
+.pants-paw-br,
+.pants-paw-fr,
+.pants-tail,
+.pants-head,
+.pants-eyes {
   position: absolute;
   top:      0;
   left:     0;
@@ -56,3 +68,46 @@
   height:   0;
   overflow: visible;
 }
+
+/* stacking order */
+.pants-paw-bl { z-index: 1; }
+.pants-paw-fl { z-index: 2; }
+.pants-body   { z-index: 3; }
+.pants-paw-br { z-index: 4; }
+.pants-paw-fr { z-index: 5; }
+.pants-tail   { z-index: 6; }
+.pants-head   { z-index: 7; }
+.pants-eyes   { z-index: 8; }
+
+
+/* ── image layers ───────────────────────────────────────────
+   ::before on each part anchor renders the default frame.
+   top-left of the image aligns with the anchor origin,
+   matching how the assets were drawn.                        */
+.pants-paw-bl::before,
+.pants-paw-fl::before,
+.pants-body::before,
+.pants-paw-br::before,
+.pants-paw-fr::before,
+.pants-tail::before,
+.pants-head::before,
+.pants-eyes::before {
+  content:             '';
+  position:            absolute;
+  top:                 0;
+  left:                0;
+  width:               var(--pants-size);
+  height:              var(--pants-size);
+  background-size:     var(--pants-size) var(--pants-size);
+  background-repeat:   no-repeat;
+  background-position: top left;
+}
+
+.pants-paw-bl::before { background-image: url('../../static/Pants/Limbs/left_back_paw.png');            }
+.pants-paw-fl::before { background-image: url('../../static/Pants/Limbs/left_front_paw.png');           }
+.pants-body::before   { background-image: url('../../static/Pants/Body/body_basic.png');                }
+.pants-paw-br::before { background-image: url('../../static/Pants/Limbs/right_back_paw.png');           }
+.pants-paw-fr::before { background-image: url('../../static/Pants/Limbs/right_front_paw.png');          }
+.pants-tail::before   { background-image: url('../../static/Pants/Limbs/tail_base.png');                }
+.pants-head::before   { background-image: url('../../static/Pants/Head/head_bas8c.png');                }
+.pants-eyes::before   { background-image: url('../../static/Pants/Head/Eyes/eyes_open.png');            }
