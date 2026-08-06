@@ -83,7 +83,11 @@ function generateCSS() {
     `${EXT}/static/Pants/Limbs/left_back_paw.png`,
   ];
   const SIZE = '150px';
-  const urls = IMGS.map(u => `url("${u}")`).join(', ');
+  /* background-position: X places her horizontally in the toolbox.
+     Y=0 lets her sit at the top of #navigator-toolbox — the tab bar
+     sits above the nav-bar inside this element, so top-of-toolbox
+     visually means top of the tab strip. Adjust X to slide her left/right. */
+  const POS  = '90px 0px';
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -91,15 +95,12 @@ function generateCSS() {
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    `/* Applying directly to #home-button — all layers share a 4400×4400 canvas`,
-    `   so the same size + position keeps them registered. overflow:visible lets`,
-    `   her spill outside the button bounds. */`,
-    `#home-button {`,
+    `#navigator-toolbox {`,
     `  overflow: visible !important;`,
-    `  background-image: ${urls};`,
+    `  background-image: ${IMGS.map(u => `url("${u}")`).join(', ')};`,
     `  background-size:     ${IMGS.map(() => `${SIZE} ${SIZE}`).join(', ')};`,
     `  background-repeat:   ${IMGS.map(() => 'no-repeat').join(', ')};`,
-    `  background-position: ${IMGS.map(() => '0 0').join(', ')};`,
+    `  background-position: ${IMGS.map(() => POS).join(', ')};`,
     `}`,
   ].join('\n');
 }
