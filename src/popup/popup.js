@@ -129,7 +129,7 @@ async function generateCSS() {
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 20px center', ['  min-height: 150px !important;']),
+    block('#TabsToolbar', 'right 170px center', ['  min-height: 150px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
     block('#nav-bar', 'left 300px center', ['  min-height: 120px !important;']),
