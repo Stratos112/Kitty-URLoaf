@@ -70,26 +70,19 @@ function renderSteps() {
 }
 
 function generateCSS() {
-  const COLORS = ['ff44bb','ff3355','00ccff','aa44ff','ff7722','33dd77','ffcc00','3399ff'];
-  const svgUri = c =>
-    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E` +
-    `%3Crect x='8' y='2' width='4' height='16' rx='1' fill='%23${c}'/%3E` +
-    `%3Crect x='2' y='8' width='16' height='4' rx='1' fill='%23${c}'/%3E%3C/svg%3E")`;
-  const imgs  = COLORS.map(svgUri).join(',\n    ');
-  const sizes = COLORS.map(() => '20px 20px').join(', ');
-  const pos   = ['0px 0px','20px 0px','10px 20px','30px 20px',
-                  '5px 10px','25px 10px','15px 30px','35px 30px'].join(', ');
-  const block = sel =>
-    `${sel} {\n  background-image:\n    ${imgs};\n  background-size: ${sizes};\n  background-repeat: repeat;\n  background-position: ${pos};\n}`;
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    block(`#navigator-toolbox`),
+    `#navigator-toolbox {`,
+    `}`,
     ``,
-    block(`#sidebar-main,\n.sidebar-launcher,\n#sidebar-box`),
+    `#sidebar-main,`,
+    `.sidebar-launcher,`,
+    `#sidebar-box {`,
+    `}`,
   ].join('\n');
 }
 
