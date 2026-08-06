@@ -5,27 +5,27 @@
   <title>Pants</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      background: transparent;
-      overflow: hidden;
+    html, body { width: 100%; height: 100%; }
+
+    #pants {
+      width:  250px;
+      height: 250px;
+      background-image:
+        url('../../static/Pants/Head/Eyes/eyes_open.png'),
+        url('../../static/Pants/Head/head_bas8c.png'),
+        url('../../static/Pants/Limbs/tail_base.png'),
+        url('../../static/Pants/Limbs/right_front_paw.png'),
+        url('../../static/Pants/Limbs/right_back_paw.png'),
+        url('../../static/Pants/Body/body_basic.png'),
+        url('../../static/Pants/Limbs/left_front_paw.png'),
+        url('../../static/Pants/Limbs/left_back_paw.png');
+      background-size:     250px 250px;
+      background-repeat:   no-repeat;
+      background-position: 0 0;
     }
   </style>
-  <link rel="stylesheet" href="../pants/pants.css">
 </head>
 <body>
-
-<div id="pants">
-  <div class="pants-paw-bl"></div>
-  <div class="pants-paw-fl"></div>
-  <div class="pants-body"></div>
-  <div class="pants-paw-br"></div>
-  <div class="pants-paw-fr"></div>
-  <div class="pants-tail"></div>
-  <div class="pants-head"></div>
-  <div class="pants-eyes"></div>
-</div>
-
+<div id="pants"></div>
 </body>
 </html>
