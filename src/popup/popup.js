@@ -132,7 +132,7 @@ async function generateCSS() {
     block('#TabsToolbar', 'right 20px center', ['  min-height: 150px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 60px center', ['  min-height: 120px !important;']),
+    block('#nav-bar', 'left 300px center', ['  min-height: 120px !important;']),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
