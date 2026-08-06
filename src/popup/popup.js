@@ -24,6 +24,7 @@ dlBtn.addEventListener('click', async () => {
 });
 
 document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(1); });
+document.querySelector('.pants-dl-icon').addEventListener('click', () => dlBtn.click());
 
 document.getElementById('back3').addEventListener('click', () => goTo(0));
 document.getElementById('next3').addEventListener('click', () => goTo(2));
@@ -90,13 +91,12 @@ async function toDataUri(path) {
 async function generateCSS() {
   const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    /* animated layers use pre-scaled APNGs (150×110) */
-    '../../static/Pants/Anim/blink.apng',              // eyes  (blink cycle ~4.5s)
-    '../../static/Pants/Head/head_bas8c.png',
-    '../../static/Pants/Anim/tail-flick.apng',         // tail  (flick cycle ~2.5s)
-    '../../static/Pants/Limbs/right_front_paw.png',
+    '../../static/Pants/Anim/blink.apng',              // eyes       (blink ~4.3s)
+    '../../static/Pants/Anim/breath-head.apng',        // head       (bobs 3px with breath)
+    '../../static/Pants/Anim/tail-flick.apng',         // tail       (flick ~11s rest)
+    '../../static/Pants/Anim/breath-rpaw.apng',        // right paw  (bobs 2px, 2 frames behind head)
     '../../static/Pants/Limbs/right_back_paw.png',
-    '../../static/Pants/Anim/breath.apng',             // body  (breath cycle ~2s)
+    '../../static/Pants/Anim/breath.apng',             // body       (breath ~2.1s)
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
@@ -128,46 +128,11 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
-    /* build @keyframes that animate background-position (full shorthand) so
-       each location's X offset is baked in — avoids the background-position-y
-       longhand which doesn't fire reliably on XUL elements.
-       Layer order: eyes(1) HEAD(2) tail(3) R-FRONT-PAW(4) r-back(5) body(6) l-front(7) l-back(8)
-       Head leads; right paw follows ~10% behind. */
-    ...(() => {
-      const bob = (name, x) => {
-        const p = (hy, py) => [
-          `${x} 50%`, `${x} ${hy}`, `${x} 50%`, `${x} ${py}`,
-          `${x} 50%`, `${x} 50%`,   `${x} 50%`, `${x} 50%`,
-        ].join(', ');
-        return [
-          `@keyframes ${name} {`,
-          `  0%   { background-position: ${p('50%',              '50%'             )}; }`,
-          `  40%  { background-position: ${p('calc(50% - 6px)', '50%'             )}; }`,
-          `  50%  { background-position: ${p('calc(50% - 6px)', 'calc(50% - 4px)')}; }`,
-          `  60%  { background-position: ${p('calc(50% - 2px)', 'calc(50% - 4px)')}; }`,
-          `  70%  { background-position: ${p('50%',              'calc(50% - 2px)')}; }`,
-          `  100% { background-position: ${p('50%',              '50%'             )}; }`,
-          `}`,
-        ].join('\n');
-      };
-      return [
-        bob('breathe-bob-a', 'right 170px'),
-        ``,
-        bob('breathe-bob-c', 'left 180px'),
-      ];
-    })(),
-    ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 170px center', [
-      '  min-height: 150px !important;',
-      '  animation: breathe-bob-a 2.13s ease-in-out infinite;',
-    ]),
+    block('#TabsToolbar', 'right 170px center', ['  min-height: 150px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 180px center', [
-      '  min-height: 120px !important;',
-      '  animation: breathe-bob-c 2.13s ease-in-out infinite;',
-    ]),
+    block('#nav-bar', 'left 142px center', ['  min-height: 120px !important;']),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
