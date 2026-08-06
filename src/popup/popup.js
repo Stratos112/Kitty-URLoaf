@@ -82,25 +82,44 @@ async function toDataUri(path) {
 }
 
 async function generateCSS() {
-  const PATHS = [
+  const LAYERS = [
     /* top → bottom z-order: first listed = topmost */
-    '../../static/Pants/Head/Eyes/eyes_open.png',
-    '../../static/Pants/Head/head_bas8c.png',
-    '../../static/Pants/Limbs/tail_base.png',
-    '../../static/Pants/Limbs/right_front_paw.png',
-    '../../static/Pants/Limbs/right_back_paw.png',
-    '../../static/Pants/Body/body_basic.png',
-    '../../static/Pants/Limbs/left_front_paw.png',
-    '../../static/Pants/Limbs/left_back_paw.png',
+    { name: 'eyes',   path: '../../static/Pants/Head/Eyes/eyes_open.png'      },
+    { name: 'head',   path: '../../static/Pants/Head/head_bas8c.png'           },
+    { name: 'tail',   path: '../../static/Pants/Limbs/tail_base.png'           },
+    { name: 'paw-fr', path: '../../static/Pants/Limbs/right_front_paw.png'     },
+    { name: 'paw-br', path: '../../static/Pants/Limbs/right_back_paw.png'      },
+    { name: 'body',   path: '../../static/Pants/Body/body_basic.png'           },
+    { name: 'paw-fl', path: '../../static/Pants/Limbs/left_front_paw.png'      },
+    { name: 'paw-bl', path: '../../static/Pants/Limbs/left_back_paw.png'       },
   ];
 
-  const uris  = await Promise.all(PATHS.map(toDataUri));
-  const imgs  = uris.map(u => `url("${u}")`).join(',\n    ');
-  const W     = '150px';
-  const H     = '110px';
-  const sizes = PATHS.map(() => `${W} ${H}`).join(', ');
-  const rpts  = PATHS.map(() => 'no-repeat').join(', ');
-  const pos   = PATHS.map(() => 'right 8px center').join(', ');
+  const uris = await Promise.all(LAYERS.map(l => toDataUri(l.path)));
+  const N    = LAYERS.length;
+  const W    = '150px';
+  const H    = '110px';
+
+  /* define images once as CSS vars — avoids repeating huge base64 blobs */
+  const varBlock = [
+    `:root {`,
+    ...LAYERS.map((l, i) => `  --pants-${l.name}: url("${uris[i]}");`),
+    `}`,
+  ].join('\n');
+
+  const refs  = LAYERS.map(l => `var(--pants-${l.name})`).join(', ');
+  const sizes = Array(N).fill(`${W} ${H}`).join(', ');
+  const rpts  = Array(N).fill('no-repeat').join(', ');
+
+  const block = (selector, pos, extra = []) => [
+    `${selector} {`,
+    `  overflow: visible !important;`,
+    ...extra,
+    `  background-image: ${refs};`,
+    `  background-size:     ${sizes};`,
+    `  background-repeat:   ${rpts};`,
+    `  background-position: ${Array(N).fill(pos).join(', ')};`,
+    `}`,
+  ].join('\n');
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -108,14 +127,23 @@ async function generateCSS() {
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
-    `/* Images are embedded as data URIs so this file is fully self-contained. */`,
-    `#TabsToolbar {`,
-    `  overflow: visible !important;`,
-    `  background-image:\n    ${imgs};`,
-    `  background-size:     ${sizes};`,
-    `  background-repeat:   ${rpts};`,
-    `  background-position: ${pos};`,
-    `}`,
+    varBlock,
+    ``,
+    `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
+    block('#nav-bar', 'left 90px center'),
+    ``,
+    `/* ── B: tab bar · left of window controls ─────────────── */`,
+    block('#TabsToolbar', 'right 150px center'),
+    ``,
+    `/* ── C: tab bar · far left on the tab strip ────────────── */`,
+    `/*   Uses #tabbrowser-tabs (the actual tab container) so   */`,
+    `/*   she's scoped to the tab area, not the whole toolbar.  */`,
+    `/*   Pure CSS: she won't push right as tabs are added.     */`,
+    block('#tabbrowser-tabs', 'left 5px center'),
+    ``,
+    `/* ── D: sidebar ─────────────────────────────────────────  */`,
+    `#sidebar-box { min-width: 300px !important; }`,
+    block('#sidebar-main', 'center bottom'),
   ].join('\n');
 }
 
