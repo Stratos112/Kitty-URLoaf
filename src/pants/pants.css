@@ -1,0 +1,58 @@
+/* ============================================================
+   pants.css  —  Pants the cat
+   ============================================================
+   Anchor hierarchy
+   ----------------
+   #pants                 →  master anchor. move this, the
+                              whole cat moves. zero-size point,
+                              position: fixed in the toolbar.
+
+   #pants > .pants-*      →  one zero-size anchor per body part,
+                              all sharing the same origin (top:0
+                              left:0).  assets were drawn to
+                              overlap, so this is intentional.
+                              move a part's anchor to offset just
+                              that layer without disturbing others.
+
+   #pants > .pants-* > *  →  actual image layers (frames).
+                              position: absolute off the part anchor.
+   ============================================================ */
+
+
+/* ── master anchor ──────────────────────────────────────────
+   Sits between the refresh button and the home button in
+   Firefox's nav-bar.  Approximate x: just past the three
+   nav buttons (~90px).  Approximate y: vertically centered
+   in the ~35px toolbar (~4px from top).
+
+   To relocate the whole cat: change only these two values.   */
+#pants {
+  position: fixed;
+  top:  4px;
+  left: 90px;
+
+  width:    0;
+  height:   0;
+  overflow: visible;
+  z-index:  9999;
+}
+
+
+/* ── per-part anchors ───────────────────────────────────────
+   All start at the same origin as #pants (top:0 left:0).
+   To shift a single part, add an offset to its rule below.   */
+.pants-body,
+.pants-head,
+.pants-eyes,
+.pants-tail,
+.pants-paw-fl,
+.pants-paw-fr,
+.pants-paw-bl,
+.pants-paw-br {
+  position: absolute;
+  top:      0;
+  left:     0;
+  width:    0;
+  height:   0;
+  overflow: visible;
+}
