@@ -103,9 +103,10 @@ async function generateCSS() {
   const rpts  = Array(N).fill('no-repeat').join(', ');
 
   /* CSS vars don't propagate to XUL — inline the data URIs directly per block */
-  const block = (selector, pos) => [
+  const block = (selector, pos, extra = []) => [
     `${selector} {`,
     `  overflow: visible !important;`,
+    ...extra,
     `  background-image: ${imgs};`,
     `  background-size:     ${sizes};`,
     `  background-repeat:   ${rpts};`,
@@ -120,17 +121,16 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     ``,
     `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
-    block('#nav-bar', 'left 90px center'),
+    block('#nav-bar', 'left 90px center', ['  min-height: 120px !important;']),
     ``,
     `/* ── B: tab bar · left of window controls ─────────────── */`,
-    block('#TabsToolbar', 'right 150px center'),
+    block('#TabsToolbar', 'right 150px center', ['  min-height: 120px !important;']),
     ``,
     `/* ── C: tab bar · far left on the tab strip ────────────── */`,
     block('#tabbrowser-tabs', 'left 5px center'),
     ``,
     `/* ── D: sidebar ──────────────────────────────────────────  */`,
-    `#sidebar-box { min-width: 300px !important; }`,
-    block('#sidebar-main', 'center bottom'),
+    block('#sidebar-box', 'left 0 bottom 0', ['  min-width: 900px !important;']),
   ].join('\n');
 }
 
