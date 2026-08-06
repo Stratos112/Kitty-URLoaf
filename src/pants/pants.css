@@ -31,7 +31,8 @@
    All assets share a 4400×4400 canvas. Change --pants-size
    to scale the whole cat uniformly.                          */
 :root {
-  --pants-size: 200px;
+  --pants-w: 300px;
+  --pants-h: 220px;
 }
 
 
@@ -96,9 +97,9 @@
   position:            absolute;
   top:                 0;
   left:                0;
-  width:               var(--pants-size);
-  height:              var(--pants-size);
-  background-size:     var(--pants-size) var(--pants-size);
+  width:               var(--pants-w);
+  height:              var(--pants-h);
+  background-size:     var(--pants-w) var(--pants-h);
   background-repeat:   no-repeat;
   background-position: top left;
 }

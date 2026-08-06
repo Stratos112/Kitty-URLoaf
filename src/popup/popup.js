@@ -82,12 +82,9 @@ function generateCSS() {
     `${EXT}/static/Pants/Limbs/left_front_paw.png`,
     `${EXT}/static/Pants/Limbs/left_back_paw.png`,
   ];
-  const SIZE = '150px';
-  /* background-position: X places her horizontally in the toolbox.
-     Y=0 lets her sit at the top of #navigator-toolbox — the tab bar
-     sits above the nav-bar inside this element, so top-of-toolbox
-     visually means top of the tab strip. Adjust X to slide her left/right. */
-  const POS  = '90px 0px';
+  const W   = '300px';
+  const H   = '220px';
+  const POS = '90px 0px';
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -98,7 +95,7 @@ function generateCSS() {
     `#navigator-toolbox {`,
     `  overflow: visible !important;`,
     `  background-image: ${IMGS.map(u => `url("${u}")`).join(', ')};`,
-    `  background-size:     ${IMGS.map(() => `${SIZE} ${SIZE}`).join(', ')};`,
+    `  background-size:     ${IMGS.map(() => `${W} ${H}`).join(', ')};`,
     `  background-repeat:   ${IMGS.map(() => 'no-repeat').join(', ')};`,
     `  background-position: ${IMGS.map(() => POS).join(', ')};`,
     `}`,
