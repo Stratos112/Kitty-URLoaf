@@ -18,5 +18,10 @@
     "default_popup": "src/popup/popup.html",
     "default_icon": "static/plus.svg"
   },
+  "sidebar_action": {
+    "default_panel": "src/sidepanel/sidepanel.html",
+    "default_icon": "static/plus.svg",
+    "default_title": "Pants"
+  },
   "permissions": ["storage"]
 }
