@@ -125,6 +125,7 @@ async function generateCSS() {
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
+    `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
     `/* ── A: nav-bar · right of back/refresh, left of home ─── */`,
     block('#nav-bar', 'left 90px center', ['  min-height: 120px !important;']),
@@ -134,14 +135,17 @@ async function generateCSS() {
     `/*   partially visible in the open space right of the tabs.  */`,
     block('#TabsToolbar', 'right 150px center', ['  min-height: 150px !important;']),
     ``,
+    `/* give the toolbox enough room to show both A and B at full height */`,
+    `#navigator-toolbox { min-height: 280px !important; }`,
+    ``,
     `/* ── C: tab bar · far left on the tab strip ────────────── */`,
     block('#tabbrowser-tabs', 'left 5px center'),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
     block('#sidebar-container', 'center bottom'),
-    `/* widen the icon launcher strip only (not the content panel) */`,
-    `sidebar-main { min-width: 150px !important; max-width: 150px !important; }`,
+    `/* widen the icon launcher strip (html namespace required for custom element) */`,
+    `html|sidebar-main { min-width: 150px !important; max-width: 150px !important; }`,
   ].join('\n');
 }
 
