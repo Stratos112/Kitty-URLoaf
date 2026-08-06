@@ -115,8 +115,8 @@ async function generateCSS() {
 
   const uris  = await Promise.all(PATHS.map(toDataUri));
   const N     = PATHS.length;
-  const W     = '165px';
-  const H     = '121px';
+  const W     = '182px';
+  const H     = '133px';
   const imgs  = uris.map(u => `url("${u}")`).join(', ');
   const sizes = Array(N).fill(`${W} ${H}`).join(', ');
   const rpts  = Array(N).fill('no-repeat').join(', ');
@@ -141,16 +141,16 @@ async function generateCSS() {
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 170px center', ['  min-height: 165px !important;']),
+    block('#TabsToolbar', 'right 170px center', ['  min-height: 182px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 142px center', ['  min-height: 133px !important;']),
+    block('#nav-bar', 'left 142px center', ['  min-height: 146px !important;']),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
     block('#sidebar-container', 'center bottom'),
     `/* widen the icon launcher strip (html namespace required for custom element) */`,
-    `html|sidebar-main { min-width: 165px !important; max-width: 165px !important; }`,
+    `html|sidebar-main { min-width: 182px !important; max-width: 182px !important; }`,
   ].join('\n');
 }
 
