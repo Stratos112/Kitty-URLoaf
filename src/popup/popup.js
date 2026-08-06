@@ -103,8 +103,7 @@ async function toDataUri(path) {
 async function generateCSS() {
   const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    '../../static/Pants/Anim/eyes.apng',           // eyes: bob hold (2 breath cycles) + blink
-    '../../static/Pants/Anim/breath-head.apng',    // head only (no eyes), bobs with breath
+    '../../static/Pants/Anim/head-eyes.apng',      // head + eyes: bob + blink in one layer
     '../../static/Pants/Anim/tail-flick.apng',     // tail       (~11s rest)
     '../../static/Pants/Anim/breath-rpaw.apng',    // right paw  (1px bob, 2 frames behind)
     '../../static/Pants/Limbs/right_back_paw.png',
