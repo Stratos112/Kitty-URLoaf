@@ -140,16 +140,16 @@ async function generateCSS() {
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 170px center', ['  min-height: 182px !important;']),
+    block('#TabsToolbar', 'right 170px center', ['  height: 143px !important;', '  min-height: 143px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 142px center', ['  min-height: 146px !important;']),
+    block('#nav-bar', 'left 142px center', ['  height: 143px !important;', '  min-height: 143px !important;']),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
-    block('#sidebar-container', 'center bottom'),
-    `/* widen the icon launcher strip (html namespace required for custom element) */`,
-    `html|sidebar-main { min-width: 182px !important; max-width: 182px !important; }`,
+    block('#sidebar-container', 'left bottom'),
+    `/* narrow the icon launcher strip to trim space right of cat */`,
+    `html|sidebar-main { min-width: 128px !important; max-width: 128px !important; }`,
   ].join('\n');
 }
 
