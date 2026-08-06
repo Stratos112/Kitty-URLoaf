@@ -24,7 +24,19 @@ dlBtn.addEventListener('click', async () => {
 });
 
 document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(1); });
-document.querySelector('.pants-dl-icon').addEventListener('click', () => dlBtn.click());
+document.querySelector('.pants-dl-icon').addEventListener('click', async () => {
+  if (dlBtn.disabled) return;
+  const icon = document.querySelector('.pants-dl-icon');
+  icon.style.opacity = '0.5';
+  dlBtn.disabled = true;
+  dlBtn.textContent = 'building…';
+  await downloadCSS();
+  icon.style.opacity = '';
+  dlBtn.disabled = false;
+  dlBtn.textContent = 'next →';
+  dlBtn.dataset.ready = '1';
+  chrome.storage.local.set({ downloaded: true });
+});
 
 document.getElementById('back3').addEventListener('click', () => goTo(0));
 document.getElementById('next3').addEventListener('click', () => goTo(2));
@@ -91,10 +103,10 @@ async function toDataUri(path) {
 async function generateCSS() {
   const PATHS = [
     /* top → bottom z-order: first listed = topmost */
-    '../../static/Pants/Anim/blink.apng',              // eyes       (blink ~4.3s)
-    '../../static/Pants/Anim/breath-head.apng',        // head       (bobs 3px with breath)
+    '../../static/Pants/Anim/blink-overlay.apng',      // blink frames on transparent hold
+    '../../static/Pants/Anim/breath-head-eyes.apng',   // head + eyes composited, bobs with breath
     '../../static/Pants/Anim/tail-flick.apng',         // tail       (flick ~11s rest)
-    '../../static/Pants/Anim/breath-rpaw.apng',        // right paw  (bobs 2px, 2 frames behind head)
+    '../../static/Pants/Anim/breath-rpaw.apng',        // right paw  (bobs 1px, 2 frames behind head)
     '../../static/Pants/Limbs/right_back_paw.png',
     '../../static/Pants/Anim/breath.apng',             // body       (breath ~2.1s)
     '../../static/Pants/Limbs/left_front_paw.png',
@@ -103,8 +115,8 @@ async function generateCSS() {
 
   const uris  = await Promise.all(PATHS.map(toDataUri));
   const N     = PATHS.length;
-  const W     = '150px';
-  const H     = '110px';
+  const W     = '165px';
+  const H     = '121px';
   const imgs  = uris.map(u => `url("${u}")`).join(', ');
   const sizes = Array(N).fill(`${W} ${H}`).join(', ');
   const rpts  = Array(N).fill('no-repeat').join(', ');
@@ -129,16 +141,16 @@ async function generateCSS() {
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 170px center', ['  min-height: 150px !important;']),
+    block('#TabsToolbar', 'right 170px center', ['  min-height: 165px !important;']),
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 142px center', ['  min-height: 120px !important;']),
+    block('#nav-bar', 'left 142px center', ['  min-height: 133px !important;']),
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
     block('#sidebar-container', 'center bottom'),
     `/* widen the icon launcher strip (html namespace required for custom element) */`,
-    `html|sidebar-main { min-width: 150px !important; max-width: 150px !important; }`,
+    `html|sidebar-main { min-width: 165px !important; max-width: 165px !important; }`,
   ].join('\n');
 }
 
