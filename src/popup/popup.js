@@ -211,12 +211,29 @@ async function generateCSS() {
   const anim     = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
   const animEase = name => `${name} ${CYCLE_SECONDS}s ease-in-out infinite`;
 
+  /* unregistered custom properties always animate with *discrete*
+     interpolation (a hard jump partway through) no matter what timing
+     function you give them — @property tells the engine these three
+     hold a <length>, which is what actually lets ease-in-out tween them
+     smoothly instead of snapping.                                     */
+  const registerLength = name => [
+    `@property ${name} {`,
+    `  syntax: '<length>';`,
+    `  inherits: false;`,
+    `  initial-value: 0px;`,
+    `}`,
+  ].join('\n');
+
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
     ``,
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
+    ``,
+    registerLength('--pants-c-h'),
+    registerLength('--pants-a-h'),
+    registerLength('--pants-sidebar-w'),
     ``,
     `/* one Pants, cycling D → C → A → D, ${STOP_SECONDS}s per stop */`,
     kfD,
