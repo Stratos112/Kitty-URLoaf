@@ -122,17 +122,52 @@ async function generateCSS() {
   const sizes = Array(N).fill(`${W} ${H}`).join(', ');
   const rpts  = Array(N).fill('no-repeat').join(', ');
 
-  /* CSS vars don't propagate to XUL — inline the data URIs directly per block */
-  const block = (selector, pos, extra = []) => [
-    `${selector} {`,
-    `  overflow: visible !important;`,
-    ...extra,
-    `  background-image: ${imgs};`,
-    `  background-size:     ${sizes};`,
-    `  background-repeat:   ${rpts};`,
-    `  background-position: ${Array(N).fill(pos).join(', ')};`,
+  /* Pants cycles D → C → A → D, one cat, one spot at a time.
+     STOP_SECONDS controls how long she lingers at each stop.
+     steps(1) makes every keyframe boundary a hard cut — she's either
+     fully "there" or fully gone, never mid-fade/mid-slide.          */
+  const STOP_SECONDS  = 30;
+  const CYCLE_SECONDS = STOP_SECONDS * 3;
+  const THIRD    = (100 / 3).toFixed(4);
+  const TWOTHIRD = (200 / 3).toFixed(4);
+  const TALL     = '143px';
+
+  const POS = {
+    d: 'left bottom',
+    c: 'left 142px center',
+    a: 'right 170px center',
+  };
+
+  /* CSS vars don't propagate to XUL — inline the data URIs directly per rule */
+  const cycle = (name, activeAt, activeDecl, inactiveDecl) => [
+    `@keyframes ${name} {`,
+    `  0%           { ${activeAt === 'd' ? activeDecl : inactiveDecl} }`,
+    `  ${THIRD}%    { ${activeAt === 'c' ? activeDecl : inactiveDecl} }`,
+    `  ${TWOTHIRD}% { ${activeAt === 'a' ? activeDecl : inactiveDecl} }`,
+    `  100%         { ${activeAt === 'd' ? activeDecl : inactiveDecl} }`,
     `}`,
   ].join('\n');
+
+  /* height/width overrides are animated as custom properties, not the
+     real properties directly — !important is stripped inside @keyframes,
+     and animated values can never beat an !important rule elsewhere in
+     the cascade (e.g. Firefox's own chrome CSS). Consuming these via
+     var() in a static !important rule outside the keyframes sidesteps
+     both problems.                                                    */
+  const kfD = cycle('pants-at-d', 'd',
+    `background-image: ${imgs}; background-position: ${POS.d};`,
+    `background-image: none;`);
+  const kfC = cycle('pants-at-c', 'c',
+    `background-image: ${imgs}; background-position: ${POS.c}; --pants-c-h: ${TALL};`,
+    `background-image: none; --pants-c-h: unset;`);
+  const kfA = cycle('pants-at-a', 'a',
+    `background-image: ${imgs}; background-position: ${POS.a}; --pants-a-h: ${TALL};`,
+    `background-image: none; --pants-a-h: unset;`);
+  const kfSidebar = cycle('pants-sidebar-width', 'd',
+    `--pants-sidebar-w: 128px;`,
+    `--pants-sidebar-w: unset;`);
+
+  const anim = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -141,17 +176,49 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
-    `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
-    block('#TabsToolbar', 'right 170px center', ['  height: 143px !important;', '  min-height: 143px !important;']),
+    `/* one Pants, cycling D → C → A → D, ${STOP_SECONDS}s per stop */`,
+    kfD,
     ``,
-    `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
-    block('#nav-bar', 'left 142px center', ['  height: 143px !important;', '  min-height: 143px !important;']),
+    kfC,
+    ``,
+    kfA,
+    ``,
+    kfSidebar,
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
-    block('#sidebar-container', 'left bottom'),
-    `/* narrow the icon launcher strip to trim space right of cat */`,
-    `html|sidebar-main { min-width: 128px !important; max-width: 128px !important; }`,
+    `#sidebar-container {`,
+    `  overflow: visible !important;`,
+    `  background-size:     ${sizes};`,
+    `  background-repeat:   ${rpts};`,
+    `  animation: ${anim('pants-at-d')};`,
+    `}`,
+    `/* squeeze the icon launcher strip back to normal when she's not here */`,
+    `html|sidebar-main {`,
+    `  animation: ${anim('pants-sidebar-width')};`,
+    `  min-width: var(--pants-sidebar-w, unset) !important;`,
+    `  max-width: var(--pants-sidebar-w, unset) !important;`,
+    `}`,
+    ``,
+    `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
+    `#nav-bar {`,
+    `  overflow: visible !important;`,
+    `  background-size:     ${sizes};`,
+    `  background-repeat:   ${rpts};`,
+    `  animation: ${anim('pants-at-c')};`,
+    `  height: var(--pants-c-h, unset) !important;`,
+    `  min-height: var(--pants-c-h, unset) !important;`,
+    `}`,
+    ``,
+    `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
+    `#TabsToolbar {`,
+    `  overflow: visible !important;`,
+    `  background-size:     ${sizes};`,
+    `  background-repeat:   ${rpts};`,
+    `  animation: ${anim('pants-at-a')};`,
+    `  height: var(--pants-a-h, unset) !important;`,
+    `  min-height: var(--pants-a-h, unset) !important;`,
+    `}`,
   ].join('\n');
 }
 
