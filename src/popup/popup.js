@@ -124,15 +124,42 @@ async function generateCSS() {
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
+  /* one-shot nod-off / rouse — no blink-overlay, no breathing bob on head/eyes
+     (they're already easing, adding a bob would just fight it); everything
+     else keeps breathing/flicking normally underneath                     */
+  const FALLING_PATHS = [
+    '../../static/Pants/Anim/fall-asleep-eyes.apng',
+    '../../static/Pants/Anim/fall-asleep-head.apng',
+    '../../static/Pants/Anim/tail-flick.apng',
+    '../../static/Pants/Anim/breath-rpaw.apng',
+    '../../static/Pants/Limbs/right_back_paw.png',
+    '../../static/Pants/Anim/breath.apng',
+    '../../static/Pants/Limbs/left_front_paw.png',
+    '../../static/Pants/Limbs/left_back_paw.png',
+  ];
+  const WAKING_PATHS = [
+    '../../static/Pants/Anim/wake-up-eyes.apng',
+    '../../static/Pants/Anim/wake-up-head.apng',
+    '../../static/Pants/Anim/tail-flick.apng',
+    '../../static/Pants/Anim/breath-rpaw.apng',
+    '../../static/Pants/Limbs/right_back_paw.png',
+    '../../static/Pants/Anim/breath.apng',
+    '../../static/Pants/Limbs/left_front_paw.png',
+    '../../static/Pants/Limbs/left_back_paw.png',
+  ];
 
-  const ALL_PATHS = [...new Set([...AWAKE_PATHS, ...SLEEP_PATHS])];
+  const ALL_PATHS = [...new Set([...AWAKE_PATHS, ...SLEEP_PATHS, ...FALLING_PATHS, ...WAKING_PATHS])];
   const ALL_URIS  = await Promise.all(ALL_PATHS.map(toDataUri));
   const uriByPath = new Map(ALL_PATHS.map((p, i) => [p, ALL_URIS[i]]));
   const W = '182px';
   const H = '133px';
   const imgsFor = paths => paths.map(p => `url("${uriByPath.get(p)}")`).join(', ');
-  const awakeImgs = imgsFor(AWAKE_PATHS);
-  const sleepImgs = imgsFor(SLEEP_PATHS);
+  const imgsForKind = {
+    awake:   imgsFor(AWAKE_PATHS),
+    asleep:  imgsFor(SLEEP_PATHS),
+    falling: imgsFor(FALLING_PATHS),
+    waking:  imgsFor(WAKING_PATHS),
+  };
   /* every layer shares the same size/repeat, so one value covers however
      many background-image layers are actually listed (CSS repeats a
      shorter multi-value property to match the longest one) */
@@ -145,24 +172,46 @@ async function generateCSS() {
     a: 'right 170px center',
   };
 
-  /* Pants cycles D → C → A awake, then D → C → A asleep, then repeats.
-     STOP_SECONDS controls how long she lingers at each stop.
-     steps(1) makes every keyframe boundary a hard cut on the sprite —
-     she's either fully "there" or fully gone, never mid-fade/mid-slide.
-     The room-making margins run on a *separate* ease-in-out animation
-     (see below) so they open/close smoothly instead of snapping.      */
-  const STOPS = ['d-awake', 'c-awake', 'a-awake', 'd-sleep', 'c-sleep', 'a-sleep'];
-  const STOP_SECONDS  = 30;
-  const CYCLE_SECONDS = STOP_SECONDS * STOPS.length;
-  const STOP_PCT      = 100 / STOPS.length;
-  const pct = n => (((n % 100) + 100) % 100).toFixed(4);
+  /* Each location visit is now itself a sequence: awake, fall asleep, asleep,
+     wake up, awake — then Pants hard-cuts to the next location (D → C → A →
+     D…), always leaving/arriving on an awake frame so that cut stays a clean
+     swap like before. TRANS_SECONDS must match the total playtime baked into
+     fall-asleep-*.apng / wake-up-*.apng (10 frames × 150ms = 1.5s — see
+     .claude/generate-anims.py) so the transition lands on its last frame
+     exactly as CSS swaps to the next phase, instead of restarting mid-motion
+     or holding on a stale frame.
+     steps(1) makes every keyframe boundary a hard cut on the sprite — she's
+     either fully in one phase's pose or the next, never blended between two
+     different images. The *transition* itself only looks smooth because its
+     backing asset is a purpose-built animation, not because CSS is easing
+     anything.                                                             */
+  const HOLD_SECONDS  = 10;   // awake / asleep hold at each end of a visit
+  const TRANS_SECONDS = 1.5;  // fall-asleep / wake-up duration — keep in sync, see above
+  const LOCATIONS   = ['d', 'c', 'a'];
+  const PHASE_KINDS = ['awake', 'falling', 'asleep', 'waking', 'awake'];
+  const secondsFor  = kind => (kind === 'falling' || kind === 'waking') ? TRANS_SECONDS : HOLD_SECONDS;
+
+  let cursor = 0;
+  const TIMELINE = LOCATIONS.flatMap(loc => PHASE_KINDS.map(kind => {
+    const startSec = cursor;
+    cursor += secondsFor(kind);
+    return { loc, kind, startSec, endSec: cursor };
+  }));
+  const CYCLE_SECONDS = cursor;
+  const toPct = sec => sec / CYCLE_SECONDS * 100;
+  const pct   = n => (((n % 100) + 100) % 100).toFixed(4);
 
   /* CSS vars don't propagate to XUL — inline the data URIs directly per rule.
-     declByStop(stop) returns this element's declaration for a given stop
-     (or null if it should be hidden that stop); steps(1) makes each stop
-     a hard cut, holding from its own keyframe until the next one.       */
-  const spriteKeyframes = (name, declByStop) => {
-    const points = STOPS.map((s, i) => [pct(i * STOP_PCT), declByStop(s) ?? 'background-image: none;']);
+     Builds one @keyframes per anchor: at every phase boundary in TIMELINE,
+     show this anchor's own image for that phase if it's her location this
+     phase, else hide her — steps(1) holds each value until the next.      */
+  const spriteKeyframesTimeline = (name, loc) => {
+    const points = TIMELINE.map(ph => [
+      toPct(ph.startSec).toFixed(4),
+      ph.loc === loc
+        ? `background-image: ${imgsForKind[ph.kind]}; background-position: ${POS[loc]};`
+        : `background-image: none;`,
+    ]);
     points.push(['100.0000', points[0][1]]);
     return [
       `@keyframes ${name} {`,
@@ -171,15 +220,9 @@ async function generateCSS() {
     ].join('\n');
   };
 
-  const kfD = spriteKeyframes('pants-at-d', s =>
-    s === 'd-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.d};` :
-    s === 'd-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.d};` : null);
-  const kfC = spriteKeyframes('pants-at-c', s =>
-    s === 'c-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.c};` :
-    s === 'c-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.c};` : null);
-  const kfA = spriteKeyframes('pants-at-a', s =>
-    s === 'a-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.a};` :
-    s === 'a-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.a};` : null);
+  const kfD = spriteKeyframesTimeline('pants-at-d', 'd');
+  const kfC = spriteKeyframesTimeline('pants-at-c', 'c');
+  const kfA = spriteKeyframesTimeline('pants-at-a', 'a');
 
   /* ── smooth margins ─────────────────────────────────────────
      height/width overrides are animated as custom properties, not the
@@ -201,12 +244,14 @@ async function generateCSS() {
      (proven to land precisely on its authored percentages) — the value
      at each step follows an ease curve, so enough small steps in a row
      reads as smooth motion even though every individual jump is a cut.
-     Each margin ramps open a beat before its stop's sprite appears and
+     Each margin ramps open a beat before its visit's sprite appears and
      ramps closed a beat after it disappears, so the room is always
      ready before she's drawn and never collapses out from under her.
-     An anchor now has *two* windows per cycle (its awake stop and its
-     sleep stop), so this builds the point list generically instead of
-     hand-deriving each percentage.                                    */
+     A location's whole visit (awake → falling → asleep → waking → awake)
+     is one contiguous block of TIMELINE entries, so each anchor only
+     needs a single open window per cycle here — the internal phases
+     don't affect the room size at all, only whether she's at this
+     location or not.                                                  */
   const C_H    = 143;   // nav-bar / TabsToolbar min-height (px), cat present
   const SIDE_W = 128;   // sidebar-main min-width (px), cat present
   const RAMP_SECONDS = 2;    // how long the open/close ease takes
@@ -215,33 +260,32 @@ async function generateCSS() {
   const easeInOutCubic = t => t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
   const px = n => `${n.toFixed(2)}px`;
 
-  const marginKeyframes = (name, prop, stopIndices, openPx) => {
+  const marginKeyframes = (name, prop, loc, openPx) => {
+    const visit  = TIMELINE.filter(ph => ph.loc === loc);
+    const start  = toPct(visit[0].startSec);
+    const end    = toPct(visit[visit.length - 1].endSec);
     const points = new Map();
-    /* seed the loop seam with defaults *before* placing each window's own
+    /* seed the loop seam with defaults *before* placing this window's own
        points, so a window that actually touches 0%/100% overwrites the
        default with its real value. The defaults only matter for the
-       indirect wraparound case: a window starting at stop 0 ramps *up*
-       during the tail of the previous lap (needs 100% open so 0% of the
-       next lap continues seamlessly); a window ending at the last stop
-       ramps *down* into the head of the next lap (needs 0% open so it
-       has something to ramp down from).                                */
-    points.set('0.0000',   stopIndices.includes(STOPS.length - 1) ? px(openPx) : px(0));
-    points.set('100.0000', stopIndices.includes(0)                ? px(openPx) : px(0));
-    for (const i of stopIndices) {
-      const start = i * STOP_PCT;
-      const end   = (i + 1) * STOP_PCT;
-      for (let s = 1; s <= RAMP_STEPS; s++) {
-        const t = s / RAMP_STEPS;
-        points.set(pct(start - RAMP_N + RAMP_N * t), px(openPx * easeInOutCubic(t)));
-        points.set(pct(end + RAMP_N * t),            px(openPx * (1 - easeInOutCubic(t))));
-      }
-      /* start/end are exact stop boundaries already in [0,100] and must
-         NOT go through pct()'s wraparound modulo, which would collapse a
-         window ending at exactly 100 down to "0.0000" and silently erase
-         its real 100% keyframe.                                        */
-      points.set(start.toFixed(4), px(openPx));
-      points.set(end.toFixed(4),   px(openPx));
+       indirect wraparound case: a window starting at 0% ramps *up* during
+       the tail of the previous lap (needs 100% open so 0% of the next lap
+       continues seamlessly); a window ending at 100% ramps *down* into the
+       head of the next lap (needs 0% open so it has something to ramp
+       down from).                                                       */
+    points.set('0.0000',   end   >= 99.9999 ? px(openPx) : px(0));
+    points.set('100.0000', start <= 0.0001  ? px(openPx) : px(0));
+    for (let s = 1; s <= RAMP_STEPS; s++) {
+      const t = s / RAMP_STEPS;
+      points.set(pct(start - RAMP_N + RAMP_N * t), px(openPx * easeInOutCubic(t)));
+      points.set(pct(end + RAMP_N * t),            px(openPx * (1 - easeInOutCubic(t))));
     }
+    /* start/end are exact visit boundaries already in [0,100] and must
+       NOT go through pct()'s wraparound modulo, which would collapse a
+       window ending at exactly 100 down to "0.0000" and silently erase
+       its real 100% keyframe.                                          */
+    points.set(start.toFixed(4), px(openPx));
+    points.set(end.toFixed(4),   px(openPx));
 
     const sorted = [...points.entries()].sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
     return [
@@ -251,10 +295,9 @@ async function generateCSS() {
     ].join('\n');
   };
 
-  const stopsFor = prefix => STOPS.reduce((acc, s, i) => (s.startsWith(prefix) ? [...acc, i] : acc), []);
-  const kfDMargin = marginKeyframes('pants-d-w', '--pants-sidebar-w', stopsFor('d-'), SIDE_W);
-  const kfCMargin = marginKeyframes('pants-c-h', '--pants-c-h', stopsFor('c-'), C_H);
-  const kfAMargin = marginKeyframes('pants-a-h', '--pants-a-h', stopsFor('a-'), C_H);
+  const kfDMargin = marginKeyframes('pants-d-w', '--pants-sidebar-w', 'd', SIDE_W);
+  const kfCMargin = marginKeyframes('pants-c-h', '--pants-c-h', 'c', C_H);
+  const kfAMargin = marginKeyframes('pants-a-h', '--pants-a-h', 'a', C_H);
 
   const anim = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
 
@@ -265,7 +308,7 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
-    `/* one Pants, cycling D → C → A awake then D → C → A asleep, ${STOP_SECONDS}s per stop */`,
+    `/* one Pants, D → C → A, each stop: ${HOLD_SECONDS}s awake → ${TRANS_SECONDS}s fall asleep → ${HOLD_SECONDS}s asleep → ${TRANS_SECONDS}s wake up → ${HOLD_SECONDS}s awake */`,
     kfD,
     ``,
     kfC,
