@@ -316,7 +316,17 @@ async function generateCSS() {
 
   const anim = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
 
+  const generatedOn = new Date().toISOString().slice(0, 10); // YYYY-MM-DD, as of build time
+  const AUTHORED_ON = 'August 2026'; // tracks the Version line in README.md — bump both together
+
   return [
+    `/**`,
+    ` * Pants The Cat. Kitty-URLoaf CSS.`,
+    ` * Sky Vercauteren. All Rights Reserved.`,
+    ` * Authored ${AUTHORED_ON}`,
+    ` * Generated ${generatedOn}`,
+    ` */`,
+    ``,
     `/* Kitty URLoaf ~ userChrome.css */`,
     `/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */`,
     ``,

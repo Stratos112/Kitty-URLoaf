@@ -14,3 +14,5 @@ Browser Plugin that adds an animated/interactive kitty.
 9. *(not yet recorded)*
 
 All Rights Reserved. Sky Vercauteren July 2026.
+
+Version 0.0.1 — August 2026. If you bump this version, don't forget to update the date added to the CSS files.
