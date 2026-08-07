@@ -124,13 +124,16 @@ async function generateCSS() {
 
   /* Pants cycles D → C → A → D, one cat, one spot at a time.
      STOP_SECONDS controls how long she lingers at each stop.
-     steps(1) makes every keyframe boundary a hard cut — she's either
-     fully "there" or fully gone, never mid-fade/mid-slide.          */
+     steps(1) makes every keyframe boundary a hard cut on the sprite —
+     she's either fully "there" or fully gone, never mid-fade/mid-slide.
+     The room-making margins run on a *separate* ease-in-out animation
+     (see below) so they open/close smoothly instead of snapping.      */
   const STOP_SECONDS  = 30;
   const CYCLE_SECONDS = STOP_SECONDS * 3;
-  const THIRD    = (100 / 3).toFixed(4);
-  const TWOTHIRD = (200 / 3).toFixed(4);
-  const TALL     = '143px';
+  const THIRD_N    = 100 / 3;
+  const TWOTHIRD_N = 200 / 3;
+  const THIRD      = THIRD_N.toFixed(4);
+  const TWOTHIRD   = TWOTHIRD_N.toFixed(4);
 
   const POS = {
     d: 'left bottom',
@@ -148,26 +151,65 @@ async function generateCSS() {
     `}`,
   ].join('\n');
 
-  /* height/width overrides are animated as custom properties, not the
-     real properties directly — !important is stripped inside @keyframes,
-     and animated values can never beat an !important rule elsewhere in
-     the cascade (e.g. Firefox's own chrome CSS). Consuming these via
-     var() in a static !important rule outside the keyframes sidesteps
-     both problems.                                                    */
   const kfD = cycle('pants-at-d', 'd',
     `background-image: ${imgs}; background-position: ${POS.d};`,
     `background-image: none;`);
   const kfC = cycle('pants-at-c', 'c',
-    `background-image: ${imgs}; background-position: ${POS.c}; --pants-c-h: ${TALL};`,
-    `background-image: none; --pants-c-h: unset;`);
+    `background-image: ${imgs}; background-position: ${POS.c};`,
+    `background-image: none;`);
   const kfA = cycle('pants-at-a', 'a',
-    `background-image: ${imgs}; background-position: ${POS.a}; --pants-a-h: ${TALL};`,
-    `background-image: none; --pants-a-h: unset;`);
-  const kfSidebar = cycle('pants-sidebar-width', 'd',
-    `--pants-sidebar-w: 128px;`,
-    `--pants-sidebar-w: unset;`);
+    `background-image: ${imgs}; background-position: ${POS.a};`,
+    `background-image: none;`);
 
-  const anim = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
+  /* ── smooth margins ─────────────────────────────────────────
+     height/width overrides are animated as custom properties, not the
+     real properties directly — !important is stripped inside @keyframes,
+     and animated values can never beat an !important rule elsewhere in
+     the cascade (e.g. Firefox's own chrome CSS). Consuming these via
+     var() in a static !important rule outside the keyframes sidesteps
+     both problems, and using 0px (not `unset`) as the "closed" value
+     keeps both ends of the tween numeric so it actually eases instead
+     of snapping halfway through.
+     Each margin ramps open a beat before its stop's sprite appears and
+     ramps closed a beat after it disappears, so the room is always
+     ready before she's drawn and never collapses out from under her.  */
+  const C_H    = '143px';   // nav-bar / TabsToolbar min-height, cat present
+  const SIDE_W = '128px';   // sidebar-main min-width, cat present
+  const RAMP_SECONDS = 2;   // how long the open/close ease takes
+  const RAMP_N = RAMP_SECONDS / CYCLE_SECONDS * 100;
+  const pct = n => (((n % 100) + 100) % 100).toFixed(4);
+
+  const easeKeyframes = (name, prop, points) => [
+    `@keyframes ${name} {`,
+    ...points.map(([p, v]) => `  ${p}% { ${prop}: ${v}; }`),
+    `}`,
+  ].join('\n');
+
+  const kfDMargin = easeKeyframes('pants-d-w', '--pants-sidebar-w', [
+    ['0.0000',                       SIDE_W],
+    [THIRD,                          SIDE_W],
+    [pct(THIRD_N + RAMP_N),          '0px'],
+    [pct(0 - RAMP_N),                '0px'],
+    ['100.0000',                     SIDE_W],
+  ]);
+  const kfCMargin = easeKeyframes('pants-c-h', '--pants-c-h', [
+    ['0.0000',                       '0px'],
+    [pct(THIRD_N - RAMP_N),          '0px'],
+    [THIRD,                          C_H],
+    [TWOTHIRD,                       C_H],
+    [pct(TWOTHIRD_N + RAMP_N),       '0px'],
+    ['100.0000',                     '0px'],
+  ]);
+  const kfAMargin = easeKeyframes('pants-a-h', '--pants-a-h', [
+    ['0.0000',                       C_H],
+    [pct(100 + RAMP_N),              '0px'],
+    [pct(TWOTHIRD_N - RAMP_N),       '0px'],
+    [TWOTHIRD,                       C_H],
+    ['100.0000',                     C_H],
+  ]);
+
+  const anim     = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
+  const animEase = name => `${name} ${CYCLE_SECONDS}s ease-in-out infinite`;
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -183,7 +225,12 @@ async function generateCSS() {
     ``,
     kfA,
     ``,
-    kfSidebar,
+    `/* room-making margins — ${RAMP_SECONDS}s ease open/close around each stop */`,
+    kfDMargin,
+    ``,
+    kfCMargin,
+    ``,
+    kfAMargin,
     ``,
     `/* ── D: sidebar icon strip ───────────────────────────────── */`,
     `#browser { overflow: visible !important; }`,
@@ -195,9 +242,9 @@ async function generateCSS() {
     `}`,
     `/* squeeze the icon launcher strip back to normal when she's not here */`,
     `html|sidebar-main {`,
-    `  animation: ${anim('pants-sidebar-width')};`,
-    `  min-width: var(--pants-sidebar-w, unset) !important;`,
-    `  max-width: var(--pants-sidebar-w, unset) !important;`,
+    `  animation: ${animEase('pants-d-w')};`,
+    `  min-width: var(--pants-sidebar-w, 0px) !important;`,
+    `  max-width: ${SIDE_W} !important;`,
     `}`,
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
@@ -205,9 +252,8 @@ async function generateCSS() {
     `  overflow: visible !important;`,
     `  background-size:     ${sizes};`,
     `  background-repeat:   ${rpts};`,
-    `  animation: ${anim('pants-at-c')};`,
-    `  height: var(--pants-c-h, unset) !important;`,
-    `  min-height: var(--pants-c-h, unset) !important;`,
+    `  animation: ${anim('pants-at-c')}, ${animEase('pants-c-h')};`,
+    `  min-height: var(--pants-c-h, 0px) !important;`,
     `}`,
     ``,
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
@@ -215,9 +261,8 @@ async function generateCSS() {
     `  overflow: visible !important;`,
     `  background-size:     ${sizes};`,
     `  background-repeat:   ${rpts};`,
-    `  animation: ${anim('pants-at-a')};`,
-    `  height: var(--pants-a-h, unset) !important;`,
-    `  min-height: var(--pants-a-h, unset) !important;`,
+    `  animation: ${anim('pants-at-a')}, ${animEase('pants-a-h')};`,
+    `  min-height: var(--pants-a-h, 0px) !important;`,
     `}`,
   ].join('\n');
 }
