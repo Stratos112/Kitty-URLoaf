@@ -255,7 +255,7 @@ async function generateCSS() {
   const C_H    = 143;   // nav-bar / TabsToolbar min-height (px), cat present
   const SIDE_W = 128;   // sidebar-main min-width (px), cat present
   const RAMP_SECONDS = 2;    // how long the open/close ease takes
-  const RAMP_STEPS   = 16;   // discrete jumps per ramp — more = smoother
+  const RAMP_STEPS   = 48;   // discrete jumps per ramp — more = smoother (~42ms/step at 2s)
   const RAMP_N = RAMP_SECONDS / CYCLE_SECONDS * 100;
   const easeInOutCubic = t => t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
   const px = n => `${n.toFixed(2)}px`;
