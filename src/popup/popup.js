@@ -187,21 +187,35 @@ async function generateCSS() {
      and animated values can never beat an !important rule elsewhere in
      the cascade (e.g. Firefox's own chrome CSS). Consuming these via
      var() in a static !important rule outside the keyframes sidesteps
-     both problems, and using 0px (not `unset`) as the "closed" value
-     keeps both ends of the tween numeric so it actually eases instead
-     of snapping halfway through.
+     both problems.
+     Registering the property with @property so it eases as a real
+     <length> does NOT reliably take effect in userChrome.css — it's a
+     privileged/chrome stylesheet, and @property silently not applying
+     leaves the property "unregistered", which per spec means it always
+     animates with *discrete* interpolation (a single hard jump at the
+     ramp's temporal midpoint) no matter what timing function is given.
+     That's the snap you were seeing.
+     So instead of trusting real interpolation, this hand-builds a
+     staircase of RAMP_STEPS discrete jumps per ramp, using the exact
+     same steps(1)-hard-cut mechanism the sprite swap already relies on
+     (proven to land precisely on its authored percentages) — the value
+     at each step follows an ease curve, so enough small steps in a row
+     reads as smooth motion even though every individual jump is a cut.
      Each margin ramps open a beat before its stop's sprite appears and
      ramps closed a beat after it disappears, so the room is always
      ready before she's drawn and never collapses out from under her.
      An anchor now has *two* windows per cycle (its awake stop and its
      sleep stop), so this builds the point list generically instead of
      hand-deriving each percentage.                                    */
-  const C_H    = '143px';   // nav-bar / TabsToolbar min-height, cat present
-  const SIDE_W = '128px';   // sidebar-main min-width, cat present
-  const RAMP_SECONDS = 2;   // how long the open/close ease takes
+  const C_H    = 143;   // nav-bar / TabsToolbar min-height (px), cat present
+  const SIDE_W = 128;   // sidebar-main min-width (px), cat present
+  const RAMP_SECONDS = 2;    // how long the open/close ease takes
+  const RAMP_STEPS   = 16;   // discrete jumps per ramp — more = smoother
   const RAMP_N = RAMP_SECONDS / CYCLE_SECONDS * 100;
+  const easeInOutCubic = t => t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+  const px = n => `${n.toFixed(2)}px`;
 
-  const marginKeyframes = (name, prop, stopIndices, openVal) => {
+  const marginKeyframes = (name, prop, stopIndices, openPx) => {
     const points = new Map();
     /* seed the loop seam with defaults *before* placing each window's own
        points, so a window that actually touches 0%/100% overwrites the
@@ -210,23 +224,23 @@ async function generateCSS() {
        during the tail of the previous lap (needs 100% open so 0% of the
        next lap continues seamlessly); a window ending at the last stop
        ramps *down* into the head of the next lap (needs 0% open so it
-       has something to ramp down from). Getting these two backwards, or
-       letting them clobber a window's real boundary value, is exactly
-       what makes the wrap point snap instead of ease.                  */
-    points.set('0.0000',   stopIndices.includes(STOPS.length - 1) ? openVal : '0px');
-    points.set('100.0000', stopIndices.includes(0)                ? openVal : '0px');
+       has something to ramp down from).                                */
+    points.set('0.0000',   stopIndices.includes(STOPS.length - 1) ? px(openPx) : px(0));
+    points.set('100.0000', stopIndices.includes(0)                ? px(openPx) : px(0));
     for (const i of stopIndices) {
       const start = i * STOP_PCT;
       const end   = (i + 1) * STOP_PCT;
-      /* only the ramp offsets can legitimately fall outside [0, 100] and
-         need wrapping — start/end are exact stop boundaries already in
-         range, and must NOT go through pct()'s wraparound modulo, which
-         would collapse a window ending at exactly 100 down to "0.0000"
-         and silently erase its real 100% keyframe.                     */
-      points.set(pct(start - RAMP_N), '0px');
-      points.set(start.toFixed(4), openVal);
-      points.set(end.toFixed(4), openVal);
-      points.set(pct(end + RAMP_N), '0px');
+      for (let s = 1; s <= RAMP_STEPS; s++) {
+        const t = s / RAMP_STEPS;
+        points.set(pct(start - RAMP_N + RAMP_N * t), px(openPx * easeInOutCubic(t)));
+        points.set(pct(end + RAMP_N * t),            px(openPx * (1 - easeInOutCubic(t))));
+      }
+      /* start/end are exact stop boundaries already in [0,100] and must
+         NOT go through pct()'s wraparound modulo, which would collapse a
+         window ending at exactly 100 down to "0.0000" and silently erase
+         its real 100% keyframe.                                        */
+      points.set(start.toFixed(4), px(openPx));
+      points.set(end.toFixed(4),   px(openPx));
     }
 
     const sorted = [...points.entries()].sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
@@ -242,21 +256,7 @@ async function generateCSS() {
   const kfCMargin = marginKeyframes('pants-c-h', '--pants-c-h', stopsFor('c-'), C_H);
   const kfAMargin = marginKeyframes('pants-a-h', '--pants-a-h', stopsFor('a-'), C_H);
 
-  const anim     = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
-  const animEase = name => `${name} ${CYCLE_SECONDS}s ease-in-out infinite`;
-
-  /* unregistered custom properties always animate with *discrete*
-     interpolation (a hard jump partway through) no matter what timing
-     function you give them — @property tells the engine these three
-     hold a <length>, which is what actually lets ease-in-out tween them
-     smoothly instead of snapping.                                     */
-  const registerLength = name => [
-    `@property ${name} {`,
-    `  syntax: '<length>';`,
-    `  inherits: false;`,
-    `  initial-value: 0px;`,
-    `}`,
-  ].join('\n');
+  const anim = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
 
   return [
     `/* Kitty URLoaf ~ userChrome.css */`,
@@ -265,10 +265,6 @@ async function generateCSS() {
     `@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");`,
     `@namespace html url("http://www.w3.org/1999/xhtml");`,
     ``,
-    registerLength('--pants-c-h'),
-    registerLength('--pants-a-h'),
-    registerLength('--pants-sidebar-w'),
-    ``,
     `/* one Pants, cycling D → C → A awake then D → C → A asleep, ${STOP_SECONDS}s per stop */`,
     kfD,
     ``,
@@ -276,7 +272,7 @@ async function generateCSS() {
     ``,
     kfA,
     ``,
-    `/* room-making margins — ${RAMP_SECONDS}s ease open/close around each stop */`,
+    `/* room-making margins — ${RAMP_SECONDS}s eased staircase open/close around each stop */`,
     kfDMargin,
     ``,
     kfCMargin,
@@ -293,9 +289,9 @@ async function generateCSS() {
     `}`,
     `/* squeeze the icon launcher strip back to normal when she's not here */`,
     `html|sidebar-main {`,
-    `  animation: ${animEase('pants-d-w')};`,
+    `  animation: ${anim('pants-d-w')};`,
     `  min-width: var(--pants-sidebar-w, 0px) !important;`,
-    `  max-width: ${SIDE_W} !important;`,
+    `  max-width: ${px(SIDE_W)} !important;`,
     `}`,
     ``,
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
@@ -303,7 +299,7 @@ async function generateCSS() {
     `  overflow: visible !important;`,
     `  background-size:     ${SIZE};`,
     `  background-repeat:   ${RPT};`,
-    `  animation: ${anim('pants-at-c')}, ${animEase('pants-c-h')};`,
+    `  animation: ${anim('pants-at-c')}, ${anim('pants-c-h')};`,
     `  min-height: var(--pants-c-h, 0px) !important;`,
     `}`,
     ``,
@@ -312,7 +308,7 @@ async function generateCSS() {
     `  overflow: visible !important;`,
     `  background-size:     ${SIZE};`,
     `  background-repeat:   ${RPT};`,
-    `  animation: ${anim('pants-at-a')}, ${animEase('pants-a-h')};`,
+    `  animation: ${anim('pants-at-a')}, ${anim('pants-a-h')};`,
     `  min-height: var(--pants-a-h, 0px) !important;`,
     `}`,
   ].join('\n');
