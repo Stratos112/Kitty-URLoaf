@@ -101,8 +101,8 @@ async function toDataUri(path) {
 }
 
 async function generateCSS() {
-  const PATHS = [
-    /* top → bottom z-order: first listed = topmost */
+  /* top → bottom z-order: first listed = topmost */
+  const AWAKE_PATHS = [
     '../../static/Pants/Anim/blink-overlay.apng',  // transparent hold; blink on head backing
     '../../static/Pants/Anim/breath-eyes.apng',    // eyes_open, same shifts/delays as head
     '../../static/Pants/Anim/breath-head.apng',    // head only, bobs with breath
@@ -113,27 +113,31 @@ async function generateCSS() {
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
+  const SLEEP_PATHS = [
+    /* no blink-overlay — eyes just stay shut */
+    '../../static/Pants/Anim/breath-eyes-sleep.apng', // eyes_closed, dropped + bobs with breath
+    '../../static/Pants/Anim/breath-head-sleep.apng', // head dropped, bobs with breath
+    '../../static/Pants/Anim/tail-flick.apng',
+    '../../static/Pants/Anim/breath-rpaw.apng',
+    '../../static/Pants/Limbs/right_back_paw.png',
+    '../../static/Pants/Anim/breath.apng',
+    '../../static/Pants/Limbs/left_front_paw.png',
+    '../../static/Pants/Limbs/left_back_paw.png',
+  ];
 
-  const uris  = await Promise.all(PATHS.map(toDataUri));
-  const N     = PATHS.length;
-  const W     = '182px';
-  const H     = '133px';
-  const imgs  = uris.map(u => `url("${u}")`).join(', ');
-  const sizes = Array(N).fill(`${W} ${H}`).join(', ');
-  const rpts  = Array(N).fill('no-repeat').join(', ');
-
-  /* Pants cycles D → C → A → D, one cat, one spot at a time.
-     STOP_SECONDS controls how long she lingers at each stop.
-     steps(1) makes every keyframe boundary a hard cut on the sprite —
-     she's either fully "there" or fully gone, never mid-fade/mid-slide.
-     The room-making margins run on a *separate* ease-in-out animation
-     (see below) so they open/close smoothly instead of snapping.      */
-  const STOP_SECONDS  = 30;
-  const CYCLE_SECONDS = STOP_SECONDS * 3;
-  const THIRD_N    = 100 / 3;
-  const TWOTHIRD_N = 200 / 3;
-  const THIRD      = THIRD_N.toFixed(4);
-  const TWOTHIRD   = TWOTHIRD_N.toFixed(4);
+  const ALL_PATHS = [...new Set([...AWAKE_PATHS, ...SLEEP_PATHS])];
+  const ALL_URIS  = await Promise.all(ALL_PATHS.map(toDataUri));
+  const uriByPath = new Map(ALL_PATHS.map((p, i) => [p, ALL_URIS[i]]));
+  const W = '182px';
+  const H = '133px';
+  const imgsFor = paths => paths.map(p => `url("${uriByPath.get(p)}")`).join(', ');
+  const awakeImgs = imgsFor(AWAKE_PATHS);
+  const sleepImgs = imgsFor(SLEEP_PATHS);
+  /* every layer shares the same size/repeat, so one value covers however
+     many background-image layers are actually listed (CSS repeats a
+     shorter multi-value property to match the longest one) */
+  const SIZE = `${W} ${H}`;
+  const RPT  = 'no-repeat';
 
   const POS = {
     d: 'left bottom',
@@ -141,25 +145,41 @@ async function generateCSS() {
     a: 'right 170px center',
   };
 
-  /* CSS vars don't propagate to XUL — inline the data URIs directly per rule */
-  const cycle = (name, activeAt, activeDecl, inactiveDecl) => [
-    `@keyframes ${name} {`,
-    `  0%           { ${activeAt === 'd' ? activeDecl : inactiveDecl} }`,
-    `  ${THIRD}%    { ${activeAt === 'c' ? activeDecl : inactiveDecl} }`,
-    `  ${TWOTHIRD}% { ${activeAt === 'a' ? activeDecl : inactiveDecl} }`,
-    `  100%         { ${activeAt === 'd' ? activeDecl : inactiveDecl} }`,
-    `}`,
-  ].join('\n');
+  /* Pants cycles D → C → A awake, then D → C → A asleep, then repeats.
+     STOP_SECONDS controls how long she lingers at each stop.
+     steps(1) makes every keyframe boundary a hard cut on the sprite —
+     she's either fully "there" or fully gone, never mid-fade/mid-slide.
+     The room-making margins run on a *separate* ease-in-out animation
+     (see below) so they open/close smoothly instead of snapping.      */
+  const STOPS = ['d-awake', 'c-awake', 'a-awake', 'd-sleep', 'c-sleep', 'a-sleep'];
+  const STOP_SECONDS  = 30;
+  const CYCLE_SECONDS = STOP_SECONDS * STOPS.length;
+  const STOP_PCT      = 100 / STOPS.length;
+  const pct = n => (((n % 100) + 100) % 100).toFixed(4);
 
-  const kfD = cycle('pants-at-d', 'd',
-    `background-image: ${imgs}; background-position: ${POS.d};`,
-    `background-image: none;`);
-  const kfC = cycle('pants-at-c', 'c',
-    `background-image: ${imgs}; background-position: ${POS.c};`,
-    `background-image: none;`);
-  const kfA = cycle('pants-at-a', 'a',
-    `background-image: ${imgs}; background-position: ${POS.a};`,
-    `background-image: none;`);
+  /* CSS vars don't propagate to XUL — inline the data URIs directly per rule.
+     declByStop(stop) returns this element's declaration for a given stop
+     (or null if it should be hidden that stop); steps(1) makes each stop
+     a hard cut, holding from its own keyframe until the next one.       */
+  const spriteKeyframes = (name, declByStop) => {
+    const points = STOPS.map((s, i) => [pct(i * STOP_PCT), declByStop(s) ?? 'background-image: none;']);
+    points.push(['100.0000', points[0][1]]);
+    return [
+      `@keyframes ${name} {`,
+      ...points.map(([p, decl]) => `  ${p}% { ${decl} }`),
+      `}`,
+    ].join('\n');
+  };
+
+  const kfD = spriteKeyframes('pants-at-d', s =>
+    s === 'd-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.d};` :
+    s === 'd-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.d};` : null);
+  const kfC = spriteKeyframes('pants-at-c', s =>
+    s === 'c-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.c};` :
+    s === 'c-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.c};` : null);
+  const kfA = spriteKeyframes('pants-at-a', s =>
+    s === 'a-awake' ? `background-image: ${awakeImgs}; background-position: ${POS.a};` :
+    s === 'a-sleep' ? `background-image: ${sleepImgs}; background-position: ${POS.a};` : null);
 
   /* ── smooth margins ─────────────────────────────────────────
      height/width overrides are animated as custom properties, not the
@@ -172,41 +192,55 @@ async function generateCSS() {
      of snapping halfway through.
      Each margin ramps open a beat before its stop's sprite appears and
      ramps closed a beat after it disappears, so the room is always
-     ready before she's drawn and never collapses out from under her.  */
+     ready before she's drawn and never collapses out from under her.
+     An anchor now has *two* windows per cycle (its awake stop and its
+     sleep stop), so this builds the point list generically instead of
+     hand-deriving each percentage.                                    */
   const C_H    = '143px';   // nav-bar / TabsToolbar min-height, cat present
   const SIDE_W = '128px';   // sidebar-main min-width, cat present
   const RAMP_SECONDS = 2;   // how long the open/close ease takes
   const RAMP_N = RAMP_SECONDS / CYCLE_SECONDS * 100;
-  const pct = n => (((n % 100) + 100) % 100).toFixed(4);
 
-  const easeKeyframes = (name, prop, points) => [
-    `@keyframes ${name} {`,
-    ...points.map(([p, v]) => `  ${p}% { ${prop}: ${v}; }`),
-    `}`,
-  ].join('\n');
+  const marginKeyframes = (name, prop, stopIndices, openVal) => {
+    const points = new Map();
+    /* seed the loop seam with defaults *before* placing each window's own
+       points, so a window that actually touches 0%/100% overwrites the
+       default with its real value. The defaults only matter for the
+       indirect wraparound case: a window starting at stop 0 ramps *up*
+       during the tail of the previous lap (needs 100% open so 0% of the
+       next lap continues seamlessly); a window ending at the last stop
+       ramps *down* into the head of the next lap (needs 0% open so it
+       has something to ramp down from). Getting these two backwards, or
+       letting them clobber a window's real boundary value, is exactly
+       what makes the wrap point snap instead of ease.                  */
+    points.set('0.0000',   stopIndices.includes(STOPS.length - 1) ? openVal : '0px');
+    points.set('100.0000', stopIndices.includes(0)                ? openVal : '0px');
+    for (const i of stopIndices) {
+      const start = i * STOP_PCT;
+      const end   = (i + 1) * STOP_PCT;
+      /* only the ramp offsets can legitimately fall outside [0, 100] and
+         need wrapping — start/end are exact stop boundaries already in
+         range, and must NOT go through pct()'s wraparound modulo, which
+         would collapse a window ending at exactly 100 down to "0.0000"
+         and silently erase its real 100% keyframe.                     */
+      points.set(pct(start - RAMP_N), '0px');
+      points.set(start.toFixed(4), openVal);
+      points.set(end.toFixed(4), openVal);
+      points.set(pct(end + RAMP_N), '0px');
+    }
 
-  const kfDMargin = easeKeyframes('pants-d-w', '--pants-sidebar-w', [
-    ['0.0000',                       SIDE_W],
-    [THIRD,                          SIDE_W],
-    [pct(THIRD_N + RAMP_N),          '0px'],
-    [pct(0 - RAMP_N),                '0px'],
-    ['100.0000',                     SIDE_W],
-  ]);
-  const kfCMargin = easeKeyframes('pants-c-h', '--pants-c-h', [
-    ['0.0000',                       '0px'],
-    [pct(THIRD_N - RAMP_N),          '0px'],
-    [THIRD,                          C_H],
-    [TWOTHIRD,                       C_H],
-    [pct(TWOTHIRD_N + RAMP_N),       '0px'],
-    ['100.0000',                     '0px'],
-  ]);
-  const kfAMargin = easeKeyframes('pants-a-h', '--pants-a-h', [
-    ['0.0000',                       C_H],
-    [pct(100 + RAMP_N),              '0px'],
-    [pct(TWOTHIRD_N - RAMP_N),       '0px'],
-    [TWOTHIRD,                       C_H],
-    ['100.0000',                     C_H],
-  ]);
+    const sorted = [...points.entries()].sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
+    return [
+      `@keyframes ${name} {`,
+      ...sorted.map(([p, v]) => `  ${p}% { ${prop}: ${v}; }`),
+      `}`,
+    ].join('\n');
+  };
+
+  const stopsFor = prefix => STOPS.reduce((acc, s, i) => (s.startsWith(prefix) ? [...acc, i] : acc), []);
+  const kfDMargin = marginKeyframes('pants-d-w', '--pants-sidebar-w', stopsFor('d-'), SIDE_W);
+  const kfCMargin = marginKeyframes('pants-c-h', '--pants-c-h', stopsFor('c-'), C_H);
+  const kfAMargin = marginKeyframes('pants-a-h', '--pants-a-h', stopsFor('a-'), C_H);
 
   const anim     = name => `${name} ${CYCLE_SECONDS}s steps(1) infinite`;
   const animEase = name => `${name} ${CYCLE_SECONDS}s ease-in-out infinite`;
@@ -235,7 +269,7 @@ async function generateCSS() {
     registerLength('--pants-a-h'),
     registerLength('--pants-sidebar-w'),
     ``,
-    `/* one Pants, cycling D → C → A → D, ${STOP_SECONDS}s per stop */`,
+    `/* one Pants, cycling D → C → A awake then D → C → A asleep, ${STOP_SECONDS}s per stop */`,
     kfD,
     ``,
     kfC,
@@ -253,8 +287,8 @@ async function generateCSS() {
     `#browser { overflow: visible !important; }`,
     `#sidebar-container {`,
     `  overflow: visible !important;`,
-    `  background-size:     ${sizes};`,
-    `  background-repeat:   ${rpts};`,
+    `  background-size:     ${SIZE};`,
+    `  background-repeat:   ${RPT};`,
     `  animation: ${anim('pants-at-d')};`,
     `}`,
     `/* squeeze the icon launcher strip back to normal when she's not here */`,
@@ -267,8 +301,8 @@ async function generateCSS() {
     `/* ── C: nav-bar · between back/refresh and home button ─────── */`,
     `#nav-bar {`,
     `  overflow: visible !important;`,
-    `  background-size:     ${sizes};`,
-    `  background-repeat:   ${rpts};`,
+    `  background-size:     ${SIZE};`,
+    `  background-repeat:   ${RPT};`,
     `  animation: ${anim('pants-at-c')}, ${animEase('pants-c-h')};`,
     `  min-height: var(--pants-c-h, 0px) !important;`,
     `}`,
@@ -276,8 +310,8 @@ async function generateCSS() {
     `/* ── A: TabsToolbar · top-right near minimize button ──────── */`,
     `#TabsToolbar {`,
     `  overflow: visible !important;`,
-    `  background-size:     ${sizes};`,
-    `  background-repeat:   ${rpts};`,
+    `  background-size:     ${SIZE};`,
+    `  background-repeat:   ${RPT};`,
     `  animation: ${anim('pants-at-a')}, ${animEase('pants-a-h')};`,
     `  min-height: var(--pants-a-h, 0px) !important;`,
     `}`,
