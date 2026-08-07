@@ -124,12 +124,20 @@ async function generateCSS() {
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
-  /* one-shot nod-off / rouse — no blink-overlay, no breathing bob on head/eyes
-     (they're already easing, adding a bob would just fight it); everything
-     else keeps breathing/flicking normally underneath                     */
-  const FALLING_PATHS = [
-    '../../static/Pants/Anim/fall-asleep-eyes.apng',
-    '../../static/Pants/Anim/fall-asleep-head.apng',
+  /* one-shot nod-off / rouse — head+eyes swapped frame-by-frame (see below),
+     everything else keeps breathing/flicking normally underneath. These
+     used to be their own fall-asleep-*.apng / wake-up-*.apng, but an
+     embedded APNG's playback clock in Gecko belongs to the shared image
+     decoder, not to whichever CSS keyframe swapped it in — so on a repeat
+     visit it could resume mid-loop instead of restarting at frame 0, which
+     is what caused the "snaps back to the top mid-transition" glitch.
+     TRANS_FRAME_COUNT must match TRANS_FRAMES in .claude/generate-anims.py
+     (kept in sync by hand) — each frame is a separate static PNG, and this
+     steps through them itself as individual keyframe stops, so the whole
+     thing is driven by the one outer CSS clock instead of a second,
+     independent one buried inside an image resource.                     */
+  const TRANS_FRAME_COUNT = 30;
+  const TRANS_REST_PATHS = [
     '../../static/Pants/Anim/tail-flick.apng',
     '../../static/Pants/Anim/breath-rpaw.apng',
     '../../static/Pants/Limbs/right_back_paw.png',
@@ -137,29 +145,23 @@ async function generateCSS() {
     '../../static/Pants/Limbs/left_front_paw.png',
     '../../static/Pants/Limbs/left_back_paw.png',
   ];
-  const WAKING_PATHS = [
-    '../../static/Pants/Anim/wake-up-eyes.apng',
-    '../../static/Pants/Anim/wake-up-head.apng',
-    '../../static/Pants/Anim/tail-flick.apng',
-    '../../static/Pants/Anim/breath-rpaw.apng',
-    '../../static/Pants/Limbs/right_back_paw.png',
-    '../../static/Pants/Anim/breath.apng',
-    '../../static/Pants/Limbs/left_front_paw.png',
-    '../../static/Pants/Limbs/left_back_paw.png',
-  ];
+  const TRANS_FRAME_PATHS = Array.from({ length: TRANS_FRAME_COUNT }, (_, i) =>
+    `../../static/Pants/Anim/Transition/frame-${String(i).padStart(2, '0')}.png`);
 
-  const ALL_PATHS = [...new Set([...AWAKE_PATHS, ...SLEEP_PATHS, ...FALLING_PATHS, ...WAKING_PATHS])];
+  const ALL_PATHS = [...new Set([...AWAKE_PATHS, ...SLEEP_PATHS, ...TRANS_REST_PATHS, ...TRANS_FRAME_PATHS])];
   const ALL_URIS  = await Promise.all(ALL_PATHS.map(toDataUri));
   const uriByPath = new Map(ALL_PATHS.map((p, i) => [p, ALL_URIS[i]]));
   const W = '182px';
   const H = '133px';
   const imgsFor = paths => paths.map(p => `url("${uriByPath.get(p)}")`).join(', ');
   const imgsForKind = {
-    awake:   imgsFor(AWAKE_PATHS),
-    asleep:  imgsFor(SLEEP_PATHS),
-    falling: imgsFor(FALLING_PATHS),
-    waking:  imgsFor(WAKING_PATHS),
+    awake:  imgsFor(AWAKE_PATHS),
+    asleep: imgsFor(SLEEP_PATHS),
   };
+  const transRestImgs  = imgsFor(TRANS_REST_PATHS);
+  const transFrameUrls = TRANS_FRAME_PATHS.map(p => `url("${uriByPath.get(p)}")`);
+  const transDecl = (frameIdx, posVal) =>
+    `background-image: ${transFrameUrls[frameIdx]}, ${transRestImgs}; background-position: ${posVal};`;
   /* every layer shares the same size/repeat, so one value covers however
      many background-image layers are actually listed (CSS repeats a
      shorter multi-value property to match the longest one) */
@@ -175,16 +177,15 @@ async function generateCSS() {
   /* Each location visit is now itself a sequence: awake, fall asleep, asleep,
      wake up, awake — then Pants hard-cuts to the next location (D → C → A →
      D…), always leaving/arriving on an awake frame so that cut stays a clean
-     swap like before. TRANS_SECONDS must match the total playtime baked into
-     fall-asleep-*.apng / wake-up-*.apng (10 frames × 150ms = 1.5s — see
-     .claude/generate-anims.py) so the transition lands on its last frame
-     exactly as CSS swaps to the next phase, instead of restarting mid-motion
-     or holding on a stale frame.
+     swap like before. TRANS_SECONDS is just this phase's window length in
+     seconds — TRANS_FRAME_COUNT static frames are spread evenly across it
+     below, so there's no separate asset duration to keep in sync with here.
      steps(1) makes every keyframe boundary a hard cut on the sprite — she's
      either fully in one phase's pose or the next, never blended between two
-     different images. The *transition* itself only looks smooth because its
-     backing asset is a purpose-built animation, not because CSS is easing
-     anything.                                                             */
+     different images. Within a falling/waking phase this cuts through all
+     TRANS_FRAME_COUNT static frames one at a time (forward for falling,
+     reversed for waking, reusing the same frame set — see generate-anims.py)
+     instead of delegating to an embedded animation's own clock.           */
   const HOLD_SECONDS  = 10;   // awake / asleep hold at each end of a visit
   const TRANS_SECONDS = 1.5;  // fall-asleep / wake-up duration — keep in sync, see above
   const LOCATIONS   = ['d', 'c', 'a'];
@@ -204,14 +205,28 @@ async function generateCSS() {
   /* CSS vars don't propagate to XUL — inline the data URIs directly per rule.
      Builds one @keyframes per anchor: at every phase boundary in TIMELINE,
      show this anchor's own image for that phase if it's her location this
-     phase, else hide her — steps(1) holds each value until the next.      */
+     phase, else hide her — steps(1) holds each value until the next. A
+     falling/waking phase expands into TRANS_FRAME_COUNT sub-points spanning
+     its own window instead of a single point.                            */
   const spriteKeyframesTimeline = (name, loc) => {
-    const points = TIMELINE.map(ph => [
-      toPct(ph.startSec).toFixed(4),
-      ph.loc === loc
-        ? `background-image: ${imgsForKind[ph.kind]}; background-position: ${POS[loc]};`
-        : `background-image: none;`,
-    ]);
+    const points = [];
+    for (const ph of TIMELINE) {
+      if (ph.loc !== loc) {
+        points.push([toPct(ph.startSec).toFixed(4), `background-image: none;`]);
+        continue;
+      }
+      if (ph.kind === 'falling' || ph.kind === 'waking') {
+        const span = ph.endSec - ph.startSec;
+        for (let i = 0; i < TRANS_FRAME_COUNT; i++) {
+          const frameIdx = ph.kind === 'falling' ? i : (TRANS_FRAME_COUNT - 1 - i);
+          const t = ph.startSec + span * i / TRANS_FRAME_COUNT;
+          points.push([toPct(t).toFixed(4), transDecl(frameIdx, POS[loc])]);
+        }
+      } else {
+        points.push([toPct(ph.startSec).toFixed(4),
+          `background-image: ${imgsForKind[ph.kind]}; background-position: ${POS[loc]};`]);
+      }
+    }
     points.push(['100.0000', points[0][1]]);
     return [
       `@keyframes ${name} {`,
