@@ -41,7 +41,7 @@ OUT   = PANTS / "Anim"
 
 OUT.mkdir(exist_ok=True)
 
-DISPLAY_W, DISPLAY_H = 182, 133  # two rounds of 10% up from original 150×110
+DISPLAY_W, DISPLAY_H = 600, 440  # 1/5 of 3000×2200 source canvas — crisp at sidebar widths
 
 
 def load(p: Path) -> Image.Image:
