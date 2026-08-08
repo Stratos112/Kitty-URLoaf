@@ -286,12 +286,26 @@ save_apng(OUT / "breath-rpaw.apng",
 
 
 # ── tail flick ────────────────────────────────────────────────────────────────
+def neighbor_blend(frames, w_side=0.12):
+    """Blend each frame with prev/next neighbours. w_side controls neighbour weight."""
+    wc = 1.0 - 2 * w_side
+    out = []
+    for i, f in enumerate(frames):
+        prev = frames[max(0, i - 1)]
+        nxt  = frames[min(len(frames) - 1, i + 1)]
+        x = Image.blend(prev, f, wc / (w_side + wc))
+        out.append(Image.blend(x, nxt, w_side))
+    return out
+
 print("=== tail-flick.apng ===")
 flick_fwd = [(TAIL / f"flick_{i:02d}.png", 80) for i in range(1, 14)]
 flick_fwd[-1] = (TAIL / "flick_13.png", 130)
 flick_ret = [(TAIL / f"flick_{i:02d}.png", 80) for i in range(12, 0, -1)]
 seq = [(TAIL / "flick_00(base).png", 11200)] + flick_fwd + flick_ret
-save_apng(OUT / "tail-flick.apng", [load(p) for p, _ in seq], [d for _, d in seq])
+delays = [d for _, d in seq]
+frames = [load(p) for p, _ in seq]
+frames[1:] = neighbor_blend(frames[1:], w_side=0.12)  # skip base hold frame
+save_apng(OUT / "tail-flick.apng", frames, delays)
 
 
 print("\ndone.")
