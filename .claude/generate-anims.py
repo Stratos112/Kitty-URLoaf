@@ -287,10 +287,10 @@ save_apng(OUT / "breath-rpaw.apng",
 
 # ── tail flick ────────────────────────────────────────────────────────────────
 print("=== tail-flick.apng ===")
-flick_fwd = [(TAIL / f"flick_{i}.png", 80) for i in range(1, 7)]
-flick_fwd[-1] = (TAIL / "flick_6.png", 130)
-flick_ret = [(TAIL / f"flick_{i}.png", 80) for i in range(5, 0, -1)]
-seq = [(TAIL / "flick_0(base).png", 11200)] + flick_fwd + flick_ret
+flick_fwd = [(TAIL / f"flick_{i:02d}.png", 80) for i in range(1, 14)]
+flick_fwd[-1] = (TAIL / "flick_13.png", 130)
+flick_ret = [(TAIL / f"flick_{i:02d}.png", 80) for i in range(12, 0, -1)]
+seq = [(TAIL / "flick_00(base).png", 11200)] + flick_fwd + flick_ret
 save_apng(OUT / "tail-flick.apng", [load(p) for p, _ in seq], [d for _, d in seq])
 
 
