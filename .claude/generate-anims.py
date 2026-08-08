@@ -123,10 +123,9 @@ RPAW_LAG_PHASE = 1 / 16
 HEAD_SHIFTS = [_breath_pulse(i / HEAD_FRAMES) for i in range(HEAD_FRAMES)]
 RPAW_SHIFTS = [_breath_pulse(i / HEAD_FRAMES - RPAW_LAG_PHASE) for i in range(HEAD_FRAMES)]
 
-# how far the head/eyes drop for the sleeping pose (head down on paws) — eyeball
-# this against the actual art and adjust further if still off. Moved up by
-# 10% of DISPLAY_H (13.3px) from 32 per feedback that it overlapped the paws.
-SLEEP_DROP = 32 - 0.10 * DISPLAY_H
+# how far the head/eyes drop for the sleeping pose, in display px. Positive = down.
+# Tweak if head overlaps paws (reduce) or barely moves (increase).
+SLEEP_DROP = 20
 
 BREATH_PATHS = [
     BODY / "body_basic.png",
