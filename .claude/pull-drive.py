@@ -27,7 +27,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 # ── config ────────────────────────────────────────────────────────────────────
-DRIVE_FOLDER_ID = "YOUR_FOLDER_ID_HERE"  # from Drive URL: /folders/<this part>
+DRIVE_FOLDER_ID = "1u2YtwXf8GQbAJG5zpPu5rbDUNuXnOm7n"  # from Drive URL: /folders/<this part>
 LOCAL_PATH      = "static/Pants"         # relative to repo root
 # ─────────────────────────────────────────────────────────────────────────────
 
