@@ -1,0 +1,297 @@
+#!/usr/bin/env python3
+"""
+Build APNG idle-animation loops from Pants frame assets.
+Output: static/Pants/Anim/
+
+Layers (background-image z-order, topmost first):
+  awake:
+    blink-overlay.apng  — transparent hold; blink frames composited onto HEAD (not eyes_open)
+    breath-eyes.apng    — eyes_open only, identical shifts/delays as breath-head → always in sync
+    breath-head.apng    — head only, bobs with breath
+  asleep (no blink-overlay; eyes_closed replaces breath-eyes, head/eyes dropped):
+    breath-eyes-sleep.apng
+    breath-head-sleep.apng
+  transitions (one-shot, no blink-overlay; replace the head/eyes layer only
+  while she's nodding off or rousing, then hand off to the awake/asleep pair) —
+  exported as static per-frame PNGs, not an APNG, and stepped through by
+  src/popup/popup.js itself; see the comment above TRANS_FRAMES for why:
+    Transition/frame-00.png … frame-29.png  (head+eyes pre-composited)
+  shared by both:
+    tail-flick.apng
+    breath-rpaw.apng    — right front paw, slightly behind head
+    right_back_paw.png  (static)
+    breath.apng         — body
+    left_front_paw.png  (static)
+    left_back_paw.png   (static)
+"""
+
+import math
+from pathlib import Path
+from PIL import Image
+
+ROOT  = Path(__file__).resolve().parent.parent
+PANTS = ROOT / "static" / "Pants"
+BODY  = PANTS / "Body"
+HEAD  = PANTS / "Head"
+EYES  = HEAD / "Eyes"
+BLINK = EYES / "Blink"
+LIMBS = PANTS / "Limbs"
+TAIL  = LIMBS / "Tail flick"
+OUT   = PANTS / "Anim"
+
+OUT.mkdir(exist_ok=True)
+
+DISPLAY_W, DISPLAY_H = 182, 133  # two rounds of 10% up from original 150×110
+
+
+def load(p: Path) -> Image.Image:
+    img = Image.open(p).convert("RGBA")
+    if img.size != (DISPLAY_W, DISPLAY_H):
+        img = img.resize((DISPLAY_W, DISPLAY_H), Image.LANCZOS)
+    return img
+
+
+def shifted(layers_bottom_to_top: list, shift: float) -> Image.Image:
+    """Paste layers offset vertically by `shift` px. Fractional shifts blend
+    between the floor/ceil integer-pixel composites so motion reads as
+    sub-pixel smooth instead of jumping a whole pixel at once."""
+    def paste_at(s: int) -> Image.Image:
+        canvas = Image.new("RGBA", (DISPLAY_W, DISPLAY_H), (0, 0, 0, 0))
+        for img in layers_bottom_to_top:
+            canvas.paste(img, (0, -s), img)
+        return canvas
+
+    base = math.floor(shift)
+    frac = shift - base
+    if frac == 0:
+        return paste_at(base)
+    return Image.blend(paste_at(base), paste_at(base + 1), frac)
+
+
+def save_apng(out_path: Path, frames: list, delays: list):
+    frames[0].save(
+        out_path, save_all=True, append_images=frames[1:],
+        loop=0, duration=delays, format="PNG",
+    )
+    print(f"  {out_path.name}  ({len(frames)} frames, {out_path.stat().st_size // 1024} KB)")
+
+
+# ── shared breath timing ────────────────────────────────────────────────────
+# body (breath.apng) is fixed hand-drawn art, so it stays on its own 16-frame
+# timeline. head/eyes/rpaw are shift-generated, not hand-drawn, so they run
+# on a separate, higher-resolution timeline for smoother motion — both total
+# the same duration so everything still breathes in the same rhythm.
+# 15% slower than the original [200, 120×7, 250, 120×7]
+BREATH_DELAYS = [230, 138, 138, 138, 138, 138, 138, 138, 288,
+                      138, 138, 138, 138, 138, 138, 138]
+TOTAL_BREATH_MS = sum(BREATH_DELAYS)  # 2450ms — the shared cycle length
+
+HEAD_FRAMES = 32  # up from 16 — more, sub-pixel-blended steps = smoother bob
+_base, _rem = divmod(TOTAL_BREATH_MS, HEAD_FRAMES)
+HEAD_DELAYS = [_base + 1 if i < _rem else _base for i in range(HEAD_FRAMES)]
+
+
+def _smoothstep(x: float) -> float:
+    x = max(0.0, min(1.0, x))
+    return x * x * (3 - 2 * x)
+
+
+def _breath_pulse(phase: float, max_shift: float = 1.0,
+                   hold_frac: float = 0.28, rise_frac: float = 0.22) -> float:
+    """0 → eased rise → hold at max_shift → eased fall → 0, over phase in [0,1).
+    Smoothstep on the rise/fall (instead of an instant jump) is what makes
+    this read as a fluid bob instead of a mechanical twitch."""
+    p = phase % 1.0
+    t0 = hold_frac
+    t1 = t0 + rise_frac
+    t2 = t1 + hold_frac
+    if p < t0:
+        return 0.0
+    if p < t1:
+        return max_shift * _smoothstep((p - t0) / rise_frac)
+    if p < t2:
+        return max_shift
+    if p < t2 + rise_frac:
+        return max_shift * (1 - _smoothstep((p - t2) / rise_frac))
+    return 0.0
+
+
+# max 1px bob, now approached gradually instead of snapping; paw trails head
+# by ~1/16 of the cycle (the original frame-to-frame lag, preserved in time
+# rather than frame count) — at 32 frames that's ~2 frames, still "just behind".
+RPAW_LAG_PHASE = 1 / 16
+HEAD_SHIFTS = [_breath_pulse(i / HEAD_FRAMES) for i in range(HEAD_FRAMES)]
+RPAW_SHIFTS = [_breath_pulse(i / HEAD_FRAMES - RPAW_LAG_PHASE) for i in range(HEAD_FRAMES)]
+
+# how far the head/eyes drop for the sleeping pose (head down on paws) — eyeball
+# this against the actual art and adjust further if still off. Moved up by
+# 10% of DISPLAY_H (13.3px) from 32 per feedback that it overlapped the paws.
+SLEEP_DROP = 32 - 0.10 * DISPLAY_H
+
+BREATH_PATHS = [
+    BODY / "body_basic.png",
+    BODY / "chest_breath-1.png",
+    BODY / "chest_breath-2.png",
+    BODY / "chest_breath-3.png",
+    BODY / "chest_breath-4.png",
+    BODY / "chest_breath-5.png",
+    BODY / "chest_breath-6.png",
+    BODY / "chest_breath-7.png",
+    BODY / "chest_breath-8.png",
+    BODY / "chest_breath-7.png",
+    BODY / "chest_breath-6.png",
+    BODY / "chest_breath-5.png",
+    BODY / "chest_breath-4.png",
+    BODY / "chest_breath-3.png",
+    BODY / "chest_breath-2.png",
+    BODY / "chest_breath-1.png",
+]
+
+BLINK_SEQ = [
+    (BLINK / "eyes_blink_1.png", 55),
+    (BLINK / "eyes_blink_2.png", 55),
+    (BLINK / "eyes_blink_3.png", 55),
+    (BLINK / "eyes_blink_4.png", 55),
+    (EYES  / "eyes_closed.png", 110),
+    (BLINK / "eyes_blink_4.png", 55),
+    (BLINK / "eyes_blink_3.png", 55),
+    (BLINK / "eyes_blink_2.png", 55),
+    (BLINK / "eyes_blink_1.png", 55),
+]
+
+
+# ── body breath ───────────────────────────────────────────────────────────────
+print("=== breath.apng ===")
+save_apng(OUT / "breath.apng", [load(p) for p in BREATH_PATHS], BREATH_DELAYS)
+
+
+# ── head bob (head only — no eyes) ───────────────────────────────────────────
+print("=== breath-head.apng ===")
+head_img = load(HEAD / "head_bas8c.png")
+save_apng(OUT / "breath-head.apng",
+          [shifted([head_img], s) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── eyes bob (eyes_open only — identical timing to head so they always sync) ──
+print("=== breath-eyes.apng ===")
+eyes_open = load(EYES / "eyes_open.png")
+save_apng(OUT / "breath-eyes.apng",
+          [shifted([eyes_open], s) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── sleeping head bob (same breath timing, dropped for the lying-down pose) ───
+print("=== breath-head-sleep.apng ===")
+save_apng(OUT / "breath-head-sleep.apng",
+          [shifted([head_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── sleeping eyes (eyes_closed, no blink — same drop/timing as sleeping head) ─
+print("=== breath-eyes-sleep.apng ===")
+eyes_closed_img = load(EYES / "eyes_closed.png")
+save_apng(OUT / "breath-eyes-sleep.apng",
+          [shifted([eyes_closed_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── fall-asleep / wake-up transitions ──────────────────────────────────────────
+# These used to be exported as one-shot APNGs (fall-asleep-head.apng etc).
+# That was the source of the "chops back to the top" / "dropped frames" glitch:
+# an embedded animated PNG's own playback clock in Gecko is tied to the shared
+# image decoder, not to whichever CSS keyframe last swapped it in — so each
+# time she revisits a location, the animation could resume mid-loop instead of
+# restarting at frame 0, occasionally looping back to the *top* frame right in
+# the middle of a window that should be holding at the bottom.
+# Fixed by not using an embedded clock at all: each frame is exported as its
+# own static PNG (head+eyes pre-composited, since they always move together),
+# and src/popup/popup.js steps through them itself as individual CSS keyframe
+# stops — the exact same steps(1)-per-percentage mechanism already proven
+# reliable for the sprite pop and the margin ease, driven by one outer clock.
+# TRANS_FRAMES must match TRANS_FRAME_COUNT in popup.js (kept in sync by hand).
+TRANS_FRAMES = 30
+TRANS_DIR    = OUT / "Transition"
+TRANS_DIR.mkdir(exist_ok=True)
+
+
+def ease_in_out_cubic(t: float) -> float:
+    return 4 * t ** 3 if t < 0.5 else 1 - ((-2 * t + 2) ** 3) / 2
+
+
+# eased *progress* (0..1) per frame — both the head shift and the eye stage
+# are derived from this same sequence so they're always in lockstep, not
+# racing each other on independent curves.
+FALL_EASE   = [ease_in_out_cubic(i / (TRANS_FRAMES - 1)) for i in range(TRANS_FRAMES)]
+# no round() here — fractional shifts flow through shifted()'s sub-pixel
+# blending (same trick the breathing bob uses) instead of snapping between
+# whole pixels, which is what made this choppy with only a few big jumps.
+FALL_SHIFTS = [SLEEP_DROP * e for e in FALL_EASE]
+
+# eyes ease through the same blink art already used for the awake blink, just
+# stretched across the transition and held shut/open at the ends instead of
+# snapping back — stage picked from the *same eased progress* as the head
+# shift (not a plain linear frame count) so they stay paced together instead
+# of the eyes visibly running ahead/behind the head's motion.
+EYE_CLOSE_STAGES = [
+    EYES / "eyes_open.png",
+    BLINK / "eyes_blink_1.png",
+    BLINK / "eyes_blink_2.png",
+    BLINK / "eyes_blink_3.png",
+    BLINK / "eyes_blink_4.png",
+    EYES / "eyes_closed.png",
+]
+
+
+def stage_index(progress: float, n_stages: int) -> int:
+    return min(n_stages - 1, int(progress * n_stages))
+
+
+fall_eye_frames = [load(EYE_CLOSE_STAGES[stage_index(e, len(EYE_CLOSE_STAGES))])
+                    for e in FALL_EASE]
+
+print(f"=== transition frames ({TRANS_FRAMES}, static — used forward for falling asleep, reversed for waking up) ===")
+for i in range(TRANS_FRAMES):
+    # head first (bottom), eyes pasted on top — same z-order as everywhere else
+    frame = shifted([head_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
+    frame.save(TRANS_DIR / f"frame-{i:02d}.png")
+print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
+
+
+# ── blink overlay ─────────────────────────────────────────────────────────────
+# Transparent during hold → bobbing eyes from breath-eyes.apng show through.
+# Blink frames use HEAD as their backing (not eyes_open).
+#   - Head fur covers the eye socket area → no phantom eyes_open layer
+#   - Blink lash art composites on top of head
+# This completely prevents the eyes_open layer below from bleeding through.
+print("=== blink-overlay.apng ===")
+head_flat   = shifted([head_img], 0)   # head at 0-shift — opaque backing for blink
+transparent = Image.new("RGBA", (DISPLAY_W, DISPLAY_H), (0, 0, 0, 0))
+
+blink_frames = [transparent]
+blink_delays = [4350]
+for path, delay in BLINK_SEQ:
+    blink_frames.append(Image.alpha_composite(head_flat.copy(), load(path)))
+    blink_delays.append(delay)
+
+save_apng(OUT / "blink-overlay.apng", blink_frames, blink_delays)
+
+
+# ── right front paw bob ───────────────────────────────────────────────────────
+print("=== breath-rpaw.apng ===")
+rpaw_img = load(LIMBS / "right_front_paw.png")
+save_apng(OUT / "breath-rpaw.apng",
+          [shifted([rpaw_img], s) for s in RPAW_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── tail flick ────────────────────────────────────────────────────────────────
+print("=== tail-flick.apng ===")
+flick_fwd = [(TAIL / f"flick_{i}.png", 80) for i in range(1, 7)]
+flick_fwd[-1] = (TAIL / "flick_6.png", 130)
+flick_ret = [(TAIL / f"flick_{i}.png", 80) for i in range(5, 0, -1)]
+seq = [(TAIL / "flick_0(base).png", 11200)] + flick_fwd + flick_ret
+save_apng(OUT / "tail-flick.apng", [load(p) for p, _ in seq], [d for _, d in seq])
+
+
+print("\ndone.")
