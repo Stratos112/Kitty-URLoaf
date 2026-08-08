@@ -41,7 +41,7 @@ OUT   = PANTS / "Anim"
 
 OUT.mkdir(exist_ok=True)
 
-DISPLAY_W, DISPLAY_H = 600, 530  # 1/5 of 3000×2650 source canvas — crisp at sidebar widths
+DISPLAY_W, DISPLAY_H = 723, 530  # 1/5 of 3615×2650 source canvas — 15:11 aspect ratio
 
 
 def load(p: Path) -> Image.Image:

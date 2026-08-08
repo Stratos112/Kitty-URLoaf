@@ -3,16 +3,16 @@
 # Safe to re-run — skips any file not at the original 4400x4400 canvas size.
 #
 # Crop amounts (from original 4400x4400):
-#   left:   1400px  →  x offset 1400
+#   left:    785px  →  x offset  785
 #   top:    1000px  →  y offset 1000
 #   bottom:  750px  →  final height 4400 - 1000 -  750 = 2650
-#   right:  none    →  final width  4400 - 1400       = 3000
+#   right:  none    →  final width  4400 -  785       = 3615
 #
-# Result: 3000x2650 per image.
-# (height increased from 2200 to capture full tail flick at peak)
+# Result: 3615x2650 per image. Ratio 3615:2650 ≈ 15:11 (same as original 3000:2200).
+# (width increased from 3000 to restore aspect ratio after height was expanded for tail flick)
 
 PANTS_DIR="$(cd "$(dirname "$0")/.." && pwd)/static/Pants"
-CROP="3000x2650+1400+1000"
+CROP="3615x2650+785+1000"
 ORIG_W=4400
 ORIG_H=4400
 COUNT_CROPPED=0
