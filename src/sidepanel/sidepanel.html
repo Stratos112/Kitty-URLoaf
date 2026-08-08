@@ -10,24 +10,41 @@
 
     #pants {
       margin-top: auto;
-      width:  363px;
-      height: 266px;
-      background-image:
-        url('../../static/Pants/Head/Eyes/eyes_open.png'),
-        url('../../static/Pants/Head/head_bas8c.png'),
-        url('../../static/Pants/Limbs/tail_base.png'),
-        url('../../static/Pants/Limbs/right_front_paw.png'),
-        url('../../static/Pants/Limbs/right_back_paw.png'),
-        url('../../static/Pants/Body/body_basic.png'),
-        url('../../static/Pants/Limbs/left_front_paw.png'),
-        url('../../static/Pants/Limbs/left_back_paw.png');
-      background-size:     100% 100%;
-      background-repeat:   no-repeat;
-      background-position: 0 0;
+      width: 100%;
+      aspect-ratio: 3000 / 2200;
+      position: relative;
     }
+
+    #pants > div {
+      position: absolute;
+      inset: 0;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: top left;
+    }
+
+    .l1 { z-index: 1; background-image: url('../../static/Pants/Limbs/left_back_paw.png');  }
+    .l2 { z-index: 2; background-image: url('../../static/Pants/Limbs/left_front_paw.png'); }
+    .l3 { z-index: 3; background-image: url('../../static/Pants/Anim/breath.apng');         }
+    .l4 { z-index: 4; background-image: url('../../static/Pants/Limbs/right_back_paw.png'); }
+    .l5 { z-index: 5; background-image: url('../../static/Pants/Anim/breath-rpaw.apng');    }
+    .l6 { z-index: 6; background-image: url('../../static/Pants/Anim/tail-flick.apng');     }
+    .l7 { z-index: 7; background-image: url('../../static/Pants/Anim/breath-head.apng');    }
+    .l8 { z-index: 8; background-image: url('../../static/Pants/Anim/breath-eyes.apng');    }
+    .l9 { z-index: 9; background-image: url('../../static/Pants/Anim/blink-overlay.apng'); }
   </style>
 </head>
 <body>
-<div id="pants"></div>
+<div id="pants">
+  <div class="l1"></div>
+  <div class="l2"></div>
+  <div class="l3"></div>
+  <div class="l4"></div>
+  <div class="l5"></div>
+  <div class="l6"></div>
+  <div class="l7"></div>
+  <div class="l8"></div>
+  <div class="l9"></div>
+</div>
 </body>
 </html>

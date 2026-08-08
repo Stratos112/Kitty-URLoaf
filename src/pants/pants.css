@@ -109,6 +109,6 @@
 .pants-body::before   { background-image: url('../../static/Pants/Body/body_basic.png');        }
 .pants-paw-br::before { background-image: url('../../static/Pants/Limbs/right_back_paw.png');  }
 .pants-paw-fr::before { background-image: url('../../static/Pants/Limbs/right_front_paw.png'); }
-.pants-tail::before   { background-image: url('../../static/Pants/Limbs/tail_base.png');        }
+.pants-tail::before   { background-image: url('../../static/Pants/Limbs/flick_00(base).png');        }
 .pants-head::before   { background-image: url('../../static/Pants/Head/head_bas8c.png');        }
 .pants-eyes::before   { background-image: url('../../static/Pants/Head/Eyes/eyes_open.png');    }
