@@ -314,16 +314,17 @@ for i in range(TRANS_FRAMES):
     frame.save(TRANS_DIR / f"frame-{i:02d}.png")
 print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 
-# ── ear flick frames (pre-shifted for awake + sleep positions) ─────────────────
-# JS steps through these on click, picking awake or sleep set so ears don't jump.
+# ── ear flick frames (awake + sleep positions) ─────────────────────────────────
 EAR_FLICK_DIR = OUT / "EarFlick"
 EAR_FLICK_DIR.mkdir(exist_ok=True)
 print("=== ear flick frames (awake + sleep positions) ===")
 for n in ["01", "02", "03"]:
     for side, src in [("L", HEAD / "Ears" / f"L_ear_{n}.png"),
                       ("R", HEAD / "Ears" / f"R_ear_{n}.png")]:
-        shifted([load(src)], 0).save(EAR_FLICK_DIR / f"{side}_{n}.png")
-print(f"  6 frames written to {EAR_FLICK_DIR.relative_to(ROOT)}")
+        img = load(src)
+        shifted([img], 0).save(EAR_FLICK_DIR / f"{side}_{n}.png")
+        shifted([img], -SLEEP_DROP).save(EAR_FLICK_DIR / f"{side}_{n}_sleep.png")
+print(f"  12 frames written to {EAR_FLICK_DIR.relative_to(ROOT)}")
 
 
 # ── blink overlay ─────────────────────────────────────────────────────────────

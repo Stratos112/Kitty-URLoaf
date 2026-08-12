@@ -5,12 +5,8 @@ files, so everything must be self-contained.
 
 Three-layer design:
   element background-image  → REST layer (cushion/body/paws/tail): simple show/hide
-  element::before            → HEAD layer (head/eyes via CSS var/transitions): per-frame
+  element::before            → HEAD layer (head/eyes/transitions): per-frame
   element::after             → EAR layer (ear cycle + flick override): per-phase
-
-Gaze tracking: eyes are a CSS custom property (--gaze-{loc}) on :root, updated
-by :root:has({xul}:hover) rules. The HEAD keyframe uses var(--gaze-{loc}) so
-gaze updates live without touching the animation.
 
 Output: static/userChrome.css
 """
@@ -52,9 +48,10 @@ REST_PATHS = [
     ACC   / "cushion_base.png",
 ]
 
-# HEAD layer: blink + head (eyes supplied by --gaze-{loc} custom property)
+# HEAD layer: head/eyes — no ears (ears live on ::after)
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
+    ANIM / "breath-eyes.apng",
     ANIM / "breath-head.apng",
 ]
 SLEEP_HEAD_PATHS = [
@@ -72,31 +69,11 @@ EAR_FLICK_SEQ = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L   = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
 EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 
-# Gaze tracking via CSS custom properties
-# GAZE_MAP[loc] = [Q1, Q2, Q3, Q4]  (quadrants: TL, TR, BR, BL)
-GAZE_MAP = {
-    "a": ["w",  "base", "s",  "sw"],
-    "c": ["base","e",   "se", "s"],
-    "d": ["n",  "ne",   "e",  "base"],
-}
-# XUL element → {loc: gaze_direction} — best-effort viewport zone proxies
-# None means keep default (breath-eyes / center gaze)
-CHROME_GAZE = [
-    ("#TabsToolbar",       {"d": "n",  "c": "e",  "a": None}),
-    ("#nav-bar",           {"d": "ne", "c": None, "a": "sw"}),
-    ("#sidebar-container", {"d": None, "c": "w",  "a": "w"}),
-    ("#browser",           {"d": "e",  "c": "se", "a": "s"}),
-]
-GAZE_DIRS    = ["n", "ne", "e", "se", "s", "sw", "w"]
-GAZE_DEFAULT = ANIM / "breath-eyes.apng"
-GAZE_PATHS   = {d: ANIM / f"eyes-{d}.apng" for d in GAZE_DIRS}
-
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *SLEEP_EAR_PATHS,
     *TRANS_FRAME_PATHS, *EAR_FLICK_L, *EAR_FLICK_R,
-    GAZE_DEFAULT, *GAZE_PATHS.values(),
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -104,9 +81,10 @@ print(f"  {len(uri)} files loaded")
 def url(p):   return f'url("{uri[p]}")'
 def imgs(ps): return ", ".join(url(p) for p in ps)
 
-rest_imgs      = imgs(REST_PATHS)
+rest_imgs       = imgs(REST_PATHS)
+awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
-awake_ear_imgs = imgs(AWAKE_EAR_PATHS)
+awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 sleep_ear_imgs = imgs(SLEEP_EAR_PATHS)
 trans_urls     = [url(p) for p in TRANS_FRAME_PATHS]
 
@@ -151,11 +129,7 @@ def rest_keyframes(name, loc):
 
 
 def head_keyframes(name, loc):
-    """Per-frame head animation. Eyes are var(--gaze-{loc}) for live gaze tracking."""
-    blink = url(ANIM / "blink-overlay.apng")
-    head  = url(ANIM / "breath-head.apng")
-    awake_bg = f"{blink}, var(--gaze-{loc}), {head}"
-    head_by  = {"awake": awake_bg, "asleep": sleep_head_imgs}
+    head_by = {"awake": awake_head_imgs, "asleep": sleep_head_imgs}
     pts = []
     for ph in TIMELINE:
         if ph["loc"] != loc:
@@ -228,26 +202,6 @@ def ear_flick_keyframes():
     return "\n".join(lines)
 
 
-def gaze_css():
-    """CSS custom property gaze system — :root:has({xul}:hover) zones update --gaze-{loc}."""
-    parts = [
-        "/* ── gaze tracking ─────────────────────────────────────────────────── */",
-        "/* --gaze-{loc} is consumed by the HEAD keyframe via var(); updating    */",
-        "/* the property live-changes the eye image without touching animations. */",
-        ":root {",
-        f"  --gaze-d: {url(GAZE_DEFAULT)};",
-        f"  --gaze-c: {url(GAZE_DEFAULT)};",
-        f"  --gaze-a: {url(GAZE_DEFAULT)};",
-        "}",
-    ]
-    for selector, locs in CHROME_GAZE:
-        decls = [f"  --gaze-{loc}: {url(GAZE_PATHS[d])};"
-                 for loc, d in locs.items() if d is not None]
-        if decls:
-            parts += ["", f":root:has({selector}:hover) {{", *decls, "}"]
-    return "\n".join(parts)
-
-
 print("Building keyframes…")
 kf_ear_flick = ear_flick_keyframes()
 kf_d_rest = rest_keyframes("pants-d-rest", "d")
@@ -284,11 +238,9 @@ css = "\n".join([
     f"",
     f"/* one Pants, D → C → A, {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
     f"",
-    gaze_css(),
-    f"",
     f"/* REST layer keyframes (cushion / body / paws / tail — constant per visit) */",
     kf_d_rest, "", kf_c_rest, "", kf_a_rest, "",
-    f"/* HEAD layer keyframes (head / var(--gaze) eyes / transition frames — no ears) */",
+    f"/* HEAD layer keyframes (head / eyes / transition frames — no ears) */",
     kf_d_head, "", kf_c_head, "", kf_a_head, "",
     f"/* EAR layer keyframes (::after — awake/sleep ears, none during transitions) */",
     kf_d_ear, "", kf_c_ear, "", kf_a_ear, "",
