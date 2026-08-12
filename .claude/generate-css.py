@@ -45,20 +45,20 @@ REST_PATHS = [
     LIMBS / "left_back_paw.png",
 ]
 
-# HEAD layer: head/eyes/ears — transitions and state swaps
+# HEAD layer: head/eyes — no ears (ears live on ::after)
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
     ANIM / "breath-eyes.apng",
     ANIM / "breath-head.apng",
-    ANIM / "breath-ear-L.apng",
-    ANIM / "breath-ear-R.apng",
 ]
 SLEEP_HEAD_PATHS = [
     ANIM / "breath-eyes-sleep.apng",
     ANIM / "breath-head-sleep.apng",
-    ANIM / "breath-ear-L-sleep.apng",
-    ANIM / "breath-ear-R-sleep.apng",
 ]
+
+# EAR layer: ::after — awake/sleep per phase, none during transitions
+AWAKE_EAR_PATHS = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
+SLEEP_EAR_PATHS = [ANIM / "breath-ear-L-sleep.apng", ANIM / "breath-ear-R-sleep.apng"]
 TRANS_FRAME_PATHS = [TRANS / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
 
 EAR_FLICK_DIR = ANIM / "EarFlick"
@@ -68,8 +68,9 @@ EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
-    *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS, *TRANS_FRAME_PATHS,
-    *EAR_FLICK_L, *EAR_FLICK_R,
+    *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
+    *AWAKE_EAR_PATHS, *SLEEP_EAR_PATHS,
+    *TRANS_FRAME_PATHS, *EAR_FLICK_L, *EAR_FLICK_R,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -80,6 +81,8 @@ def imgs(ps): return ", ".join(url(p) for p in ps)
 rest_imgs       = imgs(REST_PATHS)
 awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
+awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
+sleep_ear_imgs  = imgs(SLEEP_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
 POS = {"d": "left bottom", "c": "left 142px center", "a": "right 170px center"}
@@ -147,6 +150,22 @@ def head_keyframes(name, loc):
                       "}"])
 
 
+def ear_keyframes(name, loc):
+    """Ear cycle on ::after — awake/sleep ears shown per phase, none during transitions."""
+    ear_by = {"awake": awake_ear_imgs, "asleep": sleep_ear_imgs}
+    pts = []
+    for ph in TIMELINE:
+        if ph["loc"] != loc or ph["kind"] in ("falling", "waking"):
+            pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
+            continue
+        pts.append((f"{to_pct(ph['startSec']):.4f}",
+                    f"background-image: {ear_by[ph['kind']]}; background-position: {POS[loc]};"))
+    pts.append(("100.0000", pts[0][1]))
+    return "\n".join([f"@keyframes {name} {{",
+                      *[f"  {p}% {{ {d} }}" for p, d in pts],
+                      "}"])
+
+
 def ease_in_out_cubic(t):
     return 4 * t**3 if t < 0.5 else 1 - (-2*t + 2)**3 / 2
 
@@ -188,6 +207,9 @@ kf_a_rest = rest_keyframes("pants-a-rest", "a")
 kf_d_head = head_keyframes("pants-d-head", "d")
 kf_c_head = head_keyframes("pants-c-head", "c")
 kf_a_head = head_keyframes("pants-a-head", "a")
+kf_d_ear  = ear_keyframes("pants-d-ear",  "d")
+kf_c_ear  = ear_keyframes("pants-c-ear",  "c")
+kf_a_ear  = ear_keyframes("pants-a-ear",  "a")
 kf_dm = margin_keyframes("pants-d-w", "--pants-sidebar-w", "d", SIDE_W)
 kf_cm = margin_keyframes("pants-c-h", "--pants-c-h",       "c", C_H)
 kf_am = margin_keyframes("pants-a-h", "--pants-a-h",       "a", C_H)
@@ -217,6 +239,8 @@ css = "\n".join([
     kf_d_rest, "", kf_c_rest, "", kf_a_rest, "",
     f"/* HEAD layer keyframes (head / eyes / transition frames) */",
     kf_d_head, "", kf_c_head, "", kf_a_head, "",
+    f"/* EAR layer keyframes (::after — awake/sleep ears, none during transitions) */",
+    kf_d_ear, "", kf_c_ear, "", kf_a_ear, "",
     f"/* room-making margins */",
     kf_dm, "", kf_cm, "", kf_am, "",
     f"/* shared background geometry */",
@@ -239,11 +263,15 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
-    f"/* ear flick on :active — plays on ::after so ::before head cycle is not interrupted */",
+    f"/* ear flick on :active — higher specificity overrides base ::after ear cycle */",
     kf_ear_flick,
     f"#sidebar-container:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['d']}; }}",
     f"#nav-bar:active::after           {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['c']}; }}",
     f"#TabsToolbar:active::after       {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['a']}; }}",
+    f"/* base ::after ear cycle (lower specificity — overridden by :active above) */",
+    f"#sidebar-container::after {{ animation: {anim('pants-d-ear')}; }}",
+    f"#nav-bar::after           {{ animation: {anim('pants-c-ear')}; }}",
+    f"#TabsToolbar::after       {{ animation: {anim('pants-a-ear')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
     f"",

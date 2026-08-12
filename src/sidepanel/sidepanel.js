@@ -23,30 +23,32 @@ let transitioning = false;
 
 function setAwake() {
   pants.classList.remove('sleeping');
-  l7.style.backgroundImage = AWAKE_HEAD;
-  l8.style.backgroundImage = AWAKE_EYES;
-  l9.style.backgroundImage = BLINK;
+  l7.style.backgroundImage  = AWAKE_HEAD;
+  l8.style.backgroundImage  = AWAKE_EYES;
+  l9.style.backgroundImage  = BLINK;
+  l10.style.backgroundImage = '';
+  l11.style.backgroundImage = '';
 }
 
 function setAsleep() {
   pants.classList.add('sleeping');
-  l7.style.backgroundImage = SLEEP_HEAD;
-  l8.style.backgroundImage = SLEEP_EYES;
-  l9.style.backgroundImage = 'none';
+  l7.style.backgroundImage  = SLEEP_HEAD;
+  l8.style.backgroundImage  = SLEEP_EYES;
+  l9.style.backgroundImage  = 'none';
+  l10.style.backgroundImage = '';
+  l11.style.backgroundImage = '';
 }
 
 function runTransition(frames, onDone) {
   transitioning = true;
   l8.style.backgroundImage  = 'none';
   l9.style.backgroundImage  = 'none';
-  l10.style.backgroundImage = 'none'; // ears baked into transition frames on l7
+  l10.style.backgroundImage = 'none';
   l11.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
     if (i >= frames.length) {
       transitioning = false;
-      l10.style.backgroundImage = '';
-      l11.style.backgroundImage = '';
       onDone();
       return;
     }
