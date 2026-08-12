@@ -10,17 +10,25 @@
     }
   },
   "icons": {
-    "16": "static/plus.svg",
-    "48": "static/plus.svg",
-    "128": "static/plus.svg"
+    "16": "static/icons/icon-16.png",
+    "48": "static/icons/icon-48.png",
+    "128": "static/icons/icon-128.png"
   },
   "browser_action": {
     "default_popup": "src/popup/popup.html",
-    "default_icon": "static/plus.svg"
+    "default_icon": {
+      "16": "static/icons/icon-16.png",
+      "48": "static/icons/icon-48.png",
+      "128": "static/icons/icon-128.png"
+    }
   },
   "sidebar_action": {
     "default_panel": "src/sidepanel/sidepanel.html",
-    "default_icon": "static/plus.svg",
+    "default_icon": {
+      "16": "static/icons/icon-16.png",
+      "48": "static/icons/icon-48.png",
+      "128": "static/icons/icon-128.png"
+    },
     "default_title": "Pants"
   },
   "permissions": ["storage"]

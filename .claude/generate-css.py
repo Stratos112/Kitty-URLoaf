@@ -61,9 +61,15 @@ SLEEP_HEAD_PATHS = [
 ]
 TRANS_FRAME_PATHS = [TRANS / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
 
+EAR_FLICK_DIR = ANIM / "EarFlick"
+EAR_FLICK_SEQ = ["01", "02", "03", "02", "01"]
+EAR_FLICK_L   = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
+EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
+
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
-    *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS, *TRANS_FRAME_PATHS
+    *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS, *TRANS_FRAME_PATHS,
+    *EAR_FLICK_L, *EAR_FLICK_R,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -165,7 +171,17 @@ def margin_keyframes(name, prop, loc, open_px):
                       "}"])
 
 
+def ear_flick_keyframes():
+    lines = ["@keyframes ear-flick {"]
+    for i, (l, r) in enumerate(zip(EAR_FLICK_L, EAR_FLICK_R)):
+        p = i * 20
+        lines.append(f"  {p}%   {{ background-image: {url(l)}, {url(r)}; animation-timing-function: step-end; }}")
+    lines.append(f"  100% {{ background-image: none; }}")
+    lines.append("}")
+    return "\n".join(lines)
+
 print("Building keyframes…")
+kf_ear_flick = ear_flick_keyframes()
 kf_d_rest = rest_keyframes("pants-d-rest", "d")
 kf_c_rest = rest_keyframes("pants-c-rest", "c")
 kf_a_rest = rest_keyframes("pants-a-rest", "a")
@@ -211,8 +227,9 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
-    f"/* ::before hosts the head layer; sits in the same coordinate space as the rest layer */",
-    f"#sidebar-container::before, #nav-bar::before, #TabsToolbar::before {{",
+    f"/* ::before = head layer; ::after = ear-flick overlay (both share parent's coordinate space) */",
+    f"#sidebar-container::before, #nav-bar::before, #TabsToolbar::before,",
+    f"#sidebar-container::after,  #nav-bar::after,  #TabsToolbar::after  {{",
     f"  content:           '';",
     f"  position:          absolute;",
     f"  inset:             0;",
@@ -221,6 +238,12 @@ css = "\n".join([
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"}}",
+    f"",
+    f"/* ear flick on :active — plays on ::after so ::before head cycle is not interrupted */",
+    kf_ear_flick,
+    f"#sidebar-container:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['d']}; }}",
+    f"#nav-bar:active::after           {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['c']}; }}",
+    f"#TabsToolbar:active::after       {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['a']}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
     f"",
