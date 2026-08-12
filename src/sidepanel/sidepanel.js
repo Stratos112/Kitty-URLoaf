@@ -3,7 +3,6 @@ const l8  = document.querySelector('.l8');
 const l9  = document.querySelector('.l9');
 const l10 = document.querySelector('.l10');
 const l11 = document.querySelector('.l11');
-const l12 = document.querySelector('.l12');
 
 const HOLD_MS     = 10000;
 const FRAME_COUNT = 30;
@@ -14,12 +13,10 @@ const AWAKE_EYES  = "url('../../static/Pants/Anim/breath-eyes.apng')";
 const BLINK       = "url('../../static/Pants/Anim/blink-overlay.apng')";
 const AWAKE_EAR_L = "url('../../static/Pants/Anim/breath-ear-L.apng')";
 const AWAKE_EAR_R = "url('../../static/Pants/Anim/breath-ear-R.apng')";
-const AWAKE_FACE  = "url('../../static/Pants/Anim/breath-face.apng')";
 const SLEEP_HEAD  = "url('../../static/Pants/Anim/breath-head-sleep.apng')";
 const SLEEP_EYES  = "url('../../static/Pants/Anim/breath-eyes-sleep.apng')";
 const SLEEP_EAR_L = "url('../../static/Pants/Anim/breath-ear-L-sleep.apng')";
 const SLEEP_EAR_R = "url('../../static/Pants/Anim/breath-ear-R-sleep.apng')";
-const SLEEP_FACE  = "url('../../static/Pants/Anim/breath-face-sleep.apng')";
 
 const TRANS     = Array.from({ length: FRAME_COUNT }, (_, i) =>
   `url('../../static/Pants/Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
@@ -45,7 +42,6 @@ function setAwake() {
   l9.style.backgroundImage  = BLINK;
   l10.style.backgroundImage = AWAKE_EAR_L;
   l11.style.backgroundImage = AWAKE_EAR_R;
-  l12.style.backgroundImage = AWAKE_FACE;
 }
 
 function setAsleep() {
@@ -55,15 +51,13 @@ function setAsleep() {
   l9.style.backgroundImage  = 'none';
   l10.style.backgroundImage = SLEEP_EAR_L;
   l11.style.backgroundImage = SLEEP_EAR_R;
-  l12.style.backgroundImage = SLEEP_FACE;
 }
 
 function runTransition(frames, onDone) {
   l8.style.backgroundImage  = 'none';
   l9.style.backgroundImage  = 'none';
-  l10.style.backgroundImage = 'none'; // ears+face baked into transition frames on l7
+  l10.style.backgroundImage = 'none'; // ears baked into transition frames on l7
   l11.style.backgroundImage = 'none';
-  l12.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
     if (i >= frames.length) { onDone(); return; }

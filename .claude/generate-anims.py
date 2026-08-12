@@ -166,10 +166,16 @@ save_apng(OUT / "breath.apng", [load(p) for p in BREATH_PATHS], BREATH_DELAYS)
 
 # ── head bob (head only — no eyes) ───────────────────────────────────────────
 print("=== breath-head.apng ===")
-head_img  = load(HEAD / "head_bas8c.png")
+# Composite face onto head at source resolution before downscaling so thin
+# whisker/nose lines survive the 1/5x LANCZOS resize instead of averaging away.
+_head_raw = Image.open(HEAD / "head_bas8c.png").convert("RGBA")
+_face_raw = Image.open(HEAD / "face.png").convert("RGBA")
+_head_with_face = Image.alpha_composite(_head_raw, _face_raw)
+_head_with_face = _head_with_face.resize((DISPLAY_W, DISPLAY_H), Image.LANCZOS)
+head_img  = _head_with_face
+
 ear_L_img = load(HEAD / "L_ear_0(base).png")
 ear_R_img = load(HEAD / "R_ear_0(base).png")
-face_img  = load(HEAD / "face.png")
 save_apng(OUT / "breath-head.apng",
           [shifted([head_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
@@ -185,12 +191,6 @@ print("=== breath-ear-R.apng ===")
 save_apng(OUT / "breath-ear-R.apng",
           [shifted([ear_R_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
-
-print("=== breath-face.apng ===")
-save_apng(OUT / "breath-face.apng",
-          [shifted([face_img], s) for s in HEAD_SHIFTS],
-          HEAD_DELAYS)
-
 
 # ── eyes bob (eyes_open only — identical timing to head so they always sync) ──
 print("=== breath-eyes.apng ===")
@@ -217,12 +217,6 @@ print("=== breath-ear-R-sleep.apng ===")
 save_apng(OUT / "breath-ear-R-sleep.apng",
           [shifted([ear_R_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
-
-print("=== breath-face-sleep.apng ===")
-save_apng(OUT / "breath-face-sleep.apng",
-          [shifted([face_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
-          HEAD_DELAYS)
-
 
 # ── sleeping eyes (eyes_closed, no blink — same drop/timing as sleeping head) ─
 print("=== breath-eyes-sleep.apng ===")
@@ -289,7 +283,7 @@ fall_eye_frames = [load(EYE_CLOSE_STAGES[stage_index(e, len(EYE_CLOSE_STAGES))])
 print(f"=== transition frames ({TRANS_FRAMES}, static — used forward for falling asleep, reversed for waking up) ===")
 for i in range(TRANS_FRAMES):
     # head → ears → face → eyes, bottom to top — all baked in so those layers can be hidden during transition
-    frame = shifted([head_img, ear_L_img, ear_R_img, face_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
+    frame = shifted([head_img, ear_L_img, ear_R_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
     frame.save(TRANS_DIR / f"frame-{i:02d}.png")
 print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 
