@@ -207,16 +207,6 @@ save_apng(OUT / "breath-head-sleep.apng",
           HEAD_DELAYS)
 
 
-# ── sleeping ears (same drop/timing as sleeping head) ─────────────────────────
-print("=== breath-ear-L-sleep.apng ===")
-save_apng(OUT / "breath-ear-L-sleep.apng",
-          [shifted([ear_L_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
-          HEAD_DELAYS)
-
-print("=== breath-ear-R-sleep.apng ===")
-save_apng(OUT / "breath-ear-R-sleep.apng",
-          [shifted([ear_R_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
-          HEAD_DELAYS)
 
 # ── sleeping eyes (eyes_closed, no blink — same drop/timing as sleeping head) ─
 print("=== breath-eyes-sleep.apng ===")
@@ -295,10 +285,8 @@ print("=== ear flick frames (awake + sleep positions) ===")
 for n in ["01", "02", "03"]:
     for side, src in [("L", HEAD / "Ears" / f"L_ear_{n}.png"),
                       ("R", HEAD / "Ears" / f"R_ear_{n}.png")]:
-        img = load(src)
-        shifted([img],         0          ).save(EAR_FLICK_DIR / f"{side}_awake_{n}.png")
-        shifted([img], -SLEEP_DROP        ).save(EAR_FLICK_DIR / f"{side}_sleep_{n}.png")
-print(f"  12 frames written to {EAR_FLICK_DIR.relative_to(ROOT)}")
+        shifted([load(src)], 0).save(EAR_FLICK_DIR / f"{side}_{n}.png")
+print(f"  6 frames written to {EAR_FLICK_DIR.relative_to(ROOT)}")
 
 
 # ── blink overlay ─────────────────────────────────────────────────────────────
