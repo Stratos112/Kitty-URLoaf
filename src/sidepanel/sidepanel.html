@@ -35,9 +35,9 @@
     .l10 { z-index: 10; background-image: url('../../static/Pants/Anim/breath-ear-L.apng'); }
     .l11 { z-index: 11; background-image: url('../../static/Pants/Anim/breath-ear-R.apng'); }
 
-    /* matches SLEEP_DROP in generate-anims.py */
+    /* 70/530 of canvas height — matches SLEEP_DROP in generate-anims.py */
     #pants.sleeping .l10,
-    #pants.sleeping .l11 { transform: translateY(70px); }
+    #pants.sleeping .l11 { transform: translateY(calc(70 / 530 * 100%)); }
 
     #pants.flicking .l10 { animation: ear-flick-L 330ms linear 1 forwards; }
     #pants.flicking .l11 { animation: ear-flick-R 330ms linear 1 forwards; animation-delay: 40ms; }
