@@ -18,7 +18,21 @@ const TRANS     = Array.from({ length: FRAME_COUNT }, (_, i) =>
   `url('../../static/Pants/Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
 const TRANS_REV = [...TRANS].reverse();
 
+const FLICK_SEQ = ['01', '02', '03', '02', '01'];
+const FLICK_L   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/L_${n}.png')`);
+const FLICK_R   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/R_${n}.png')`);
+const FLICK_MS  = 275 / FLICK_SEQ.length;
+
 let transitioning = false;
+let flickTimer    = null;
+
+function cancelFlick() {
+  if (flickTimer === null) return;
+  clearTimeout(flickTimer);
+  flickTimer = null;
+  l10.style.backgroundImage = '';
+  l11.style.backgroundImage = '';
+}
 
 function setAwake() {
   pants.classList.remove('sleeping');
@@ -39,6 +53,7 @@ function setAsleep() {
 }
 
 function runTransition(frames, onDone) {
+  cancelFlick();
   transitioning = true;
   l8.style.backgroundImage  = 'none';
   l9.style.backgroundImage  = 'none';
@@ -57,9 +72,20 @@ function runTransition(frames, onDone) {
 }
 
 function flickEars() {
-  if (transitioning || pants.classList.contains('flicking')) return;
-  pants.classList.add('flicking');
-  l11.addEventListener('animationend', () => pants.classList.remove('flicking'), { once: true });
+  if (transitioning || flickTimer !== null) return;
+  let i = 0;
+  (function step() {
+    if (i >= FLICK_L.length) {
+      flickTimer = null;
+      l10.style.backgroundImage = '';
+      l11.style.backgroundImage = '';
+      return;
+    }
+    l10.style.backgroundImage = FLICK_L[i];
+    l11.style.backgroundImage = FLICK_R[i];
+    i++;
+    flickTimer = setTimeout(step, FLICK_MS);
+  })();
 }
 
 function cycle() {

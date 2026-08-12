@@ -54,43 +54,6 @@
     #pants:has(.br:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-e.apng');  }
     /* .bl (Q4) intentionally omitted — falls back to breath-eyes.apng */
 
-    #pants.flicking:not(.sleeping) .l10 { animation: ear-flick-L       275ms linear 1 forwards; }
-    #pants.flicking:not(.sleeping) .l11 { animation: ear-flick-R       275ms linear 1 forwards; animation-delay: 40ms; }
-    #pants.flicking.sleeping       .l10 { animation: ear-flick-L-sleep 275ms linear 1 forwards; }
-    #pants.flicking.sleeping       .l11 { animation: ear-flick-R-sleep 275ms linear 1 forwards; animation-delay: 40ms; }
-
-    @keyframes ear-flick-L {
-      0%   { background-image: url('../../static/Pants/Anim/EarFlick/L_01.png'); animation-timing-function: step-end; }
-      20%  { background-image: url('../../static/Pants/Anim/EarFlick/L_02.png'); animation-timing-function: step-end; }
-      40%  { background-image: url('../../static/Pants/Anim/EarFlick/L_03.png'); animation-timing-function: step-end; }
-      60%  { background-image: url('../../static/Pants/Anim/EarFlick/L_02.png'); animation-timing-function: step-end; }
-      80%  { background-image: url('../../static/Pants/Anim/EarFlick/L_01.png'); animation-timing-function: step-end; }
-      100% { background-image: url('../../static/Pants/Anim/breath-ear-L.apng'); }
-    }
-    @keyframes ear-flick-R {
-      0%   { background-image: url('../../static/Pants/Anim/EarFlick/R_01.png'); animation-timing-function: step-end; }
-      20%  { background-image: url('../../static/Pants/Anim/EarFlick/R_02.png'); animation-timing-function: step-end; }
-      40%  { background-image: url('../../static/Pants/Anim/EarFlick/R_03.png'); animation-timing-function: step-end; }
-      60%  { background-image: url('../../static/Pants/Anim/EarFlick/R_02.png'); animation-timing-function: step-end; }
-      80%  { background-image: url('../../static/Pants/Anim/EarFlick/R_01.png'); animation-timing-function: step-end; }
-      100% { background-image: url('../../static/Pants/Anim/breath-ear-R.apng'); }
-    }
-    @keyframes ear-flick-L-sleep {
-      0%   { background-image: url('../../static/Pants/Anim/EarFlick/L_01_sleep.png'); animation-timing-function: step-end; }
-      20%  { background-image: url('../../static/Pants/Anim/EarFlick/L_02_sleep.png'); animation-timing-function: step-end; }
-      40%  { background-image: url('../../static/Pants/Anim/EarFlick/L_03_sleep.png'); animation-timing-function: step-end; }
-      60%  { background-image: url('../../static/Pants/Anim/EarFlick/L_02_sleep.png'); animation-timing-function: step-end; }
-      80%  { background-image: url('../../static/Pants/Anim/EarFlick/L_01_sleep.png'); animation-timing-function: step-end; }
-      100% { background-image: url('../../static/Pants/Anim/breath-ear-L-sleep.apng'); }
-    }
-    @keyframes ear-flick-R-sleep {
-      0%   { background-image: url('../../static/Pants/Anim/EarFlick/R_01_sleep.png'); animation-timing-function: step-end; }
-      20%  { background-image: url('../../static/Pants/Anim/EarFlick/R_02_sleep.png'); animation-timing-function: step-end; }
-      40%  { background-image: url('../../static/Pants/Anim/EarFlick/R_03_sleep.png'); animation-timing-function: step-end; }
-      60%  { background-image: url('../../static/Pants/Anim/EarFlick/R_02_sleep.png'); animation-timing-function: step-end; }
-      80%  { background-image: url('../../static/Pants/Anim/EarFlick/R_01_sleep.png'); animation-timing-function: step-end; }
-      100% { background-image: url('../../static/Pants/Anim/breath-ear-R-sleep.apng'); }
-    }
   </style>
 </head>
 <body>
