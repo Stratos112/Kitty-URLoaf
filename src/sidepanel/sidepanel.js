@@ -32,8 +32,9 @@ const EAR_SEQ = {
 const EAR_FRAME_MS = 55;
 const EAR_R_DELAY  = 40;
 
-let sleeping    = false;
-let earFlicking = false;
+let sleeping      = false;
+let earFlicking   = false;
+let transitioning = false;
 
 function setAwake() {
   sleeping = false;
@@ -54,20 +55,21 @@ function setAsleep() {
 }
 
 function runTransition(frames, onDone) {
+  transitioning = true;
   l8.style.backgroundImage  = 'none';
   l9.style.backgroundImage  = 'none';
   l10.style.backgroundImage = 'none'; // ears baked into transition frames on l7
   l11.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
-    if (i >= frames.length) { onDone(); return; }
+    if (i >= frames.length) { transitioning = false; onDone(); return; }
     l7.style.backgroundImage = frames[i++];
     setTimeout(step, FRAME_MS);
   })();
 }
 
 function flickEars() {
-  if (earFlicking) return;
+  if (earFlicking || transitioning) return;
   earFlicking = true;
 
   const state    = sleeping ? 'sleep' : 'awake';
