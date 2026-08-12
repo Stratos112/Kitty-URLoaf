@@ -309,8 +309,8 @@ fall_eye_frames = [load(EYE_CLOSE_STAGES[stage_index(e, len(EYE_CLOSE_STAGES))])
 
 print(f"=== transition frames ({TRANS_FRAMES}, static — used forward for falling asleep, reversed for waking up) ===")
 for i in range(TRANS_FRAMES):
-    # head → ears → face → eyes, bottom to top — all baked in so those layers can be hidden during transition
-    frame = shifted([head_img, ear_L_img, ear_R_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
+    # ears excluded — ::after ear_keyframes shows none during transitions, preventing double-ears
+    frame = shifted([head_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
     frame.save(TRANS_DIR / f"frame-{i:02d}.png")
 print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 

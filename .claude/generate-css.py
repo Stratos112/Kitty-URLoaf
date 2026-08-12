@@ -3,9 +3,14 @@
 userChrome.css lives in the Firefox profile and cannot reference extension
 files, so everything must be self-contained.
 
-Two-layer design to avoid repeating large rest-asset data URIs 180 times:
-  element background-image  → REST layer (body/paws/tail): simple show/hide
-  element::before            → HEAD layer (head/eyes/transitions): per-frame
+Three-layer design:
+  element background-image  → REST layer (cushion/body/paws/tail): simple show/hide
+  element::before            → HEAD layer (head/eyes via CSS var/transitions): per-frame
+  element::after             → EAR layer (ear cycle + flick override): per-phase
+
+Gaze tracking: eyes are a CSS custom property (--gaze-{loc}) on :root, updated
+by :root:has({xul}:hover) rules. The HEAD keyframe uses var(--gaze-{loc}) so
+gaze updates live without touching the animation.
 
 Output: static/userChrome.css
 """
@@ -20,6 +25,7 @@ ANIM  = PANTS / "Anim"
 TRANS = ANIM / "Transition"
 LIMBS = PANTS / "Limbs"
 BODY  = PANTS / "Body"
+ACC   = PANTS / "Accessories"
 OUT   = ROOT / "static" / "userChrome.css"
 
 def data_uri(path: Path) -> str:
@@ -35,7 +41,7 @@ RAMP_SECONDS      = 2
 RAMP_STEPS        = 48
 W, H              = "364px", "266px"
 
-# REST layer: body/paws/tail — constant during all phases at a location
+# REST layer: cushion behind body/paws/tail — constant during all phases at a location
 REST_PATHS = [
     ANIM  / "tail-flick.apng",
     ANIM  / "breath-rpaw.apng",
@@ -43,12 +49,12 @@ REST_PATHS = [
     BODY  / "body_basic.png",
     LIMBS / "left_front_paw.png",
     LIMBS / "left_back_paw.png",
+    ACC   / "cushion_base.png",
 ]
 
-# HEAD layer: head/eyes — no ears (ears live on ::after)
+# HEAD layer: blink + head (eyes supplied by --gaze-{loc} custom property)
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
-    ANIM / "breath-eyes.apng",
     ANIM / "breath-head.apng",
 ]
 SLEEP_HEAD_PATHS = [
@@ -66,11 +72,31 @@ EAR_FLICK_SEQ = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L   = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
 EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 
+# Gaze tracking via CSS custom properties
+# GAZE_MAP[loc] = [Q1, Q2, Q3, Q4]  (quadrants: TL, TR, BR, BL)
+GAZE_MAP = {
+    "a": ["w",  "base", "s",  "sw"],
+    "c": ["base","e",   "se", "s"],
+    "d": ["n",  "ne",   "e",  "base"],
+}
+# XUL element → {loc: gaze_direction} — best-effort viewport zone proxies
+# None means keep default (breath-eyes / center gaze)
+CHROME_GAZE = [
+    ("#TabsToolbar",       {"d": "n",  "c": "e",  "a": None}),
+    ("#nav-bar",           {"d": "ne", "c": None, "a": "sw"}),
+    ("#sidebar-container", {"d": None, "c": "w",  "a": "w"}),
+    ("#browser",           {"d": "e",  "c": "se", "a": "s"}),
+]
+GAZE_DIRS    = ["n", "ne", "e", "se", "s", "sw", "w"]
+GAZE_DEFAULT = ANIM / "breath-eyes.apng"
+GAZE_PATHS   = {d: ANIM / f"eyes-{d}.apng" for d in GAZE_DIRS}
+
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *SLEEP_EAR_PATHS,
     *TRANS_FRAME_PATHS, *EAR_FLICK_L, *EAR_FLICK_R,
+    GAZE_DEFAULT, *GAZE_PATHS.values(),
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -78,12 +104,11 @@ print(f"  {len(uri)} files loaded")
 def url(p):   return f'url("{uri[p]}")'
 def imgs(ps): return ", ".join(url(p) for p in ps)
 
-rest_imgs       = imgs(REST_PATHS)
-awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
+rest_imgs      = imgs(REST_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
-awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
-sleep_ear_imgs  = imgs(SLEEP_EAR_PATHS)
-trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
+awake_ear_imgs = imgs(AWAKE_EAR_PATHS)
+sleep_ear_imgs = imgs(SLEEP_EAR_PATHS)
+trans_urls     = [url(p) for p in TRANS_FRAME_PATHS]
 
 POS = {"d": "left bottom", "c": "left 142px center", "a": "right 170px center"}
 
@@ -115,7 +140,6 @@ def rest_keyframes(name, loc):
     show  = f"background-image: {rest_imgs}; background-position: {POS[loc]};"
     hide  = "background-image: none;"
     pts   = {}
-    # seed loop seam
     pts["0.0000"]   = show if start <= 0.0001 else hide
     pts["100.0000"] = show if end   >= 99.9999 else hide
     pts[f"{start:.4f}"] = show
@@ -127,8 +151,11 @@ def rest_keyframes(name, loc):
 
 
 def head_keyframes(name, loc):
-    """Per-frame head/eye animation — no rest assets bundled in."""
-    head_by = {"awake": awake_head_imgs, "asleep": sleep_head_imgs}
+    """Per-frame head animation. Eyes are var(--gaze-{loc}) for live gaze tracking."""
+    blink = url(ANIM / "blink-overlay.apng")
+    head  = url(ANIM / "breath-head.apng")
+    awake_bg = f"{blink}, var(--gaze-{loc}), {head}"
+    head_by  = {"awake": awake_bg, "asleep": sleep_head_imgs}
     pts = []
     for ph in TIMELINE:
         if ph["loc"] != loc:
@@ -151,7 +178,8 @@ def head_keyframes(name, loc):
 
 
 def ear_keyframes(name, loc):
-    """Ear cycle on ::after — awake/sleep ears shown per phase, none during transitions."""
+    """Ear cycle on ::after — awake/sleep ears shown per phase, none during transitions.
+    None during transitions ensures no double-ears with ::before transition frames."""
     ear_by = {"awake": awake_ear_imgs, "asleep": sleep_ear_imgs}
     pts = []
     for ph in TIMELINE:
@@ -199,6 +227,27 @@ def ear_flick_keyframes():
     lines.append("}")
     return "\n".join(lines)
 
+
+def gaze_css():
+    """CSS custom property gaze system — :root:has({xul}:hover) zones update --gaze-{loc}."""
+    parts = [
+        "/* ── gaze tracking ─────────────────────────────────────────────────── */",
+        "/* --gaze-{loc} is consumed by the HEAD keyframe via var(); updating    */",
+        "/* the property live-changes the eye image without touching animations. */",
+        ":root {",
+        f"  --gaze-d: {url(GAZE_DEFAULT)};",
+        f"  --gaze-c: {url(GAZE_DEFAULT)};",
+        f"  --gaze-a: {url(GAZE_DEFAULT)};",
+        "}",
+    ]
+    for selector, locs in CHROME_GAZE:
+        decls = [f"  --gaze-{loc}: {url(GAZE_PATHS[d])};"
+                 for loc, d in locs.items() if d is not None]
+        if decls:
+            parts += ["", f":root:has({selector}:hover) {{", *decls, "}"]
+    return "\n".join(parts)
+
+
 print("Building keyframes…")
 kf_ear_flick = ear_flick_keyframes()
 kf_d_rest = rest_keyframes("pants-d-rest", "d")
@@ -235,9 +284,11 @@ css = "\n".join([
     f"",
     f"/* one Pants, D → C → A, {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
     f"",
-    f"/* REST layer keyframes (body / paws / tail — constant per visit) */",
+    gaze_css(),
+    f"",
+    f"/* REST layer keyframes (cushion / body / paws / tail — constant per visit) */",
     kf_d_rest, "", kf_c_rest, "", kf_a_rest, "",
-    f"/* HEAD layer keyframes (head / eyes / transition frames) */",
+    f"/* HEAD layer keyframes (head / var(--gaze) eyes / transition frames — no ears) */",
     kf_d_head, "", kf_c_head, "", kf_a_head, "",
     f"/* EAR layer keyframes (::after — awake/sleep ears, none during transitions) */",
     kf_d_ear, "", kf_c_ear, "", kf_a_ear, "",
@@ -251,7 +302,7 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
-    f"/* ::before = head layer; ::after = ear-flick overlay (both share parent's coordinate space) */",
+    f"/* ::before = head layer; ::after = ear layer (both share parent coordinate space) */",
     f"#sidebar-container::before, #nav-bar::before, #TabsToolbar::before,",
     f"#sidebar-container::after,  #nav-bar::after,  #TabsToolbar::after  {{",
     f"  content:           '';",
@@ -264,11 +315,13 @@ css = "\n".join([
     f"}}",
     f"",
     f"/* ear flick on :active — higher specificity overrides base ::after ear cycle */",
+    f"/* ends at none so base cycle can resume cleanly; no double-ears since ::before */",
+    f"/* transition frames no longer bake in ears */",
     kf_ear_flick,
     f"#sidebar-container:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['d']}; }}",
     f"#nav-bar:active::after           {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['c']}; }}",
     f"#TabsToolbar:active::after       {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['a']}; }}",
-    f"/* base ::after ear cycle (lower specificity — overridden by :active above) */",
+    f"/* base ::after ear cycle — overridden by :active above */",
     f"#sidebar-container::after {{ animation: {anim('pants-d-ear')}; }}",
     f"#nav-bar::after           {{ animation: {anim('pants-c-ear')}; }}",
     f"#TabsToolbar::after       {{ animation: {anim('pants-a-ear')}; }}",
