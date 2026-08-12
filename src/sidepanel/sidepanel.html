@@ -39,6 +39,19 @@
     #pants.sleeping .l10,
     #pants.sleeping .l11 { transform: translateY(calc(70 / 530 * 100%)); }
 
+    /* gaze zones — 2×2 grid, each corner is a diagonal blend of its two cardinals */
+    #zones {
+      position: absolute; inset: 0; z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    #pants:has(.tl:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-nw.apng'); }
+    #pants:has(.tr:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-ne.apng'); }
+    #pants:has(.bl:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-sw.apng'); }
+    #pants:has(.br:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-se.apng'); }
+
     #pants.flicking .l10 { animation: ear-flick-L 275ms linear 1 forwards; }
     #pants.flicking .l11 { animation: ear-flick-R 275ms linear 1 forwards; animation-delay: 40ms; }
 
@@ -73,6 +86,12 @@
   <div class="l9"></div>
   <div class="l10"></div>
   <div class="l11"></div>
+  <div id="zones">
+    <div class="z tl"></div>
+    <div class="z tr"></div>
+    <div class="z bl"></div>
+    <div class="z br"></div>
+  </div>
 </div>
 <script src="sidepanel.js"></script>
 </body>

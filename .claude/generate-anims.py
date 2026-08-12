@@ -200,6 +200,24 @@ save_apng(OUT / "breath-eyes.apng",
           HEAD_DELAYS)
 
 
+# ── directional gaze eyes (cardinal + diagonal blends) ─────────────────────────
+print("=== gaze eyes ===")
+LOOK = EYES / "look"
+_gaze = {d: load(LOOK / f"{d}.png") for d in ("north", "south", "east", "west")}
+
+def gaze_blend(a, b): return Image.blend(_gaze[a], _gaze[b], 0.5)
+
+_diag = {
+    "nw": gaze_blend("north", "west"),
+    "ne": gaze_blend("north", "east"),
+    "sw": gaze_blend("south", "west"),
+    "se": gaze_blend("south", "east"),
+}
+for name, img in _diag.items():
+    save_apng(OUT / f"eyes-{name}.apng",
+              [shifted([img], s) for s in HEAD_SHIFTS],
+              HEAD_DELAYS)
+
 # ── sleeping head bob (same breath timing, dropped for the lying-down pose) ───
 print("=== breath-head-sleep.apng ===")
 save_apng(OUT / "breath-head-sleep.apng",

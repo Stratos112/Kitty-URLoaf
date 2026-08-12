@@ -10,7 +10,6 @@ const FRAME_COUNT = 30;
 const FRAME_MS    = 1500 / FRAME_COUNT;
 
 const AWAKE_HEAD = "url('../../static/Pants/Anim/breath-head.apng')";
-const AWAKE_EYES = "url('../../static/Pants/Anim/breath-eyes.apng')";
 const BLINK      = "url('../../static/Pants/Anim/blink-overlay.apng')";
 const SLEEP_HEAD = "url('../../static/Pants/Anim/breath-head-sleep.apng')";
 const SLEEP_EYES = "url('../../static/Pants/Anim/breath-eyes-sleep.apng')";
@@ -24,7 +23,7 @@ let transitioning = false;
 function setAwake() {
   pants.classList.remove('sleeping');
   l7.style.backgroundImage  = AWAKE_HEAD;
-  l8.style.backgroundImage  = AWAKE_EYES;
+  l8.style.backgroundImage  = '';
   l9.style.backgroundImage  = BLINK;
   l10.style.backgroundImage = '';
   l11.style.backgroundImage = '';
