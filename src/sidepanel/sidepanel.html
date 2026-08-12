@@ -47,10 +47,11 @@
       grid-template-rows: 1fr 1fr;
     }
 
-    #pants:has(.tl:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-nw.apng'); }
+    /* GAZE_MAP["d"]: Q1→n  Q2→ne  Q3→e  Q4→base (no rule = breath-eyes.apng) */
+    #pants:has(.tl:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-n.apng');  }
     #pants:has(.tr:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-ne.apng'); }
-    #pants:has(.bl:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-sw.apng'); }
-    #pants:has(.br:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-se.apng'); }
+    #pants:has(.br:hover) .l8 { background-image: url('../../static/Pants/Anim/eyes-e.apng');  }
+    /* .bl (Q4) intentionally omitted — falls back to breath-eyes.apng */
 
     #pants.flicking .l10 { animation: ear-flick-L 275ms linear 1 forwards; }
     #pants.flicking .l11 { animation: ear-flick-R 275ms linear 1 forwards; animation-delay: 40ms; }

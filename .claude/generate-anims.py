@@ -200,20 +200,34 @@ save_apng(OUT / "breath-eyes.apng",
           HEAD_DELAYS)
 
 
-# ── directional gaze eyes (cardinal + diagonal blends) ─────────────────────────
+# ── directional gaze eyes ──────────────────────────────────────────────────────
+# Q1=top-left  Q2=top-right  Q3=bottom-right  Q4=bottom-left  (viewport quadrants)
+# "base" = breath-eyes.apng (no gaze override)
+#
+# GAZE_MAP[loc] = [Q1, Q2, Q3, Q4]
+GAZE_MAP = {
+    "a": ["w",    "base", "s",    "sw"],
+    "c": ["base", "e",    "se",   "s"],
+    "d": ["n",    "ne",   "e",    "base"],
+}
+
 print("=== gaze eyes ===")
 LOOK = EYES / "look"
-_gaze = {d: load(LOOK / f"{d}.png") for d in ("north", "south", "east", "west")}
+_card = {d: load(LOOK / f"{d}.png") for d in ("north", "south", "east", "west")}
 
-def gaze_blend(a, b): return Image.blend(_gaze[a], _gaze[b], 0.5)
+def _blend(a, b): return Image.blend(_card[a], _card[b], 0.5)
 
-_diag = {
-    "nw": gaze_blend("north", "west"),
-    "ne": gaze_blend("north", "east"),
-    "sw": gaze_blend("south", "west"),
-    "se": gaze_blend("south", "east"),
+_gaze_imgs = {
+    "n":  _card["north"],
+    "s":  _card["south"],
+    "e":  _card["east"],
+    "w":  _card["west"],
+    "ne": _blend("north", "east"),
+    "se": _blend("south", "east"),
+    "sw": _blend("south", "west"),
+    "nw": _blend("north", "west"),
 }
-for name, img in _diag.items():
+for name, img in _gaze_imgs.items():
     save_apng(OUT / f"eyes-{name}.apng",
               [shifted([img], s) for s in HEAD_SHIFTS],
               HEAD_DELAYS)
