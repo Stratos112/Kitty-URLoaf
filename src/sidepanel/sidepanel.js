@@ -25,8 +25,13 @@ const TRANS     = Array.from({ length: FRAME_COUNT }, (_, i) =>
   `url('../../static/Pants/Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
 const TRANS_REV = [...TRANS].reverse();
 
-const EAR_SEQ_L  = ['01','02','03','02','01'].map(n => `url('../../static/Pants/Head/Ears/L_ear_${n}.png')`);
-const EAR_SEQ_R  = ['01','02','03','02','01'].map(n => `url('../../static/Pants/Head/Ears/R_ear_${n}.png')`);
+const EAR_FLICK_SEQ = ['01','02','03','02','01'];
+const EAR_SEQ = {
+  L: { awake: EAR_FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/L_awake_${n}.png')`),
+       sleep: EAR_FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/L_sleep_${n}.png')`) },
+  R: { awake: EAR_FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/R_awake_${n}.png')`),
+       sleep: EAR_FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/R_sleep_${n}.png')`) },
+};
 const EAR_FRAME_MS = 55;
 const EAR_R_DELAY  = 40;
 
@@ -71,6 +76,7 @@ function flickEars() {
   if (earFlicking) return;
   earFlicking = true;
 
+  const state    = sleeping ? 'sleep' : 'awake';
   const restoreL = sleeping ? SLEEP_EAR_L : AWAKE_EAR_L;
   const restoreR = sleeping ? SLEEP_EAR_R : AWAKE_EAR_R;
 
@@ -85,8 +91,8 @@ function flickEars() {
     }, delay);
   }
 
-  runEar(l10, EAR_SEQ_L, restoreL, 0);
-  runEar(l11, EAR_SEQ_R, restoreR, EAR_R_DELAY);
+  runEar(l10, EAR_SEQ.L[state], restoreL, 0);
+  runEar(l11, EAR_SEQ.R[state], restoreR, EAR_R_DELAY);
 
   const total = EAR_SEQ_L.length * EAR_FRAME_MS + EAR_R_DELAY + 100;
   setTimeout(() => { earFlicking = false; }, total);
