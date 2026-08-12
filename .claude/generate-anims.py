@@ -314,6 +314,16 @@ for i in range(TRANS_FRAMES):
     frame.save(TRANS_DIR / f"frame-{i:02d}.png")
 print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 
+# ── cushion appear animation ──────────────────────────────────────────────────
+print("=== cushion-appear.apng ===")
+CUSH_DIR    = PANTS / "Accessories" / "Cushion appear"
+CUSH_FRAMES = [CUSH_DIR / f"cush_appear_{n}.png" for n in ["0","1","2","3","4","5","6","7","8","9","9B"]]
+APPEAR_MS   = 1500
+save_apng(OUT / "cushion-appear.apng",
+          [load(p) for p in CUSH_FRAMES],
+          [APPEAR_MS // len(CUSH_FRAMES)] * len(CUSH_FRAMES))
+
+
 # ── ear flick frames (awake + sleep positions) ─────────────────────────────────
 EAR_FLICK_DIR = OUT / "EarFlick"
 EAR_FLICK_DIR.mkdir(exist_ok=True)

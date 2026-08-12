@@ -30,6 +30,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 TRANS_SECONDS     = 1.5
+APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 C_H               = 286
 SIDE_W            = 256
@@ -64,6 +65,8 @@ AWAKE_EAR_PATHS = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
 SLEEP_EAR_PATHS = [ANIM / "breath-ear-L-sleep.apng", ANIM / "breath-ear-R-sleep.apng"]
 TRANS_FRAME_PATHS = [TRANS / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
 
+CUSH_APPEAR_PATH = ANIM / "cushion-appear.apng"
+
 EAR_FLICK_DIR = ANIM / "EarFlick"
 EAR_FLICK_SEQ = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L   = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
@@ -71,6 +74,7 @@ EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
+    CUSH_APPEAR_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *SLEEP_EAR_PATHS,
     *TRANS_FRAME_PATHS, *EAR_FLICK_L, *EAR_FLICK_R,
@@ -91,10 +95,12 @@ trans_urls     = [url(p) for p in TRANS_FRAME_PATHS]
 POS = {"d": "left bottom", "c": "left 142px center", "a": "right 170px center"}
 
 LOCATIONS   = ["d", "c", "a"]
-PHASE_KINDS = ["awake", "falling", "asleep", "waking", "awake"]
+PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
 
 def seconds_for(kind):
-    return TRANS_SECONDS if kind in ("falling", "waking") else HOLD_SECONDS
+    if kind == "appear":              return APPEAR_SECONDS
+    if kind in ("falling", "waking"): return TRANS_SECONDS
+    return HOLD_SECONDS
 
 cursor = 0
 TIMELINE = []
@@ -111,17 +117,20 @@ def px(n):      return f"{n:.2f}px"
 
 
 def rest_keyframes(name, loc):
-    """Show rest_imgs during the entire location visit, none otherwise."""
-    visit = [ph for ph in TIMELINE if ph["loc"] == loc]
-    start = to_pct(visit[0]["startSec"])
-    end   = to_pct(visit[-1]["endSec"])
-    show  = f"background-image: {rest_imgs}; background-position: {POS[loc]};"
-    hide  = "background-image: none;"
-    pts   = {}
-    pts["0.0000"]   = show if start <= 0.0001 else hide
-    pts["100.0000"] = show if end   >= 99.9999 else hide
-    pts[f"{start:.4f}"] = show
-    pts[f"{end:.4f}"]   = hide
+    visit       = [ph for ph in TIMELINE if ph["loc"] == loc]
+    appear_ph   = next(ph for ph in visit if ph["kind"] == "appear")
+    appear_pct  = to_pct(appear_ph["startSec"])
+    pants_pct   = to_pct(appear_ph["endSec"])
+    end_pct     = to_pct(visit[-1]["endSec"])
+    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {POS[loc]};"
+    show        = f"background-image: {rest_imgs}; background-position: {POS[loc]};"
+    hide        = "background-image: none;"
+    pts = {}
+    pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
+    pts["100.0000"]            = cush_appear if appear_pct <= 0.0001 else hide
+    pts[f"{appear_pct:.4f}"]   = cush_appear
+    pts[f"{pants_pct:.4f}"]    = show
+    pts[f"{end_pct:.4f}"]      = hide
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
     return "\n".join([f"@keyframes {name} {{",
                       *[f"  {p}% {{ {d} }}" for p, d in sorted_pts],
@@ -132,7 +141,7 @@ def head_keyframes(name, loc):
     head_by = {"awake": awake_head_imgs, "asleep": sleep_head_imgs}
     pts = []
     for ph in TIMELINE:
-        if ph["loc"] != loc:
+        if ph["loc"] != loc or ph["kind"] == "appear":
             pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
             continue
         if ph["kind"] in ("falling", "waking"):
@@ -157,7 +166,7 @@ def ear_keyframes(name, loc):
     ear_by = {"awake": awake_ear_imgs, "asleep": sleep_ear_imgs}
     pts = []
     for ph in TIMELINE:
-        if ph["loc"] != loc or ph["kind"] in ("falling", "waking"):
+        if ph["loc"] != loc or ph["kind"] in ("falling", "waking", "appear"):
             pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
             continue
         pts.append((f"{to_pct(ph['startSec']):.4f}",

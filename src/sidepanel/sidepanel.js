@@ -52,13 +52,14 @@ function setAsleep() {
   l11.style.backgroundImage = '';
 }
 
-function runTransition(frames, onDone) {
+/* toSleep=true: pre-apply .sleeping at fall start so ears drop with the head
+   rather than snapping after the transition. Ears stay visible throughout. */
+function runTransition(frames, onDone, toSleep = false) {
   cancelFlick();
+  if (toSleep) pants.classList.add('sleeping');
   transitioning = true;
-  l8.style.backgroundImage  = 'none';
-  l9.style.backgroundImage  = 'none';
-  l10.style.backgroundImage = 'none';
-  l11.style.backgroundImage = 'none';
+  l8.style.backgroundImage = 'none';
+  l9.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
     if (i >= frames.length) {
@@ -93,7 +94,7 @@ function cycle() {
   setTimeout(() => runTransition(TRANS, () => {
     setAsleep();
     setTimeout(() => runTransition(TRANS_REV, cycle), HOLD_MS);
-  }), HOLD_MS);
+  }, true), HOLD_MS);
 }
 
 pants.addEventListener('click', flickEars);
