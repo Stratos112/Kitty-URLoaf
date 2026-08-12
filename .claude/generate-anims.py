@@ -208,6 +208,18 @@ save_apng(OUT / "breath-head-sleep.apng",
 
 
 
+# ── sleeping ears (pre-shifted — used by userChrome.css flat-stack approach) ──
+print("=== breath-ear-L-sleep.apng ===")
+save_apng(OUT / "breath-ear-L-sleep.apng",
+          [shifted([ear_L_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+print("=== breath-ear-R-sleep.apng ===")
+save_apng(OUT / "breath-ear-R-sleep.apng",
+          [shifted([ear_R_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
 # ── sleeping eyes (eyes_closed, no blink — same drop/timing as sleeping head) ─
 print("=== breath-eyes-sleep.apng ===")
 eyes_closed_img = load(EYES / "eyes_closed.png")

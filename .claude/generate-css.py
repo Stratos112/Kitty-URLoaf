@@ -29,11 +29,11 @@ def data_uri(path: Path) -> str:
 HOLD_SECONDS      = 10
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
-C_H               = 143
-SIDE_W            = 128
+C_H               = 286
+SIDE_W            = 256
 RAMP_SECONDS      = 2
 RAMP_STEPS        = 48
-W, H              = "182px", "133px"
+W, H              = "364px", "266px"
 
 # REST layer: body/paws/tail — constant during all phases at a location
 REST_PATHS = [
@@ -45,15 +45,19 @@ REST_PATHS = [
     LIMBS / "left_back_paw.png",
 ]
 
-# HEAD layer: head/eyes only — transitions and state swaps
+# HEAD layer: head/eyes/ears — transitions and state swaps
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
     ANIM / "breath-eyes.apng",
     ANIM / "breath-head.apng",
+    ANIM / "breath-ear-L.apng",
+    ANIM / "breath-ear-R.apng",
 ]
 SLEEP_HEAD_PATHS = [
     ANIM / "breath-eyes-sleep.apng",
     ANIM / "breath-head-sleep.apng",
+    ANIM / "breath-ear-L-sleep.apng",
+    ANIM / "breath-ear-R-sleep.apng",
 ]
 TRANS_FRAME_PATHS = [TRANS / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
 
@@ -201,16 +205,18 @@ css = "\n".join([
     kf_dm, "", kf_cm, "", kf_am, "",
     f"/* shared background geometry */",
     f"#sidebar-container, #nav-bar, #TabsToolbar {{",
+    f"  position:          relative;",
     f"  overflow:          visible !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
-    f"/* ::before hosts the head layer; absolute so it shares the parent's coordinate space */",
+    f"/* ::before hosts the head layer; sits in the same coordinate space as the rest layer */",
     f"#sidebar-container::before, #nav-bar::before, #TabsToolbar::before {{",
     f"  content:           '';",
     f"  position:          absolute;",
     f"  inset:             0;",
+    f"  overflow:          visible;",
     f"  pointer-events:    none;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
