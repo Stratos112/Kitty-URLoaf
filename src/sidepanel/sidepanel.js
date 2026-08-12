@@ -94,7 +94,7 @@ function flickEars() {
   runEar(l10, EAR_SEQ.L[state], restoreL, 0);
   runEar(l11, EAR_SEQ.R[state], restoreR, EAR_R_DELAY);
 
-  const total = EAR_SEQ_L.length * EAR_FRAME_MS + EAR_R_DELAY + 100;
+  const total = EAR_FLICK_SEQ.length * EAR_FRAME_MS + EAR_R_DELAY + 100;
   setTimeout(() => { earFlicking = false; }, total);
 }
 
