@@ -1,8 +1,8 @@
-const l7   = document.querySelector('.l7');
-const l8   = document.querySelector('.l8');
-const l9   = document.querySelector('.l9');
-const l10  = document.querySelector('.l10');
-const l11  = document.querySelector('.l11');
+const l7    = document.querySelector('.l7');
+const l8    = document.querySelector('.l8');
+const l9    = document.querySelector('.l9');
+const l10   = document.querySelector('.l10');
+const l11   = document.querySelector('.l11');
 const pants = document.getElementById('pants');
 
 const HOLD_MS     = 10000;
@@ -22,6 +22,13 @@ const FLICK_SEQ = ['01', '02', '03', '02', '01'];
 const FLICK_L   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/L_${n}.png')`);
 const FLICK_R   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/R_${n}.png')`);
 const FLICK_MS  = 275 / FLICK_SEQ.length;
+
+/* matches SLEEP_DROP / DISPLAY_H — ears slide with the head during transitions */
+const SLEEP_PCT = 70 / 530 * 100;
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 let transitioning = false;
 let flickTimer    = null;
@@ -52,21 +59,26 @@ function setAsleep() {
   l11.style.backgroundImage = '';
 }
 
-/* toSleep=true: pre-apply .sleeping at fall start so ears drop with the head
-   rather than snapping after the transition. Ears stay visible throughout. */
+/* Ears slide with the head: inline transform eases from 0↔SLEEP_PCT each frame,
+   then clears so the CSS .sleeping rule takes over at the same final value — no jump. */
 function runTransition(frames, onDone, toSleep = false) {
   cancelFlick();
-  if (toSleep) pants.classList.add('sleeping');
   transitioning = true;
   l8.style.backgroundImage = 'none';
   l9.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
     if (i >= frames.length) {
+      l10.style.transform = '';
+      l11.style.transform = '';
       transitioning = false;
       onDone();
       return;
     }
+    const progress = toSleep ? i / FRAME_COUNT : (FRAME_COUNT - i) / FRAME_COUNT;
+    const ty = `translateY(${easeInOutCubic(progress) * SLEEP_PCT}%)`;
+    l10.style.transform = ty;
+    l11.style.transform = ty;
     l7.style.backgroundImage = frames[i++];
     setTimeout(step, FRAME_MS);
   })();
