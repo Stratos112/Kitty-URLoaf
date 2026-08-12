@@ -213,21 +213,14 @@ GAZE_MAP = {
 
 print("=== gaze eyes ===")
 LOOK = EYES / "look"
-_card = {d: load(LOOK / f"{d}.png") for d in ("north", "south", "east", "west")}
-
-def _blend(a, b): return Image.blend(_card[a], _card[b], 0.5)
-
-_gaze_imgs = {
-    "n":  _card["north"],
-    "s":  _card["south"],
-    "e":  _card["east"],
-    "w":  _card["west"],
-    "ne": _blend("north", "east"),
-    "se": _blend("south", "east"),
-    "sw": _blend("south", "west"),
-    "nw": _blend("north", "west"),
+_gaze_src = {
+    "n":  "north",    "s":  "south",
+    "e":  "east",     "w":  "west",
+    "ne": "northeast","se": "southeast",
+    "sw": "southwest","nw": "northwest",
 }
-for name, img in _gaze_imgs.items():
+for name, fname in _gaze_src.items():
+    img = load(LOOK / f"{fname}.png")
     save_apng(OUT / f"eyes-{name}.apng",
               [shifted([img], s) for s in HEAD_SHIFTS],
               HEAD_DELAYS)
