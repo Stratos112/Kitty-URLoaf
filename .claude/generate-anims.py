@@ -166,9 +166,29 @@ save_apng(OUT / "breath.apng", [load(p) for p in BREATH_PATHS], BREATH_DELAYS)
 
 # ── head bob (head only — no eyes) ───────────────────────────────────────────
 print("=== breath-head.apng ===")
-head_img = load(HEAD / "head_bas8c.png")
+head_img  = load(HEAD / "head_bas8c.png")
+ear_L_img = load(HEAD / "L_ear_0(base).png")
+ear_R_img = load(HEAD / "R_ear_0(base).png")
+face_img  = load(HEAD / "face.png")
 save_apng(OUT / "breath-head.apng",
           [shifted([head_img], s) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── ear bob (each ear separately — same timing as head so they always sync) ───
+print("=== breath-ear-L.apng ===")
+save_apng(OUT / "breath-ear-L.apng",
+          [shifted([ear_L_img], s) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+print("=== breath-ear-R.apng ===")
+save_apng(OUT / "breath-ear-R.apng",
+          [shifted([ear_R_img], s) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+print("=== breath-face.apng ===")
+save_apng(OUT / "breath-face.apng",
+          [shifted([face_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
 
@@ -184,6 +204,23 @@ save_apng(OUT / "breath-eyes.apng",
 print("=== breath-head-sleep.apng ===")
 save_apng(OUT / "breath-head-sleep.apng",
           [shifted([head_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+
+# ── sleeping ears (same drop/timing as sleeping head) ─────────────────────────
+print("=== breath-ear-L-sleep.apng ===")
+save_apng(OUT / "breath-ear-L-sleep.apng",
+          [shifted([ear_L_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+print("=== breath-ear-R-sleep.apng ===")
+save_apng(OUT / "breath-ear-R-sleep.apng",
+          [shifted([ear_R_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          HEAD_DELAYS)
+
+print("=== breath-face-sleep.apng ===")
+save_apng(OUT / "breath-face-sleep.apng",
+          [shifted([face_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
 
@@ -251,8 +288,8 @@ fall_eye_frames = [load(EYE_CLOSE_STAGES[stage_index(e, len(EYE_CLOSE_STAGES))])
 
 print(f"=== transition frames ({TRANS_FRAMES}, static — used forward for falling asleep, reversed for waking up) ===")
 for i in range(TRANS_FRAMES):
-    # head first (bottom), eyes pasted on top — same z-order as everywhere else
-    frame = shifted([head_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
+    # head → ears → face → eyes, bottom to top — all baked in so those layers can be hidden during transition
+    frame = shifted([head_img, ear_L_img, ear_R_img, face_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
     frame.save(TRANS_DIR / f"frame-{i:02d}.png")
 print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 
