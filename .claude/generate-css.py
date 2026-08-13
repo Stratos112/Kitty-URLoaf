@@ -133,7 +133,7 @@ def rest_keyframes(name, loc):
     hide        = "background-image: none;"
     pts = {}
     pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
-    pts["100.0000"]            = cush_appear if appear_pct <= 0.0001 else hide
+    pts["100.0000"]            = hide
     pts[f"{appear_pct:.4f}"]   = cush_appear
     pts[f"{pants_pct:.4f}"]    = show
     pts[f"{end_pct:.4f}"]      = hide
@@ -173,7 +173,7 @@ def ear_keyframes(name, loc):
     show = f"background-image: {awake_ear_imgs}; background-position: {POS[loc]};"
     pts  = []
     for ph in TIMELINE:
-        val = show if ph["loc"] == loc else "background-image: none;"
+        val = show if (ph["loc"] == loc and ph["kind"] != "appear") else "background-image: none;"
         pts.append((f"{to_pct(ph['startSec']):.4f}", val))
     pts.append(("100.0000", pts[0][1]))
     return "\n".join([f"@keyframes {name} {{",

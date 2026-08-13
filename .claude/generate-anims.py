@@ -68,10 +68,10 @@ def shifted(layers_bottom_to_top: list, shift: float) -> Image.Image:
     return Image.blend(paste_at(base), paste_at(base + 1), frac)
 
 
-def save_apng(out_path: Path, frames: list, delays: list):
+def save_apng(out_path: Path, frames: list, delays: list, loop: int = 0):
     frames[0].save(
         out_path, save_all=True, append_images=frames[1:],
-        loop=0, duration=delays, format="PNG",
+        loop=loop, duration=delays, format="PNG",
     )
     print(f"  {out_path.name}  ({len(frames)} frames, {out_path.stat().st_size // 1024} KB)")
 
@@ -321,7 +321,8 @@ CUSH_FRAMES = [CUSH_DIR / f"cush_appear_{n}.png" for n in ["0","1","2","3","4","
 APPEAR_MS   = 1500
 save_apng(OUT / "cushion-appear.apng",
           [load(p) for p in CUSH_FRAMES],
-          [APPEAR_MS // len(CUSH_FRAMES)] * len(CUSH_FRAMES))
+          [APPEAR_MS // len(CUSH_FRAMES)] * len(CUSH_FRAMES),
+          loop=1)
 
 
 # ── ear flick frames (awake + sleep positions) ─────────────────────────────────
