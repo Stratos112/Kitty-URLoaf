@@ -233,7 +233,7 @@ def ear_flick_keyframes():
     for i, (l, r) in enumerate(zip(EAR_FLICK_L, EAR_FLICK_R)):
         p = i * 20
         lines.append(f"  {p}%   {{ background-image: {url(l)}, {url(r)}; animation-timing-function: step-end; }}")
-    lines.append(f"  100% {{ background-image: none; }}")
+    lines.append(f"  100% {{ background-image: {awake_ear_imgs}; }}")
     lines.append("}")
     return "\n".join(lines)
 
