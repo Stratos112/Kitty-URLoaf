@@ -161,16 +161,22 @@ def head_keyframes(name, loc):
 
 
 def ear_keyframes(name, loc):
-    """Ear cycle on ::after — awake/sleep ears shown per phase, none during transitions.
-    None during transitions ensures no double-ears with ::before transition frames."""
-    ear_by = {"awake": awake_ear_imgs, "asleep": sleep_ear_imgs}
-    pts = []
+    """Ears visible for the entire location visit (appear, awake, transitions, asleep).
+    Holds last awake/sleep state across falling/waking/appear so ears never vanish.
+    None only when the cat is at a different location entirely."""
+    show = lambda imgs: f"background-image: {imgs}; background-position: {POS[loc]};"
+    pts  = []
+    cur  = show(awake_ear_imgs)  # default; overwritten when we hit awake/asleep phases
     for ph in TIMELINE:
-        if ph["loc"] != loc or ph["kind"] in ("falling", "waking", "appear"):
+        if ph["loc"] != loc:
             pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
             continue
-        pts.append((f"{to_pct(ph['startSec']):.4f}",
-                    f"background-image: {ear_by[ph['kind']]}; background-position: {POS[loc]};"))
+        if ph["kind"] == "awake":
+            cur = show(awake_ear_imgs)
+        elif ph["kind"] == "asleep":
+            cur = show(sleep_ear_imgs)
+        # appear, falling, waking → hold cur (last known state for this loc)
+        pts.append((f"{to_pct(ph['startSec']):.4f}", cur))
     pts.append(("100.0000", pts[0][1]))
     return "\n".join([f"@keyframes {name} {{",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
