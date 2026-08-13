@@ -8,6 +8,13 @@ Three-layer design:
   element::before            → HEAD layer (head/eyes/transitions): per-frame
   element::after             → EAR layer (ear cycle + flick override): per-phase
 
+Ear Y positioning:
+  --ear-y is animated on the element and inherited by ::after.
+  ::after applies transform: translateY(var(--ear-y)) so the entire ear box
+  rides with the head during falling/waking transitions.  The same transform
+  is active during :active::after ear-flick, so flick frames are always at
+  the correct position without needing separate awake/sleep flick assets.
+
 Output: static/userChrome.css
 """
 
@@ -32,6 +39,7 @@ HOLD_SECONDS      = 10
 TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
+SLEEP_DROP        = 70        # px — must match generate-anims.py
 C_H               = 286
 SIDE_W            = 256
 RAMP_SECONDS      = 2
@@ -60,9 +68,8 @@ SLEEP_HEAD_PATHS = [
     ANIM / "breath-head-sleep.apng",
 ]
 
-# EAR layer: ::after — awake/sleep per phase, none during transitions
-AWAKE_EAR_PATHS = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
-SLEEP_EAR_PATHS = [ANIM / "breath-ear-L-sleep.apng", ANIM / "breath-ear-R-sleep.apng"]
+# EAR layer: awake APNGs only — --ear-y transform handles sleep drop
+AWAKE_EAR_PATHS   = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
 TRANS_FRAME_PATHS = [TRANS / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
 
 CUSH_APPEAR_PATH = ANIM / "cushion-appear.apng"
@@ -76,7 +83,7 @@ print("Loading assets…")
 all_paths = list(dict.fromkeys([
     CUSH_APPEAR_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
-    *AWAKE_EAR_PATHS, *SLEEP_EAR_PATHS,
+    *AWAKE_EAR_PATHS,
     *TRANS_FRAME_PATHS, *EAR_FLICK_L, *EAR_FLICK_R,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
@@ -89,8 +96,7 @@ rest_imgs       = imgs(REST_PATHS)
 awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
-sleep_ear_imgs = imgs(SLEEP_EAR_PATHS)
-trans_urls     = [url(p) for p in TRANS_FRAME_PATHS]
+trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
 POS = {"d": "left bottom", "c": "left 142px center", "a": "right 170px center"}
 
@@ -161,22 +167,14 @@ def head_keyframes(name, loc):
 
 
 def ear_keyframes(name, loc):
-    """Ears visible for the entire location visit (appear, awake, transitions, asleep).
-    Holds last awake/sleep state across falling/waking/appear so ears never vanish.
-    None only when the cat is at a different location entirely."""
-    show = lambda imgs: f"background-image: {imgs}; background-position: {POS[loc]};"
+    """Always awake ear APNGs during the location visit — no image swap for sleep.
+    --ear-y (animated on the element, inherited by ::after) shifts the ear box
+    down for the sleep pose so we never need separate sleep ear assets here."""
+    show = f"background-image: {awake_ear_imgs}; background-position: {POS[loc]};"
     pts  = []
-    cur  = show(awake_ear_imgs)  # default; overwritten when we hit awake/asleep phases
     for ph in TIMELINE:
-        if ph["loc"] != loc:
-            pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
-            continue
-        if ph["kind"] == "awake":
-            cur = show(awake_ear_imgs)
-        elif ph["kind"] == "asleep":
-            cur = show(sleep_ear_imgs)
-        # appear, falling, waking → hold cur (last known state for this loc)
-        pts.append((f"{to_pct(ph['startSec']):.4f}", cur))
+        val = show if ph["loc"] == loc else "background-image: none;"
+        pts.append((f"{to_pct(ph['startSec']):.4f}", val))
     pts.append(("100.0000", pts[0][1]))
     return "\n".join([f"@keyframes {name} {{",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
@@ -207,6 +205,29 @@ def margin_keyframes(name, prop, loc, open_px):
                       "}"])
 
 
+def ear_y_keyframes(name, loc):
+    """Animate --ear-y on the element so ::after's transform tracks the head.
+    Eases 0 → SLEEP_DROP during falling, holds, eases back during waking.
+    ::after inherits the value and applies transform: translateY(var(--ear-y)).
+    :active::after overrides animation but not transform, so ear-flick frames
+    ride the same Y offset automatically."""
+    sleep_y = f"{SLEEP_DROP}px"
+    ease    = "animation-timing-function: ease-in-out;"
+    pts     = {"0.0000": "--ear-y: 0px;", "100.0000": "--ear-y: 0px;"}
+    for ph in TIMELINE:
+        if ph["loc"] != loc:
+            continue
+        p = f"{to_pct(ph['startSec']):.4f}"
+        if   ph["kind"] == "falling": pts[p] = f"--ear-y: 0px; {ease}"
+        elif ph["kind"] == "asleep":  pts[p] = f"--ear-y: {sleep_y};"
+        elif ph["kind"] == "waking":  pts[p] = f"--ear-y: {sleep_y}; {ease}"
+        elif ph["kind"] == "awake":   pts[p] = "--ear-y: 0px;"
+    sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
+    return "\n".join([f"@keyframes {name} {{",
+                      *[f"  {p}% {{ {d} }}" for p, d in sorted_pts],
+                      "}"])
+
+
 def ear_flick_keyframes():
     lines = ["@keyframes ear-flick {"]
     for i, (l, r) in enumerate(zip(EAR_FLICK_L, EAR_FLICK_R)):
@@ -219,20 +240,24 @@ def ear_flick_keyframes():
 
 print("Building keyframes…")
 kf_ear_flick = ear_flick_keyframes()
-kf_d_rest = rest_keyframes("pants-d-rest", "d")
-kf_c_rest = rest_keyframes("pants-c-rest", "c")
-kf_a_rest = rest_keyframes("pants-a-rest", "a")
-kf_d_head = head_keyframes("pants-d-head", "d")
-kf_c_head = head_keyframes("pants-c-head", "c")
-kf_a_head = head_keyframes("pants-a-head", "a")
-kf_d_ear  = ear_keyframes("pants-d-ear",  "d")
-kf_c_ear  = ear_keyframes("pants-c-ear",  "c")
-kf_a_ear  = ear_keyframes("pants-a-ear",  "a")
+kf_d_rest  = rest_keyframes("pants-d-rest",  "d")
+kf_c_rest  = rest_keyframes("pants-c-rest",  "c")
+kf_a_rest  = rest_keyframes("pants-a-rest",  "a")
+kf_d_head  = head_keyframes("pants-d-head",  "d")
+kf_c_head  = head_keyframes("pants-c-head",  "c")
+kf_a_head  = head_keyframes("pants-a-head",  "a")
+kf_d_ear   = ear_keyframes( "pants-d-ear",   "d")
+kf_c_ear   = ear_keyframes( "pants-c-ear",   "c")
+kf_a_ear   = ear_keyframes( "pants-a-ear",   "a")
+kf_d_ear_y = ear_y_keyframes("pants-d-ear-y","d")
+kf_c_ear_y = ear_y_keyframes("pants-c-ear-y","c")
+kf_a_ear_y = ear_y_keyframes("pants-a-ear-y","a")
 kf_dm = margin_keyframes("pants-d-w", "--pants-sidebar-w", "d", SIDE_W)
 kf_cm = margin_keyframes("pants-c-h", "--pants-c-h",       "c", C_H)
 kf_am = margin_keyframes("pants-a-h", "--pants-a-h",       "a", C_H)
 
-def anim(*names): return ", ".join(f"{n} {CYCLE}s steps(1) infinite" for n in names)
+def anim(*names):      return ", ".join(f"{n} {CYCLE}s steps(1) infinite" for n in names)
+def smooth_anim(name): return f"{name} {CYCLE}s linear infinite"
 
 SIZE = f"{W} {H}"
 RPT  = "no-repeat"
@@ -251,14 +276,23 @@ css = "\n".join([
     f'@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");',
     f'@namespace html url("http://www.w3.org/1999/xhtml");',
     f"",
+    f"/* --ear-y: animated on the element, inherited by ::after for transform */",
+    f"@property --ear-y {{",
+    f"  syntax: '<length>';",
+    f"  initial-value: 0px;",
+    f"  inherits: true;",
+    f"}}",
+    f"",
     f"/* one Pants, D → C → A, {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
     f"",
     f"/* REST layer keyframes (cushion / body / paws / tail — constant per visit) */",
     kf_d_rest, "", kf_c_rest, "", kf_a_rest, "",
     f"/* HEAD layer keyframes (head / eyes / transition frames — no ears) */",
     kf_d_head, "", kf_c_head, "", kf_a_head, "",
-    f"/* EAR layer keyframes (::after — awake/sleep ears, none during transitions) */",
+    f"/* EAR layer keyframes (::after — awake ears only; --ear-y handles sleep drop) */",
     kf_d_ear, "", kf_c_ear, "", kf_a_ear, "",
+    f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
+    kf_d_ear_y, "", kf_c_ear_y, "", kf_a_ear_y, "",
     f"/* room-making margins */",
     kf_dm, "", kf_cm, "", kf_am, "",
     f"/* shared background geometry */",
@@ -281,9 +315,13 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
+    f"/* ::after inherits --ear-y from parent; translateY shifts the whole ear box */",
+    f"/* :active::after overrides animation but not transform — flick rides same Y */",
+    f"#sidebar-container::after, #nav-bar::after, #TabsToolbar::after {{",
+    f"  transform: translateY(var(--ear-y, 0px));",
+    f"}}",
+    f"",
     f"/* ear flick on :active — higher specificity overrides base ::after ear cycle */",
-    f"/* ends at none so base cycle can resume cleanly; no double-ears since ::before */",
-    f"/* transition frames no longer bake in ears */",
     kf_ear_flick,
     f"#sidebar-container:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['d']}; }}",
     f"#nav-bar:active::after           {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['c']}; }}",
@@ -296,7 +334,7 @@ css = "\n".join([
     f"#browser {{ overflow: visible !important; }}",
     f"",
     f"/* ── D: sidebar icon strip ───────────────────────────────── */",
-    f"#sidebar-container {{ animation: {anim('pants-d-rest')}; }}",
+    f"#sidebar-container {{ animation: {anim('pants-d-rest')}, {smooth_anim('pants-d-ear-y')}; }}",
     f"#sidebar-container::before {{ animation: {anim('pants-d-head')}; }}",
     f"html|sidebar-main {{",
     f"  animation:  {anim('pants-d-w')};",
@@ -306,14 +344,14 @@ css = "\n".join([
     f"",
     f"/* ── C: nav-bar ─────────────────────────────────────────── */",
     f"#nav-bar {{",
-    f"  animation:  {anim('pants-c-rest', 'pants-c-h')};",
+    f"  animation:  {anim('pants-c-rest', 'pants-c-h')}, {smooth_anim('pants-c-ear-y')};",
     f"  min-height: var(--pants-c-h, 0px) !important;",
     f"}}",
     f"#nav-bar::before {{ animation: {anim('pants-c-head')}; }}",
     f"",
     f"/* ── A: TabsToolbar ─────────────────────────────────────── */",
     f"#TabsToolbar {{",
-    f"  animation:  {anim('pants-a-rest', 'pants-a-h')};",
+    f"  animation:  {anim('pants-a-rest', 'pants-a-h')}, {smooth_anim('pants-a-ear-y')};",
     f"  min-height: var(--pants-a-h, 0px) !important;",
     f"}}",
     f"#TabsToolbar::before {{ animation: {anim('pants-a-head')}; }}",
