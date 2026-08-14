@@ -326,6 +326,11 @@ css = "\n".join([
     f"  animation:         {anim('pants-rest')};",
     f"}}",
     f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
+    f"",
+    f"/* === DEBUG: remove before shipping === */",
+    f"#taskbar-tabs-favicon {{ background: rgba(255,0,0,0.25) !important; cursor: crosshair !important; }}",
+    f"#taskbar-tabs-favicon:active {{ background: rgba(0,255,0,0.6) !important; }}",
+    f"#nav-bar:has(#taskbar-tabs-favicon:active) {{ outline: 4px solid blue !important; }}",
 ])
 
 OUT.write_text(css)
