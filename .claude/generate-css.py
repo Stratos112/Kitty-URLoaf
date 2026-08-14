@@ -52,6 +52,7 @@ REST_PATHS = [
     ANIM  / "tail-flick.apng",
     ANIM  / "breath-rpaw.apng",
     LIMBS / "right_back_paw.png",
+    ANIM  / "breath.apng",
     BODY  / "body_basic.png",
     LIMBS / "left_front_paw.png",
     LIMBS / "left_back_paw.png",
