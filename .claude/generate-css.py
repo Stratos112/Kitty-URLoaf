@@ -299,15 +299,17 @@ css = "\n".join([
     f"#nav-bar::after        {{ animation: {anim('pants-ear')}; }}",
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
-    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed='true'])) #nav-bar {{ align-items: flex-start !important; }}",
     f"#browser {{ overflow: visible !important; }}",
     f"#PersonalToolbar {{",
     f"  --cat-y:           -{Y_SHIFT + C_H}px;",
     f"  position:          relative;",
+    f"  min-height:        {px(Y_BELOW)} !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')};",
     f"}}",
+    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ align-items: flex-start !important; }}",
+    f"#navigator-toolbox:has(#PersonalToolbar[collapsed]) #nav-bar {{ min-height: {px(C_H + Y_BELOW)} !important; }}",
 ])
 
 OUT.write_text(css)
