@@ -21,9 +21,7 @@ dlBtn.addEventListener('click', async () => {
 });
 
 document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(1); });
-document.querySelector('.pants-dl-icon').addEventListener('click', () => {
-  if (!dlBtn.dataset.ready) triggerDownload();
-});
+document.querySelector('.pants-dl-icon').addEventListener('click', () => triggerDownload());
 
 document.getElementById('back3').addEventListener('click', () => goTo(0));
 document.getElementById('next3').addEventListener('click', () => goTo(2));
