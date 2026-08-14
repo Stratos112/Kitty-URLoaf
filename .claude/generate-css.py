@@ -268,7 +268,7 @@ css = "\n".join([
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
-    f"  min-height:        {px(C_H)} !important;",
+    f"  min-height:        {px(C_H + Y_BELOW)} !important;",
     f"  align-items:       flex-end !important;",
     f"}}",
     f"",
@@ -308,9 +308,7 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')};",
     f"}}",
-    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ padding-bottom: {px(Y_BELOW)} !important; }}",
-    f"#PersonalToolbar[collapsed] {{ display: -moz-box !important; pointer-events: none !important; }}",
-    f"#PersonalToolbar[collapsed] > * {{ visibility: hidden !important; pointer-events: none !important; }}",
+    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; padding-bottom: {px(Y_BELOW)} !important; }}",
 ])
 
 OUT.write_text(css)
