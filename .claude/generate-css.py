@@ -302,7 +302,13 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
-    f"#PersonalToolbar {{ opacity: 0.4; }}",
+    f"#PersonalToolbar {{",
+    f"  --cat-y:           -{Y_SHIFT + C_H}px;",
+    f"  position:          relative;",
+    f"  background-size:   {SIZE};",
+    f"  background-repeat: {RPT};",
+    f"  animation:         {anim('pants-rest')};",
+    f"}}",
     f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
 ])
 
