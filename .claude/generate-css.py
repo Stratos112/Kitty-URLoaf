@@ -308,8 +308,9 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')};",
     f"}}",
-    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ align-items: flex-start !important; }}",
-    f"#navigator-toolbox:has(#PersonalToolbar[collapsed]) #nav-bar {{ min-height: {px(C_H + Y_BELOW)} !important; }}",
+    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ padding-bottom: {px(Y_BELOW)} !important; }}",
+    f"#PersonalToolbar[collapsed] {{ display: -moz-box !important; pointer-events: none !important; }}",
+    f"#PersonalToolbar[collapsed] > * {{ visibility: hidden !important; pointer-events: none !important; }}",
 ])
 
 OUT.write_text(css)
