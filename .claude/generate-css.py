@@ -40,7 +40,7 @@ TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
-C_H               = 196
+C_H               = 166
 W, H              = "364px", "266px"
 
 # REST layer: cushion behind body/paws/tail — constant during all phases at a location
@@ -282,6 +282,9 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
+    f"",
+    f"/* push URL bar + buttons below the cat's body */",
+    f"#nav-bar > .toolbar-items {{ margin-top: auto; }}",
 ])
 
 OUT.write_text(css)
