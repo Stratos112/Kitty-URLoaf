@@ -299,6 +299,7 @@ css = "\n".join([
     f"#nav-bar::after        {{ animation: {anim('pants-ear')}; }}",
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
+    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed='true'])) #nav-bar {{ align-items: flex-start !important; }}",
     f"#browser {{ overflow: visible !important; }}",
     f"#PersonalToolbar {{",
     f"  --cat-y:           -{Y_SHIFT + C_H}px;",
