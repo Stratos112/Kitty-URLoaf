@@ -41,7 +41,6 @@ APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
 C_H               = 286
-SIDE_W            = 256
 RAMP_SECONDS      = 2
 RAMP_STEPS        = 48
 W, H              = "364px", "266px"
@@ -98,9 +97,8 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-POS = {"d": "left bottom", "c": "left 142px center", "a": "right 170px center"}
+POS = "left 142px center"
 
-LOCATIONS   = ["d", "c", "a"]
 PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
 
 def seconds_for(kind):
@@ -110,11 +108,10 @@ def seconds_for(kind):
 
 cursor = 0
 TIMELINE = []
-for loc in LOCATIONS:
-    for kind in PHASE_KINDS:
-        start = cursor
-        cursor += seconds_for(kind)
-        TIMELINE.append(dict(loc=loc, kind=kind, startSec=start, endSec=cursor))
+for kind in PHASE_KINDS:
+    start = cursor
+    cursor += seconds_for(kind)
+    TIMELINE.append(dict(kind=kind, startSec=start, endSec=cursor))
 CYCLE = cursor
 
 def to_pct(s):  return s / CYCLE * 100
@@ -122,14 +119,13 @@ def pct(n):     return f"{(((n % 100) + 100) % 100):.4f}"
 def px(n):      return f"{n:.2f}px"
 
 
-def rest_keyframes(name, loc):
-    visit       = [ph for ph in TIMELINE if ph["loc"] == loc]
-    appear_ph   = next(ph for ph in visit if ph["kind"] == "appear")
+def rest_keyframes():
+    appear_ph   = next(ph for ph in TIMELINE if ph["kind"] == "appear")
     appear_pct  = to_pct(appear_ph["startSec"])
     pants_pct   = to_pct(appear_ph["endSec"])
-    end_pct     = to_pct(visit[-1]["endSec"])
-    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {POS[loc]};"
-    show        = f"background-image: {rest_imgs}; background-position: {POS[loc]};"
+    end_pct     = to_pct(TIMELINE[-1]["endSec"])
+    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {POS};"
+    show        = f"background-image: {rest_imgs}; background-position: {POS};"
     hide        = "background-image: none;"
     pts = {}
     pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
@@ -138,16 +134,16 @@ def rest_keyframes(name, loc):
     pts[f"{pants_pct:.4f}"]    = show
     pts[f"{end_pct:.4f}"]      = hide
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
-    return "\n".join([f"@keyframes {name} {{",
+    return "\n".join(["@keyframes pants-rest {",
                       *[f"  {p}% {{ {d} }}" for p, d in sorted_pts],
                       "}"])
 
 
-def head_keyframes(name, loc):
+def head_keyframes():
     head_by = {"awake": awake_head_imgs, "asleep": sleep_head_imgs}
     pts = []
     for ph in TIMELINE:
-        if ph["loc"] != loc or ph["kind"] == "appear":
+        if ph["kind"] == "appear":
             pts.append((f"{to_pct(ph['startSec']):.4f}", "background-image: none;"))
             continue
         if ph["kind"] in ("falling", "waking"):
@@ -156,27 +152,27 @@ def head_keyframes(name, loc):
                 fi = i if ph["kind"] == "falling" else (TRANS_FRAME_COUNT - 1 - i)
                 t  = ph["startSec"] + span * i / TRANS_FRAME_COUNT
                 pts.append((f"{to_pct(t):.4f}",
-                             f"background-image: {trans_urls[fi]}; background-position: {POS[loc]};"))
+                             f"background-image: {trans_urls[fi]}; background-position: {POS};"))
         else:
             pts.append((f"{to_pct(ph['startSec']):.4f}",
-                        f"background-image: {head_by[ph['kind']]}; background-position: {POS[loc]};"))
+                        f"background-image: {head_by[ph['kind']]}; background-position: {POS};"))
     pts.append(("100.0000", pts[0][1]))
-    return "\n".join([f"@keyframes {name} {{",
+    return "\n".join(["@keyframes pants-head {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
                       "}"])
 
 
-def ear_keyframes(name, loc):
+def ear_keyframes():
     """Always awake ear APNGs during the location visit — no image swap for sleep.
     --ear-y (animated on the element, inherited by ::after) shifts the ear box
     down for the sleep pose so we never need separate sleep ear assets here."""
-    show = f"background-image: {awake_ear_imgs}; background-position: {POS[loc]};"
+    show = f"background-image: {awake_ear_imgs}; background-position: {POS};"
     pts  = []
     for ph in TIMELINE:
-        val = show if (ph["loc"] == loc and ph["kind"] != "appear") else "background-image: none;"
+        val = show if ph["kind"] != "appear" else "background-image: none;"
         pts.append((f"{to_pct(ph['startSec']):.4f}", val))
     pts.append(("100.0000", pts[0][1]))
-    return "\n".join([f"@keyframes {name} {{",
+    return "\n".join(["@keyframes pants-ear {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
                       "}"])
 
@@ -185,27 +181,26 @@ def ease_in_out_cubic(t):
     return 4 * t**3 if t < 0.5 else 1 - (-2*t + 2)**3 / 2
 
 
-def margin_keyframes(name, prop, loc, open_px):
-    visit = [ph for ph in TIMELINE if ph["loc"] == loc]
-    start = to_pct(visit[0]["startSec"])
-    end   = to_pct(visit[-1]["endSec"])
+def margin_keyframes():
+    start = to_pct(TIMELINE[0]["startSec"])
+    end   = to_pct(TIMELINE[-1]["endSec"])
     ramp  = RAMP_SECONDS / CYCLE * 100
     pts   = {}
-    pts["0.0000"]   = px(open_px) if end   >= 99.9999 else px(0)
-    pts["100.0000"] = px(open_px) if start <= 0.0001  else px(0)
+    pts["0.0000"]   = px(C_H) if end   >= 99.9999 else px(0)
+    pts["100.0000"] = px(C_H) if start <= 0.0001  else px(0)
     for s in range(1, RAMP_STEPS + 1):
         t = s / RAMP_STEPS
-        pts[pct(start - ramp + ramp * t)] = px(open_px * ease_in_out_cubic(t))
-        pts[pct(end   + ramp * t)]        = px(open_px * (1 - ease_in_out_cubic(t)))
-    pts[f"{start:.4f}"] = px(open_px)
-    pts[f"{end:.4f}"]   = px(open_px)
+        pts[pct(start - ramp + ramp * t)] = px(C_H * ease_in_out_cubic(t))
+        pts[pct(end   + ramp * t)]        = px(C_H * (1 - ease_in_out_cubic(t)))
+    pts[f"{start:.4f}"] = px(C_H)
+    pts[f"{end:.4f}"]   = px(C_H)
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
-    return "\n".join([f"@keyframes {name} {{",
-                      *[f"  {p}% {{ {prop}: {v}; }}" for p, v in sorted_pts],
+    return "\n".join(["@keyframes pants-h {",
+                      *[f"  {p}% {{ --pants-c-h: {v}; }}" for p, v in sorted_pts],
                       "}"])
 
 
-def ear_y_keyframes(name, loc):
+def ear_y_keyframes():
     """Animate --ear-y on the element so ::after's transform tracks the head.
     Eases 0 → SLEEP_DROP during falling, holds, eases back during waking.
     ::after inherits the value and applies transform: translateY(var(--ear-y)).
@@ -215,15 +210,13 @@ def ear_y_keyframes(name, loc):
     ease    = "animation-timing-function: ease-in-out;"
     pts     = {"0.0000": "--ear-y: 0px;", "100.0000": "--ear-y: 0px;"}
     for ph in TIMELINE:
-        if ph["loc"] != loc:
-            continue
         p = f"{to_pct(ph['startSec']):.4f}"
         if   ph["kind"] == "falling": pts[p] = f"--ear-y: 0px; {ease}"
         elif ph["kind"] == "asleep":  pts[p] = f"--ear-y: {sleep_y};"
         elif ph["kind"] == "waking":  pts[p] = f"--ear-y: {sleep_y}; {ease}"
         elif ph["kind"] == "awake":   pts[p] = "--ear-y: 0px;"
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
-    return "\n".join([f"@keyframes {name} {{",
+    return "\n".join(["@keyframes pants-ear-y {",
                       *[f"  {p}% {{ {d} }}" for p, d in sorted_pts],
                       "}"])
 
@@ -240,21 +233,11 @@ def ear_flick_keyframes():
 
 print("Building keyframes…")
 kf_ear_flick = ear_flick_keyframes()
-kf_d_rest  = rest_keyframes("pants-d-rest",  "d")
-kf_c_rest  = rest_keyframes("pants-c-rest",  "c")
-kf_a_rest  = rest_keyframes("pants-a-rest",  "a")
-kf_d_head  = head_keyframes("pants-d-head",  "d")
-kf_c_head  = head_keyframes("pants-c-head",  "c")
-kf_a_head  = head_keyframes("pants-a-head",  "a")
-kf_d_ear   = ear_keyframes( "pants-d-ear",   "d")
-kf_c_ear   = ear_keyframes( "pants-c-ear",   "c")
-kf_a_ear   = ear_keyframes( "pants-a-ear",   "a")
-kf_d_ear_y = ear_y_keyframes("pants-d-ear-y","d")
-kf_c_ear_y = ear_y_keyframes("pants-c-ear-y","c")
-kf_a_ear_y = ear_y_keyframes("pants-a-ear-y","a")
-kf_dm = margin_keyframes("pants-d-w", "--pants-sidebar-w", "d", SIDE_W)
-kf_cm = margin_keyframes("pants-c-h", "--pants-c-h",       "c", C_H)
-kf_am = margin_keyframes("pants-a-h", "--pants-a-h",       "a", C_H)
+kf_rest  = rest_keyframes()
+kf_head  = head_keyframes()
+kf_ear   = ear_keyframes()
+kf_ear_y = ear_y_keyframes()
+kf_h     = margin_keyframes()
 
 def anim(*names):      return ", ".join(f"{n} {CYCLE}s steps(1) infinite" for n in names)
 def smooth_anim(name): return f"{name} {CYCLE}s linear infinite"
@@ -283,29 +266,30 @@ css = "\n".join([
     f"  inherits: true;",
     f"}}",
     f"",
-    f"/* one Pants, D → C → A, {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
+    f"/* Pants on nav-bar — {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
     f"",
-    f"/* REST layer keyframes (cushion / body / paws / tail — constant per visit) */",
-    kf_d_rest, "", kf_c_rest, "", kf_a_rest, "",
+    f"/* REST layer keyframes (cushion / body / paws / tail) */",
+    kf_rest, "",
     f"/* HEAD layer keyframes (head / eyes / transition frames — no ears) */",
-    kf_d_head, "", kf_c_head, "", kf_a_head, "",
+    kf_head, "",
     f"/* EAR layer keyframes (::after — awake ears only; --ear-y handles sleep drop) */",
-    kf_d_ear, "", kf_c_ear, "", kf_a_ear, "",
+    kf_ear, "",
     f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
-    kf_d_ear_y, "", kf_c_ear_y, "", kf_a_ear_y, "",
-    f"/* room-making margins */",
-    kf_dm, "", kf_cm, "", kf_am, "",
-    f"/* shared background geometry */",
-    f"#sidebar-container, #nav-bar, #TabsToolbar {{",
+    kf_ear_y, "",
+    f"/* room-making margin */",
+    kf_h, "",
+    f"#nav-bar {{",
     f"  position:          relative;",
     f"  overflow:          visible !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
+    f"  animation:         {anim('pants-rest', 'pants-h')}, {smooth_anim('pants-ear-y')};",
+    f"  min-height:        var(--pants-c-h, 0px) !important;",
     f"}}",
     f"",
-    f"/* ::before = head layer; ::after = ear layer (both share parent coordinate space) */",
-    f"#sidebar-container::before, #nav-bar::before, #TabsToolbar::before,",
-    f"#sidebar-container::after,  #nav-bar::after,  #TabsToolbar::after  {{",
+    f"/* ::before = head layer; ::after = ear layer */",
+    f"#nav-bar::before,",
+    f"#nav-bar::after {{",
     f"  content:           '';",
     f"  position:          absolute;",
     f"  inset:             0;",
@@ -317,44 +301,16 @@ css = "\n".join([
     f"",
     f"/* ::after inherits --ear-y from parent; translateY shifts the whole ear box */",
     f"/* :active::after overrides animation but not transform — flick rides same Y */",
-    f"#sidebar-container::after, #nav-bar::after, #TabsToolbar::after {{",
+    f"#nav-bar::after {{",
     f"  transform: translateY(var(--ear-y, 0px));",
     f"}}",
     f"",
-    f"/* ear flick on :active — higher specificity overrides base ::after ear cycle */",
     kf_ear_flick,
-    f"#sidebar-container:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['d']}; }}",
-    f"#nav-bar:active::after           {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['c']}; }}",
-    f"#TabsToolbar:active::after       {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS['a']}; }}",
-    f"/* base ::after ear cycle — overridden by :active above */",
-    f"#sidebar-container::after {{ animation: {anim('pants-d-ear')}; }}",
-    f"#nav-bar::after           {{ animation: {anim('pants-c-ear')}; }}",
-    f"#TabsToolbar::after       {{ animation: {anim('pants-a-ear')}; }}",
+    f"#nav-bar:active::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS}; }}",
+    f"#nav-bar::after        {{ animation: {anim('pants-ear')}; }}",
+    f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
-    f"",
-    f"/* ── D: sidebar icon strip ───────────────────────────────── */",
-    f"#sidebar-container {{ animation: {anim('pants-d-rest')}, {smooth_anim('pants-d-ear-y')}; }}",
-    f"#sidebar-container::before {{ animation: {anim('pants-d-head')}; }}",
-    f"html|sidebar-main {{",
-    f"  animation:  {anim('pants-d-w')};",
-    f"  min-width:  var(--pants-sidebar-w, 0px) !important;",
-    f"  max-width:  {px(SIDE_W)} !important;",
-    f"}}",
-    f"",
-    f"/* ── C: nav-bar ─────────────────────────────────────────── */",
-    f"#nav-bar {{",
-    f"  animation:  {anim('pants-c-rest', 'pants-c-h')}, {smooth_anim('pants-c-ear-y')};",
-    f"  min-height: var(--pants-c-h, 0px) !important;",
-    f"}}",
-    f"#nav-bar::before {{ animation: {anim('pants-c-head')}; }}",
-    f"",
-    f"/* ── A: TabsToolbar ─────────────────────────────────────── */",
-    f"#TabsToolbar {{",
-    f"  animation:  {anim('pants-a-rest', 'pants-a-h')}, {smooth_anim('pants-a-ear-y')};",
-    f"  min-height: var(--pants-a-h, 0px) !important;",
-    f"}}",
-    f"#TabsToolbar::before {{ animation: {anim('pants-a-head')}; }}",
 ])
 
 OUT.write_text(css)
