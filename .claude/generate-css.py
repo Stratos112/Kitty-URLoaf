@@ -99,7 +99,7 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-POS      = "left 0px top 0px"            # pseudo-element background (HEAD, EAR)
+POS      = "left 91px top 0px"            # pseudo-element background (HEAD, EAR)
 
 PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
 
@@ -125,8 +125,8 @@ def rest_keyframes():
     appear_pct  = to_pct(appear_ph["startSec"])
     pants_pct   = to_pct(appear_ph["endSec"])
     end_pct     = to_pct(TIMELINE[-1]["endSec"])
-    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: left 0px top var(--cat-y);"
-    show        = f"background-image: {rest_imgs}; background-position: left 0px top var(--cat-y);"
+    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: left 91px top var(--cat-y);"
+    show        = f"background-image: {rest_imgs}; background-position: left 91px top var(--cat-y);"
     hide        = "background-image: none;"
     pts = {}
     pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
