@@ -328,11 +328,9 @@ css = "\n".join([
     f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
     f"",
     f"/* === DEBUG: remove before shipping === */",
-    f"/* test 1: does #nav-bar:active fire on empty-space clicks? */",
+    f"/* does clicking ::after (the ear layer) activate #nav-bar? */",
+    f"#nav-bar::after {{ pointer-events: auto !important; }}",
     f"#nav-bar:active {{ outline: 4px solid lime !important; }}",
-    f"/* test 2: does the favicon exist at all? force it to a corner */",
-    f"#taskbar-tabs-favicon {{ display: block !important; position: fixed !important; top: 4px !important; left: 50% !important; width: 40px !important; height: 40px !important; background: red !important; z-index: 99999 !important; pointer-events: auto !important; }}",
-    f"#taskbar-tabs-favicon:active {{ background: green !important; }}",
 ])
 
 OUT.write_text(css)
