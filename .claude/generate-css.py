@@ -269,7 +269,7 @@ css = "\n".join([
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
-    f"  min-height:        {px(C_H + Y_BELOW)} !important;",
+    f"  min-height:        {px(C_H + PT_H)} !important;",
     f"  align-items:       flex-end !important;",
     f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
