@@ -249,9 +249,12 @@ css = "\n".join([
     kf_ear, "",
     f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
     kf_ear_y, "",
+    f"#navigator-toolbox {{ overflow: visible !important; }}",
+    f"",
     f"#nav-bar {{",
     f"  position:          relative;",
     f"  overflow:          visible !important;",
+    f"  z-index:           9999 !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
@@ -283,8 +286,8 @@ css = "\n".join([
     f"",
     f"#browser {{ overflow: visible !important; }}",
     f"",
-    f"/* push URL bar + buttons below the cat's body */",
-    f"#nav-bar > .toolbar-items {{ margin-top: auto; }}",
+    f"/* push URL bar + buttons down over the pillow */",
+    f"#nav-bar > .toolbar-items {{ padding-top: 110px !important; }}",
 ])
 
 OUT.write_text(css)
