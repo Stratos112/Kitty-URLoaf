@@ -42,6 +42,9 @@ TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
 C_H               = 166
 W, H              = "364px", "266px"
+IMG_H             = int(H.replace("px", ""))   # 266
+Y_SHIFT           = 30                          # px above nav-bar pseudo-elements extend (cat shifted up)
+Y_BELOW           = IMG_H - Y_SHIFT - C_H      # px below nav-bar pseudo-elements extend (cushion overflow)
 
 # REST layer: cushion behind body/paws/tail — constant during all phases at a location
 REST_PATHS = [
@@ -95,7 +98,7 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-POS = "left 142px top -30px"
+POS = "left 142px top 0px"
 
 PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
 
@@ -249,24 +252,31 @@ css = "\n".join([
     kf_ear, "",
     f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
     kf_ear_y, "",
-    f"#navigator-toolbox {{ overflow: visible !important; }}",
+    f"/* stacking: toolbox above browser; nav-bar above tab bar */",
+    f"#navigator-toolbox {{ position: relative !important; z-index: 9999 !important; }}",
+    f"#TabsToolbar       {{ position: relative !important; z-index: 1    !important; }}",
     f"",
     f"#nav-bar {{",
     f"  position:          relative;",
     f"  overflow:          visible !important;",
-    f"  z-index:           9999 !important;",
+    f"  z-index:           2 !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
     f"  min-height:        {px(C_H)} !important;",
+    f"  align-items:       flex-end !important;",
     f"}}",
     f"",
     f"/* ::before = head layer; ::after = ear layer */",
+    f"/* extend beyond nav-bar so the full image is unclipped above and below */",
     f"#nav-bar::before,",
     f"#nav-bar::after {{",
     f"  content:           '';",
     f"  position:          absolute;",
-    f"  inset:             0;",
+    f"  top:               -{Y_SHIFT}px;",
+    f"  left:              0;",
+    f"  right:             0;",
+    f"  bottom:            -{Y_BELOW}px;",
     f"  overflow:          visible;",
     f"  pointer-events:    none;",
     f"  background-size:   {SIZE};",
@@ -285,9 +295,6 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
-    f"",
-    f"/* push URL bar + buttons down over the pillow */",
-    f"#nav-bar > .toolbar-items {{ padding-top: 110px !important; }}",
 ])
 
 OUT.write_text(css)
