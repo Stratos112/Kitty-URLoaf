@@ -41,6 +41,7 @@ APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
 C_H               = 166
+PT_H              = 34        # estimate of Firefox bookmarks toolbar natural height
 W, H              = "364px", "266px"
 IMG_H             = int(H.replace("px", ""))   # 266
 Y_SHIFT           = 30                          # px above nav-bar pseudo-elements extend (cat shifted up)
@@ -270,6 +271,7 @@ css = "\n".join([
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
     f"  min-height:        {px(C_H + Y_BELOW)} !important;",
     f"  align-items:       flex-end !important;",
+    f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
     f"",
     f"/* ::before = head layer; ::after = ear layer */",
@@ -303,12 +305,11 @@ css = "\n".join([
     f"#PersonalToolbar {{",
     f"  --cat-y:           -{Y_SHIFT + C_H}px;",
     f"  position:          relative;",
-    f"  min-height:        {px(Y_BELOW)} !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')};",
     f"}}",
-    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; padding-bottom: {px(Y_BELOW)} !important; }}",
+    f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; padding-bottom: {px(PT_H + 4)} !important; }}",
 ])
 
 OUT.write_text(css)
