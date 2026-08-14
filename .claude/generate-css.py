@@ -254,7 +254,7 @@ css = "\n".join([
     f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
     kf_ear_y, "",
     f"/* stacking: toolbox above browser; nav-bar above tab bar */",
-    f"#navigator-toolbox {{ position: relative !important; z-index: 9999 !important; }}",
+    f"#navigator-toolbox {{ position: relative !important; z-index: 9999 !important; overflow: visible !important; }}",
     f"#TabsToolbar       {{ position: relative !important; z-index: 1    !important; }}",
     f"",
     f"#nav-bar {{",
@@ -296,7 +296,6 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
-    f"#PersonalToolbar {{ background: transparent !important; }}",
 ])
 
 OUT.write_text(css)
