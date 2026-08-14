@@ -40,7 +40,7 @@ TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
-C_H               = 210
+C_H               = 166
 W, H              = "364px", "266px"
 IMG_H             = int(H.replace("px", ""))   # 266
 Y_SHIFT           = 30                          # px above nav-bar pseudo-elements extend (cat shifted up)
@@ -98,7 +98,6 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-POS_ELEM = f"left 142px top -{Y_SHIFT}px"  # element background (REST): shift image up to align with pseudo-elements
 POS      = "left 142px top 0px"            # pseudo-element background (HEAD, EAR)
 
 PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
@@ -125,8 +124,8 @@ def rest_keyframes():
     appear_pct  = to_pct(appear_ph["startSec"])
     pants_pct   = to_pct(appear_ph["endSec"])
     end_pct     = to_pct(TIMELINE[-1]["endSec"])
-    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {POS_ELEM};"
-    show        = f"background-image: {rest_imgs}; background-position: {POS_ELEM};"
+    cush_appear = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: left 142px top var(--cat-y);"
+    show        = f"background-image: {rest_imgs}; background-position: left 142px top var(--cat-y);"
     hide        = "background-image: none;"
     pts = {}
     pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
@@ -236,11 +235,15 @@ css = "\n".join([
     f'@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");',
     f'@namespace html url("http://www.w3.org/1999/xhtml");',
     f"",
-    f"/* --ear-y: animated on the element, inherited by ::after for transform */",
     f"@property --ear-y {{",
     f"  syntax: '<length>';",
     f"  initial-value: 0px;",
     f"  inherits: true;",
+    f"}}",
+    f"@property --cat-y {{",
+    f"  syntax: '<length>';",
+    f"  initial-value: 0px;",
+    f"  inherits: false;",
     f"}}",
     f"",
     f"/* Pants on nav-bar — {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
@@ -261,6 +264,7 @@ css = "\n".join([
     f"  position:          relative;",
     f"  overflow:          visible !important;",
     f"  z-index:           2 !important;",
+    f"  --cat-y:           -{Y_SHIFT}px;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
@@ -277,7 +281,7 @@ css = "\n".join([
     f"  top:               -{Y_SHIFT}px;",
     f"  left:              0;",
     f"  right:             0;",
-    f"  bottom:            -{Y_BELOW}px;",
+    f"  bottom:            0;",
     f"  overflow:          visible;",
     f"  pointer-events:    none;",
     f"  background-size:   {SIZE};",
@@ -296,7 +300,13 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
-    f"#PersonalToolbar {{ display: none !important; }}",
+    f"#PersonalToolbar {{",
+    f"  --cat-y:           -{Y_SHIFT + C_H}px;",
+    f"  position:          relative;",
+    f"  background-size:   {SIZE};",
+    f"  background-repeat: {RPT};",
+    f"  animation:         {anim('pants-rest')};",
+    f"}}",
 ])
 
 OUT.write_text(css)
