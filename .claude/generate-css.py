@@ -40,7 +40,7 @@ TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
-C_H               = 256
+C_H               = 196
 W, H              = "364px", "266px"
 
 # REST layer: cushion behind body/paws/tail — constant during all phases at a location
@@ -95,7 +95,7 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-POS = "left 142px top 0px"
+POS = "left 142px top -30px"
 
 PHASE_KINDS = ["appear", "awake", "falling", "asleep", "waking", "awake"]
 
