@@ -296,6 +296,7 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
+    f"#PersonalToolbar {{ background: transparent !important; }}",
 ])
 
 OUT.write_text(css)
