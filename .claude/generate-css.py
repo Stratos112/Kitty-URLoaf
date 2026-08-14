@@ -41,8 +41,6 @@ APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
 C_H               = 286
-RAMP_SECONDS      = 2
-RAMP_STEPS        = 48
 W, H              = "364px", "266px"
 
 # REST layer: cushion behind body/paws/tail — constant during all phases at a location
@@ -115,7 +113,6 @@ for kind in PHASE_KINDS:
 CYCLE = cursor
 
 def to_pct(s):  return s / CYCLE * 100
-def pct(n):     return f"{(((n % 100) + 100) % 100):.4f}"
 def px(n):      return f"{n:.2f}px"
 
 
@@ -177,29 +174,6 @@ def ear_keyframes():
                       "}"])
 
 
-def ease_in_out_cubic(t):
-    return 4 * t**3 if t < 0.5 else 1 - (-2*t + 2)**3 / 2
-
-
-def margin_keyframes():
-    start = to_pct(TIMELINE[0]["startSec"])
-    end   = to_pct(TIMELINE[-1]["endSec"])
-    ramp  = RAMP_SECONDS / CYCLE * 100
-    pts   = {}
-    pts["0.0000"]   = px(C_H) if end   >= 99.9999 else px(0)
-    pts["100.0000"] = px(C_H) if start <= 0.0001  else px(0)
-    for s in range(1, RAMP_STEPS + 1):
-        t = s / RAMP_STEPS
-        pts[pct(start - ramp + ramp * t)] = px(C_H * ease_in_out_cubic(t))
-        pts[pct(end   + ramp * t)]        = px(C_H * (1 - ease_in_out_cubic(t)))
-    pts[f"{start:.4f}"] = px(C_H)
-    pts[f"{end:.4f}"]   = px(C_H)
-    sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
-    return "\n".join(["@keyframes pants-h {",
-                      *[f"  {p}% {{ --pants-c-h: {v}; }}" for p, v in sorted_pts],
-                      "}"])
-
-
 def ear_y_keyframes():
     """Animate --ear-y on the element so ::after's transform tracks the head.
     Eases 0 → SLEEP_DROP during falling, holds, eases back during waking.
@@ -237,7 +211,6 @@ kf_rest  = rest_keyframes()
 kf_head  = head_keyframes()
 kf_ear   = ear_keyframes()
 kf_ear_y = ear_y_keyframes()
-kf_h     = margin_keyframes()
 
 def anim(*names):      return ", ".join(f"{n} {CYCLE}s steps(1) infinite" for n in names)
 def smooth_anim(name): return f"{name} {CYCLE}s linear infinite"
@@ -276,15 +249,13 @@ css = "\n".join([
     kf_ear, "",
     f"/* EAR Y keyframes (--ear-y on element; eases with head during transitions) */",
     kf_ear_y, "",
-    f"/* room-making margin */",
-    kf_h, "",
     f"#nav-bar {{",
     f"  position:          relative;",
     f"  overflow:          visible !important;",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
-    f"  animation:         {anim('pants-rest', 'pants-h')}, {smooth_anim('pants-ear-y')};",
-    f"  min-height:        var(--pants-c-h, 0px) !important;",
+    f"  animation:         {anim('pants-rest')}, {smooth_anim('pants-ear-y')};",
+    f"  min-height:        {px(C_H)} !important;",
     f"}}",
     f"",
     f"/* ::before = head layer; ::after = ear layer */",
