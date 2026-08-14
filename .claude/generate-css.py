@@ -40,11 +40,11 @@ TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
-C_H               = 136
+C_H               = 166
 PT_H              = 34        # estimate of Firefox bookmarks toolbar natural height
 W, H              = "364px", "266px"
 IMG_H             = int(H.replace("px", ""))   # 266
-Y_SHIFT           = 60                          # px above nav-bar pseudo-elements extend (cat shifted up)
+Y_SHIFT           = 30                          # px above nav-bar pseudo-elements extend (cat shifted up)
 Y_BELOW           = IMG_H - Y_SHIFT - C_H      # px below nav-bar pseudo-elements extend (cushion overflow)
 
 # REST layer: cushion behind body/paws/tail — constant during all phases at a location
@@ -302,6 +302,7 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
+    f"#PersonalToolbar {{ opacity: 0.4; }}",
     f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
 ])
 
