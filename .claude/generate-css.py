@@ -40,7 +40,7 @@ TRANS_SECONDS     = 1.5
 APPEAR_SECONDS    = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # CSS px — generate-anims uses 70px at 530px tall; CSS renders at 266px (×0.502 scale)
-C_H               = 166
+C_H               = 210
 W, H              = "364px", "266px"
 IMG_H             = int(H.replace("px", ""))   # 266
 Y_SHIFT           = 30                          # px above nav-bar pseudo-elements extend (cat shifted up)
@@ -296,6 +296,7 @@ css = "\n".join([
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
+    f"#PersonalToolbar {{ display: none !important; }}",
 ])
 
 OUT.write_text(css)
