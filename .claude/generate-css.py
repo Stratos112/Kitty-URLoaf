@@ -205,7 +205,7 @@ def ear_flick_keyframes():
     for i, (l, r) in enumerate(zip(EAR_FLICK_L, EAR_FLICK_R)):
         p = i * 20
         lines.append(f"  {p}%   {{ background-image: {url(l)}, {url(r)}; animation-timing-function: step-end; }}")
-    lines.append(f"  100% {{ background-image: none; }}")
+    lines.append(f"  100% {{ background-image: {awake_ear_imgs}; }}")
     lines.append("}")
     return "\n".join(lines)
 
@@ -309,11 +309,11 @@ css = "\n".join([
     f"}}",
     f"",
     kf_ear_flick,
-    f"/* #taskbar-tabs-favicon is an HTML <img> — reliably gets :active on click.",
-    f"   :has() on the XUL ancestor reads the child :active without XUL :active propagation issues.",
-    f"   Also keep :active fallback for button/urlbar clicks that propagate normally. */",
+    f"/* hover: 200ms delay filters casual mouse passes — only triggers if you pause on the cat */",
+    f"#nav-bar:hover::after {{ animation: ear-flick 275ms 200ms linear 1 both; background-position: {POS}; }}",
+    f"/* active beats hover (same specificity, later in source wins) */",
     f"#nav-bar:has(#taskbar-tabs-favicon:active)::after,",
-    f"#nav-bar:has(:active)::after {{ animation: ear-flick 275ms linear 1 forwards; background-position: {POS}; }}",
+    f"#nav-bar:has(:active)::after {{ animation: ear-flick 275ms linear 1 both; background-position: {POS}; }}",
     f"#nav-bar::after        {{ animation: {anim('pants-ear')}; }}",
     f"#nav-bar::before       {{ animation: {anim('pants-head')}; }}",
     f"",
@@ -327,10 +327,6 @@ css = "\n".join([
     f"}}",
     f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
     f"",
-    f"/* === DEBUG: remove before shipping === */",
-    f"/* does clicking ::after (the ear layer) activate #nav-bar? */",
-    f"#nav-bar::after {{ pointer-events: auto !important; }}",
-    f"#nav-bar:active {{ outline: 4px solid lime !important; }}",
 ])
 
 OUT.write_text(css)
