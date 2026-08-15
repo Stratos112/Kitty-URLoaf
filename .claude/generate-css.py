@@ -118,7 +118,7 @@ all_paths = list(dict.fromkeys([
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
-    EYES_SE, EYES_E, EYES_S,
+    EYES_E, EYES_S,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -147,11 +147,8 @@ def rest_appear_keyframes():
 
 
 def head_loop_keyframes():
-    awake  = f"background-image: {awake_head_imgs}; background-position: {POS};"
+    awake  = f"background-image: {url(AWAKE_HEAD_PATHS[2])}; background-position: {POS};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {POS};"
-    # Looking-mode awake: swap breath-eyes for var(--eye-img); var() resolves live from :has() hover rules
-    look_imgs = awake_head_imgs
-    looking = f"background-image: {look_imgs}; background-position: {POS};"
     span   = TRANS_SECONDS
 
     def trans(t_start, reverse=False):
@@ -166,7 +163,7 @@ def head_loop_keyframes():
         + trans(t_falling)
         + [(f"{lp(t_asleep):.4f}", asleep)]
         + trans(t_waking, reverse=True)
-        + [(f"{lp(t_looking):.4f}", looking)]
+        + [(f"{lp(t_looking):.4f}", awake)]
         + trans(t2_falling)
         + [(f"{lp(t2_asleep):.4f}", asleep)]
         + trans(t2_waking, reverse=True)
@@ -231,12 +228,30 @@ def ear_flick_keyframes():
     return "\n".join(lines)
 
 
+def eye_overlay_keyframes():
+    pts = {
+        "0.0000":                "opacity: 1;",
+        f"{lp(t_falling):.4f}":  "opacity: 1;",
+        f"{lp(t_asleep):.4f}":   "opacity: 0;",
+        f"{lp(t_waking):.4f}":   "opacity: 0;",
+        f"{lp(t_looking):.4f}":  "opacity: 1;",
+        f"{lp(t2_falling):.4f}": "opacity: 1;",
+        f"{lp(t2_asleep):.4f}":  "opacity: 0;",
+        f"{lp(t2_waking):.4f}":  "opacity: 0;",
+        "100.0000":              "opacity: 1;",
+    }
+    return "\n".join(["@keyframes pants-eye-overlay {",
+                      *[f"  {p}% {{ {d} }}" for p, d in sorted(pts.items(), key=lambda x: float(x[0]))],
+                      "}"])
+
+
 print("Building keyframes…")
 kf_rest_appear = rest_appear_keyframes()
 kf_head_loop   = head_loop_keyframes()
 kf_ear_random  = ear_random_keyframes()
 kf_ear_y_loop  = ear_y_loop_keyframes()
 kf_ear_flick   = ear_flick_keyframes()
+kf_eye_overlay = eye_overlay_keyframes()
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
@@ -283,6 +298,8 @@ css = "\n".join([
     kf_ear_y_loop, "",
     f"/* ear-flick: hover/click override — both ears, holds last frame */",
     kf_ear_flick, "",
+    f"/* eye overlay: opacity-only animation so :has() can change background-image live */",
+    kf_eye_overlay, "",
     f"/* stacking: toolbox above browser; nav-bar above tab bar */",
     f"#navigator-toolbox {{ position: relative !important; z-index: 9999 !important; overflow: visible !important; }}",
     f"#TabsToolbar       {{ position: relative !important; z-index: 1    !important; }}",
@@ -302,17 +319,32 @@ css = "\n".join([
     f"  align-items:       flex-end !important;",
     f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
-    f"/* Eye tracking: !important author declarations beat animation declarations per CSS cascade spec.",
-    f"   Targeting ::before directly; no custom property indirection needed. */",
-    f":root:has(#urlbar:hover) #nav-bar::before,",
-    f":root:has(#nav-bar .toolbarbutton-1:hover) #nav-bar::before {{",
-    f"  background-image:    {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_E)}, {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])} !important;",
-    f"  background-position: {POS} !important; }}",
-    f":root:has(#PersonalToolbar:hover) #nav-bar::before {{",
-    f"  background-image:    {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_S)}, {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])} !important;",
-    f"  background-position: {POS} !important; }}",
     f"#taskbar-tabs-favicon {{ position: absolute !important; inset: 0 !important; }}",
-    f"#nav-bar-customization-target {{ position: relative !important; z-index: 1 !important; }}",
+    f"/* No position:relative — lets ::before position relative to #nav-bar instead */",
+    f"#nav-bar-customization-target {{ z-index: 1 !important; }}",
+    f"",
+    f"/* eye overlay: separate from HEAD animation so :has() can swap background-image freely */",
+    f"#nav-bar-customization-target::before {{",
+    f"  content:           '';",
+    f"  position:          absolute;",
+    f"  top:               -{Y_SHIFT}px;",
+    f"  left:              0;",
+    f"  right:             0;",
+    f"  bottom:            0;",
+    f"  pointer-events:    none;",
+    f"  background-image:  {url(AWAKE_HEAD_PATHS[0])}, {url(AWAKE_HEAD_PATHS[1])};",
+    f"  background-size:   {SIZE};",
+    f"  background-repeat: {RPT};",
+    f"  background-position: {POS};",
+    f"  animation:         pants-eye-overlay {loop_smooth};",
+    f"}}",
+    f":root:has(#urlbar:hover) #nav-bar-customization-target::before,",
+    f":root:has(#nav-bar .toolbarbutton-1:hover) #nav-bar-customization-target::before {{",
+    f"  background-image: {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_E)}, {url(AWAKE_HEAD_PATHS[1])};",
+    f"}}",
+    f":root:has(#PersonalToolbar:hover) #nav-bar-customization-target::before {{",
+    f"  background-image: {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_S)}, {url(AWAKE_HEAD_PATHS[1])};",
+    f"}}",
     f"",
     f"/* ::before = head layer; ::after = ear layer */",
     f"#nav-bar::before,",
