@@ -251,7 +251,7 @@ def css_header():
 
 def pseudo_base_rules(el, top):
     return "\n".join([
-        f"/* ::before = head layer; ::after = ear layer */",
+        f"/* ::before = head+body layer; ::after = ear layer */",
         f"{el}::before,",
         f"{el}::after {{",
         f"  content:           '';",
@@ -264,6 +264,10 @@ def pseudo_base_rules(el, top):
         f"  pointer-events:    none;",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
+        f"}}",
+        f"/* body-imgs defined directly on ::before so var() resolves in keyframes */",
+        f"{el}::before {{",
+        f"  --body-imgs:       {body_imgs};",
         f"}}",
         f"/* ::after inherits --ear-y; translateY snaps ear to sleep position */",
         f"{el}::after {{",
@@ -322,7 +326,6 @@ def generate_nav_bar():
         f"  overflow:          visible !important;",
         f"  z-index:           2 !important;",
         f"  --cat-y:           -{NAV_Y_SHIFT}px;",
-        f"  --body-imgs:       {body_imgs};",
         f"  background-image:  {url(CUSH_APPEAR_PATH)};",
         f"  background-position: {NAV_APP_POS};",
         f"  background-size:   {SIZE};",
@@ -374,7 +377,6 @@ def generate_sidebar():
         f"  position:          relative !important;",
         f"  overflow:          visible !important;",
         f"  min-width:         {W} !important;",
-        f"  --body-imgs:       {body_imgs};",
         f"  background-image:  {url(CUSH_APPEAR_PATH)};",
         f"  background-position: {SIDEBAR_APP_POS};",
         f"  background-size:   {SIZE};",
