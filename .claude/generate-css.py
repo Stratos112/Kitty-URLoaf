@@ -150,7 +150,7 @@ def head_loop_keyframes():
     awake  = f"background-image: {awake_head_imgs}; background-position: {POS};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {POS};"
     # Looking-mode awake: swap breath-eyes for var(--eye-img); var() resolves live from :has() hover rules
-    look_imgs = f"{url(AWAKE_HEAD_PATHS[0])}, var(--eye-img), {url(AWAKE_HEAD_PATHS[2])}"
+    look_imgs = f"{url(AWAKE_HEAD_PATHS[0])}, var(--eye-img), {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])}"
     looking = f"background-image: {look_imgs}; background-position: {POS};"
     span   = TRANS_SECONDS
 
@@ -275,7 +275,7 @@ css = "\n".join([
     f"   which Firefox resolves live every frame, so :has() hover changes take effect immediately. */",
     f"@property --eye-img {{",
     f"  syntax: '*';",
-    f"  initial-value: ;",
+    f"  initial-value: none;",
     f"  inherits: true;",
     f"}}",
     f"",
@@ -303,7 +303,6 @@ css = "\n".join([
     f"  overflow:          visible !important;",
     f"  z-index:           2 !important;",
     f"  --cat-y:           -{Y_SHIFT}px;",
-    f"  --eye-img:         {url(EYES_SE)};",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
