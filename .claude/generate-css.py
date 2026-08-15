@@ -16,7 +16,7 @@ Ear Y positioning:
 Animation cycle:
   One-time appear (APPEAR_SECONDS): cushion APNG plays, then body/head/ears snap in.
   Head loop (LOOP_CYCLE = 23s): awake → falling → asleep → waking → repeat
-  Ear loop (RANDOM_CYCLE = 300s): pseudo-random L/R twitches at varied intervals, seeded for reproducibility
+  Ear loop (RANDOM_CYCLE = 90s): pseudo-random L/R twitches at varied intervals, seeded for reproducibility
   Cat and cushion never re-appear after the initial intro.
 
 Output: static/userChrome.css
@@ -47,9 +47,7 @@ SLEEP_DROP        = 35        # px ear drops during sleep (::after translateY)
 C_H               = 166
 PT_H              = 34
 W, H              = "364px", "266px"
-IMG_H             = int(H.replace("px", ""))
 Y_SHIFT           = 30
-Y_BELOW           = IMG_H - Y_SHIFT - C_H
 
 # REST layer: body / paws / tail / cushion — always visible after appear
 REST_PATHS = [
@@ -88,19 +86,14 @@ EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 FRAME_COUNT  = len(EAR_FLICK_SEQ)   # 5
 FLICK_SECS   = 0.275
 FRAME_SECS   = FLICK_SECS / FRAME_COUNT
-# head cycle: normal awake → fall → sleep → wake → looking awake → fall → sleep → wake → repeat
-LOOP_CYCLE   = HOLD_SECONDS * 4 + TRANS_SECONDS * 4  # 46s
+LOOP_CYCLE   = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
 
-t_falling    = float(HOLD_SECONDS)          # 10.0s
-t_asleep     = t_falling  + TRANS_SECONDS   # 11.5s
-t_waking     = t_asleep   + HOLD_SECONDS    # 21.5s
-t_looking    = t_waking   + TRANS_SECONDS   # 23.0s  ← looking-mode awake starts
-t2_falling   = t_looking  + HOLD_SECONDS    # 33.0s
-t2_asleep    = t2_falling + TRANS_SECONDS   # 34.5s
-t2_waking    = t2_asleep  + HOLD_SECONDS    # 44.5s
+t_falling    = float(HOLD_SECONDS)     # 10.0s
+t_asleep     = t_falling + TRANS_SECONDS  # 11.5s
+t_waking     = t_asleep  + HOLD_SECONDS  # 21.5s
 
 # ear cycle: independent pseudo-random L/R twitches
-RANDOM_CYCLE = 90.0    # 90s before repeating (head cycle is 23s — they drift so it feels longer)
+RANDOM_CYCLE = 90.0    # 90s — drifts against 23s head cycle for variety
 RANDOM_SEED  = 10      # gives R/L/R/L at 20s, 39s, 53s, 78s
 MIN_GAP      = 10.0    # min seconds between twitches
 MAX_GAP      = 28.0    # max seconds between twitches
@@ -155,10 +148,6 @@ def head_loop_keyframes():
         + trans(t_falling)
         + [(f"{lp(t_asleep):.4f}", asleep)]
         + trans(t_waking, reverse=True)
-        + [(f"{lp(t_looking):.4f}", awake)]
-        + trans(t2_falling)
-        + [(f"{lp(t2_asleep):.4f}", asleep)]
-        + trans(t2_waking, reverse=True)
         + [("100.0000", awake)]
     )
     return "\n".join(["@keyframes pants-head-loop {",
@@ -194,15 +183,11 @@ def ear_y_loop_keyframes():
     ease = "animation-timing-function: ease-in-out;"
     sy   = f"{SLEEP_DROP}px"
     pts  = {
-        "0.0000":                "--ear-y: 0px;",
-        f"{lp(t_falling):.4f}":  f"--ear-y: 0px; {ease}",
-        f"{lp(t_asleep):.4f}":   f"--ear-y: {sy};",
-        f"{lp(t_waking):.4f}":   f"--ear-y: {sy}; {ease}",
-        f"{lp(t_looking):.4f}":  "--ear-y: 0px;",
-        f"{lp(t2_falling):.4f}": f"--ear-y: 0px; {ease}",
-        f"{lp(t2_asleep):.4f}":  f"--ear-y: {sy};",
-        f"{lp(t2_waking):.4f}":  f"--ear-y: {sy}; {ease}",
-        "100.0000":              "--ear-y: 0px;",
+        "0.0000":               "--ear-y: 0px;",
+        f"{lp(t_falling):.4f}": f"--ear-y: 0px; {ease}",
+        f"{lp(t_asleep):.4f}":  f"--ear-y: {sy};",
+        f"{lp(t_waking):.4f}":  f"--ear-y: {sy}; {ease}",
+        "100.0000":             "--ear-y: 0px;",
     }
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
     return "\n".join(["@keyframes pants-ear-y-loop {",
@@ -218,8 +203,6 @@ def ear_flick_keyframes():
     lines.append(f"  100% {{ background-image: {awake_ear_imgs}; }}")
     lines.append("}")
     return "\n".join(lines)
-
-
 
 
 print("Building keyframes…")
