@@ -129,6 +129,7 @@ def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"
 
 rest_imgs       = imgs(REST_PATHS)
+body_imgs       = imgs([p for p in REST_PATHS if p != ACC / "cushion_base.png"])
 awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
@@ -157,14 +158,15 @@ def rest_appear_keyframes(appear_pos):
 
 
 def head_loop_keyframes(pos):
-    awake  = f"background-image: {awake_head_imgs}; background-position: {pos};"
-    asleep = f"background-image: {sleep_head_imgs}; background-position: {pos};"
+    # var(--body-imgs) is defined once on the element; ::before inherits it
+    awake  = f"background-image: {awake_head_imgs}, var(--body-imgs); background-position: {pos};"
+    asleep = f"background-image: {sleep_head_imgs}, var(--body-imgs); background-position: {pos};"
     span   = TRANS_SECONDS
 
     def trans(t_start, reverse=False):
         return [
             (f"{lp(t_start + span * i / TRANS_FRAME_COUNT):.4f}",
-             f"background-image: {trans_urls[TRANS_FRAME_COUNT-1-i if reverse else i]}; background-position: {pos};")
+             f"background-image: {trans_urls[TRANS_FRAME_COUNT-1-i if reverse else i]}, var(--body-imgs); background-position: {pos};")
             for i in range(TRANS_FRAME_COUNT)
         ]
 
@@ -287,7 +289,6 @@ def ear_animation_rules(el, pos):
 def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
-        rest_appear_keyframes(NAV_APP_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
@@ -321,9 +322,12 @@ def generate_nav_bar():
         f"  overflow:          visible !important;",
         f"  z-index:           2 !important;",
         f"  --cat-y:           -{NAV_Y_SHIFT}px;",
+        f"  --body-imgs:       {body_imgs};",
+        f"  background-image:  {url(CUSH_APPEAR_PATH)};",
+        f"  background-position: {NAV_APP_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth};",
         f"  min-height:        {px(C_H + PT_H)} !important;",
         f"  align-items:       flex-end !important;",
         f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
@@ -333,13 +337,6 @@ def generate_nav_bar():
         pseudo_base_rules(el, top), "",
         ear_animation_rules(el, NAV_POS), "",
         "#browser { overflow: visible !important; }",
-        f"#PersonalToolbar {{",
-        f"  --cat-y:           -{NAV_Y_SHIFT + C_H}px;",
-        f"  position:          relative;",
-        f"  background-size:   {SIZE};",
-        f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec};",
-        f"}}",
         f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
         "",
     ])
@@ -356,7 +353,6 @@ def generate_nav_bar():
 def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
-        rest_appear_keyframes(SIDEBAR_APP_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
@@ -378,9 +374,12 @@ def generate_sidebar():
         f"  position:          relative !important;",
         f"  overflow:          visible !important;",
         f"  min-width:         {W} !important;",
+        f"  --body-imgs:       {body_imgs};",
+        f"  background-image:  {url(CUSH_APPEAR_PATH)};",
+        f"  background-position: {SIDEBAR_APP_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         ear_animation_rules(el, SIDEBAR_POS), "",
