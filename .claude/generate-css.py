@@ -105,20 +105,12 @@ RANDOM_SEED  = 10      # gives R/L/R/L at 20s, 39s, 53s, 78s
 MIN_GAP      = 10.0    # min seconds between twitches
 MAX_GAP      = 28.0    # max seconds between twitches
 
-# Eye direction APNGs for looking-mode (transparent overlays on head layer)
-# Cat is NW corner → gaze zones: E (urlbar/buttons), S (bookmarks), SE (content — default)
-EYES_SE = ANIM / "eyes-se.apng"   # default: looking at page content
-EYES_E  = ANIM / "eyes-e.apng"    # looking at urlbar / nav buttons
-EYES_S  = ANIM / "eyes-s.apng"    # looking at bookmarks bar
-EYES_SW = ANIM / "eyes-sw.apng"   # looking at bottom-left (future use)
-
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
     CUSH_APPEAR_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
-    EYES_E, EYES_S,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -147,7 +139,7 @@ def rest_appear_keyframes():
 
 
 def head_loop_keyframes():
-    awake  = f"background-image: {url(AWAKE_HEAD_PATHS[2])}; background-position: {POS};"
+    awake  = f"background-image: {awake_head_imgs}; background-position: {POS};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {POS};"
     span   = TRANS_SECONDS
 
@@ -228,22 +220,6 @@ def ear_flick_keyframes():
     return "\n".join(lines)
 
 
-def sleep_cover_keyframes():
-    e = 0.001
-    pts = [
-        ("0.0000",                         "opacity: 0;"),
-        (f"{lp(t_falling) - e:.4f}",       "opacity: 0;"),
-        (f"{lp(t_falling):.4f}",           "opacity: 1;"),
-        (f"{lp(t_looking) - e:.4f}",       "opacity: 1;"),
-        (f"{lp(t_looking):.4f}",           "opacity: 0;"),
-        (f"{lp(t2_falling) - e:.4f}",      "opacity: 0;"),
-        (f"{lp(t2_falling):.4f}",          "opacity: 1;"),
-        ("99.9990",                         "opacity: 1;"),
-        ("100.0000",                        "opacity: 0;"),
-    ]
-    return "\n".join(["@keyframes pants-sleep-cover {",
-                      *[f"  {p}% {{ {d} }}" for p, d in pts],
-                      "}"])
 
 
 print("Building keyframes…")
@@ -252,7 +228,6 @@ kf_head_loop   = head_loop_keyframes()
 kf_ear_random  = ear_random_keyframes()
 kf_ear_y_loop  = ear_y_loop_keyframes()
 kf_ear_flick   = ear_flick_keyframes()
-kf_sleep_cover = sleep_cover_keyframes()
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
@@ -299,10 +274,6 @@ css = "\n".join([
     kf_ear_y_loop, "",
     f"/* ear-flick: hover/click override — both ears, holds last frame */",
     kf_ear_flick, "",
-    f"/* sleep cover: snaps opaque during transition+sleep, hiding eye overlay beneath */",
-    kf_sleep_cover, "",
-    f"@keyframes pants-overlay-appear {{ to {{ opacity: 1; }} }}",
-    f"",
     f"/* stacking: toolbox above browser; nav-bar above tab bar */",
     f"#navigator-toolbox {{ position: relative !important; z-index: 9999 !important; overflow: visible !important; }}",
     f"#TabsToolbar       {{ position: relative !important; z-index: 1    !important; }}",
@@ -323,39 +294,7 @@ css = "\n".join([
     f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
     f"#taskbar-tabs-favicon {{ position: absolute !important; inset: 0 !important; }}",
-    f"#nav-bar-customization-target {{ z-index: 1 !important; }}",
-    f"",
-    f"/* eye overlay (::before z:1) + sleep cover (::after z:2) — both position relative to #nav-bar */",
-    f"#nav-bar-customization-target::before,",
-    f"#nav-bar-customization-target::after {{",
-    f"  content:           '';",
-    f"  position:          absolute;",
-    f"  top:               -{Y_SHIFT}px;",
-    f"  left:              0;",
-    f"  right:             0;",
-    f"  bottom:            0;",
-    f"  pointer-events:    none;",
-    f"  background-size:   {SIZE};",
-    f"  background-repeat: {RPT};",
-    f"  background-position: {POS};",
-    f"}}",
-    f"#nav-bar-customization-target::before {{",
-    f"  z-index:           1;",
-    f"  opacity:           0;",
-    f"  background-image:  {url(AWAKE_HEAD_PATHS[0])}, {url(AWAKE_HEAD_PATHS[1])};",
-    f"  animation:         pants-overlay-appear {appear_spec};",
-    f"}}",
-    f"#nav-bar-customization-target::after {{",
-    f"  z-index:           2;",
-    f"  animation:         pants-head-loop {loop_spec}, pants-sleep-cover {loop_smooth};",
-    f"}}",
-    f":root:has(#urlbar:hover) #nav-bar-customization-target::before,",
-    f":root:has(#nav-bar .toolbarbutton-1:hover) #nav-bar-customization-target::before {{",
-    f"  background-image: {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_E)}, {url(AWAKE_HEAD_PATHS[1])};",
-    f"}}",
-    f":root:has(#PersonalToolbar:hover) #nav-bar-customization-target::before {{",
-    f"  background-image: {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_S)}, {url(AWAKE_HEAD_PATHS[1])};",
-    f"}}",
+    f"#nav-bar-customization-target {{ position: relative !important; z-index: 1 !important; }}",
     f"",
     f"/* ::before = head layer; ::after = ear layer */",
     f"#nav-bar::before,",
@@ -372,10 +311,9 @@ css = "\n".join([
     f"  background-repeat: {RPT};",
     f"}}",
     f"",
-    f"/* ::after inherits --ear-y; translateY snaps ear box to sleep position; z-index above sleep cover */",
+    f"/* ::after inherits --ear-y; translateY snaps ear box to sleep position */",
     f"#nav-bar::after {{",
     f"  transform: translateY(var(--ear-y, 0px));",
-    f"  z-index: 3;",
     f"}}",
     f"",
     f"/* pants-ear-random in all ::after rules prevents animation restart on hover state change */",
