@@ -39,5 +39,5 @@
     "default_title": "Kitty URLoaf"
   },
   "permissions": ["storage", "contextMenus", "notifications"],
-  "web_accessible_resources": ["static/plus.svg"]
+  "web_accessible_resources": ["static/plus.svg", "static/userChrome-sidebar.css"]
 }

@@ -77,7 +77,7 @@ function renderSteps() {
 }
 
 async function downloadCSS() {
-  const blob = await fetch('../../static/userChrome.css').then(r => r.blob());
+  const blob = await fetch('../../static/userChrome-sidebar.css').then(r => r.blob());
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css',
