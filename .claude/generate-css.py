@@ -88,12 +88,16 @@ EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 FRAME_COUNT  = len(EAR_FLICK_SEQ)   # 5
 FLICK_SECS   = 0.275
 FRAME_SECS   = FLICK_SECS / FRAME_COUNT
-# head cycle: awake → falling → asleep → waking → repeat (no embedded flicks)
-LOOP_CYCLE   = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
+# head cycle: normal awake → fall → sleep → wake → looking awake → fall → sleep → wake → repeat
+LOOP_CYCLE   = HOLD_SECONDS * 4 + TRANS_SECONDS * 4  # 46s
 
-t_falling    = float(HOLD_SECONDS)              # 10.0s
-t_asleep     = t_falling + TRANS_SECONDS         # 11.5s
-t_waking     = t_asleep + HOLD_SECONDS           # 21.5s
+t_falling    = float(HOLD_SECONDS)          # 10.0s
+t_asleep     = t_falling  + TRANS_SECONDS   # 11.5s
+t_waking     = t_asleep   + HOLD_SECONDS    # 21.5s
+t_looking    = t_waking   + TRANS_SECONDS   # 23.0s  ← looking-mode awake starts
+t2_falling   = t_looking  + HOLD_SECONDS    # 33.0s
+t2_asleep    = t2_falling + TRANS_SECONDS   # 34.5s
+t2_waking    = t2_asleep  + HOLD_SECONDS    # 44.5s
 
 # ear cycle: independent pseudo-random L/R twitches
 RANDOM_CYCLE = 90.0    # 90s before repeating (head cycle is 23s — they drift so it feels longer)
@@ -101,12 +105,20 @@ RANDOM_SEED  = 10      # gives R/L/R/L at 20s, 39s, 53s, 78s
 MIN_GAP      = 10.0    # min seconds between twitches
 MAX_GAP      = 28.0    # max seconds between twitches
 
+# Eye direction APNGs for looking-mode (transparent overlays on head layer)
+# Cat is NW corner → gaze zones: E (urlbar/buttons), S (bookmarks), SE (content — default)
+EYES_SE = ANIM / "eyes-se.apng"   # default: looking at page content
+EYES_E  = ANIM / "eyes-e.apng"    # looking at urlbar / nav buttons
+EYES_S  = ANIM / "eyes-s.apng"    # looking at bookmarks bar
+EYES_SW = ANIM / "eyes-sw.apng"   # looking at bottom-left (future use)
+
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
     CUSH_APPEAR_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
+    EYES_SE, EYES_E, EYES_S,
 ]))
 uri = {p: data_uri(p) for p in all_paths}
 print(f"  {len(uri)} files loaded")
@@ -137,18 +149,29 @@ def rest_appear_keyframes():
 def head_loop_keyframes():
     awake  = f"background-image: {awake_head_imgs}; background-position: {POS};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {POS};"
-    pts    = [("0.0000", awake)]
+    # Looking-mode awake: swap breath-eyes for var(--eye-img); var() resolves live from :has() hover rules
+    look_imgs = f"{url(AWAKE_HEAD_PATHS[0])}, var(--eye-img), {url(AWAKE_HEAD_PATHS[2])}"
+    looking = f"background-image: {look_imgs}; background-position: {POS};"
     span   = TRANS_SECONDS
-    for i in range(TRANS_FRAME_COUNT):
-        fi = i   # falling: forward through frames
-        t  = t_falling + span * i / TRANS_FRAME_COUNT
-        pts.append((f"{lp(t):.4f}", f"background-image: {trans_urls[fi]}; background-position: {POS};"))
-    pts.append((f"{lp(t_asleep):.4f}", asleep))
-    for i in range(TRANS_FRAME_COUNT):
-        fi = TRANS_FRAME_COUNT - 1 - i  # waking: reverse through frames
-        t  = t_waking + span * i / TRANS_FRAME_COUNT
-        pts.append((f"{lp(t):.4f}", f"background-image: {trans_urls[fi]}; background-position: {POS};"))
-    pts.append(("100.0000", awake))
+
+    def trans(t_start, reverse=False):
+        return [
+            (f"{lp(t_start + span * i / TRANS_FRAME_COUNT):.4f}",
+             f"background-image: {trans_urls[TRANS_FRAME_COUNT-1-i if reverse else i]}; background-position: {POS};")
+            for i in range(TRANS_FRAME_COUNT)
+        ]
+
+    pts = (
+        [("0.0000", awake)]
+        + trans(t_falling)
+        + [(f"{lp(t_asleep):.4f}", asleep)]
+        + trans(t_waking, reverse=True)
+        + [(f"{lp(t_looking):.4f}", looking)]
+        + trans(t2_falling)
+        + [(f"{lp(t2_asleep):.4f}", asleep)]
+        + trans(t2_waking, reverse=True)
+        + [("100.0000", awake)]
+    )
     return "\n".join(["@keyframes pants-head-loop {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
                       "}"])
@@ -180,12 +203,17 @@ def ear_random_keyframes():
 
 def ear_y_loop_keyframes():
     ease = "animation-timing-function: ease-in-out;"
+    sy   = f"{SLEEP_DROP}px"
     pts  = {
-        "0.0000":               "--ear-y: 0px;",
-        f"{lp(t_falling):.4f}": f"--ear-y: 0px; {ease}",
-        f"{lp(t_asleep):.4f}":  f"--ear-y: {SLEEP_DROP}px;",
-        f"{lp(t_waking):.4f}":  f"--ear-y: {SLEEP_DROP}px; {ease}",
-        "100.0000":             "--ear-y: 0px;",
+        "0.0000":                "--ear-y: 0px;",
+        f"{lp(t_falling):.4f}":  f"--ear-y: 0px; {ease}",
+        f"{lp(t_asleep):.4f}":   f"--ear-y: {sy};",
+        f"{lp(t_waking):.4f}":   f"--ear-y: {sy}; {ease}",
+        f"{lp(t_looking):.4f}":  "--ear-y: 0px;",
+        f"{lp(t2_falling):.4f}": f"--ear-y: 0px; {ease}",
+        f"{lp(t2_asleep):.4f}":  f"--ear-y: {sy};",
+        f"{lp(t2_waking):.4f}":  f"--ear-y: {sy}; {ease}",
+        "100.0000":              "--ear-y: 0px;",
     }
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
     return "\n".join(["@keyframes pants-ear-y-loop {",
@@ -242,6 +270,14 @@ css = "\n".join([
     f"  initial-value: 0px;",
     f"  inherits: false;",
     f"}}",
+    f"/* --eye-img: inheritable custom property holding the active eye-direction APNG url().",
+    f"   Set on #nav-bar; inherited by ::before. The looking-mode keyframe references var(--eye-img)",
+    f"   which Firefox resolves live every frame, so :has() hover changes take effect immediately. */",
+    f"@property --eye-img {{",
+    f"  syntax: '*';",
+    f"  initial-value: ;",
+    f"  inherits: true;",
+    f"}}",
     f"",
     f"/* Pants on nav-bar — appear once, then head loops {LOOP_CYCLE}s; ears twitch pseudo-randomly over {RANDOM_CYCLE}s */",
     f"",
@@ -267,6 +303,7 @@ css = "\n".join([
     f"  overflow:          visible !important;",
     f"  z-index:           2 !important;",
     f"  --cat-y:           -{Y_SHIFT}px;",
+    f"  --eye-img:         {url(EYES_SE)};",
     f"  background-size:   {SIZE};",
     f"  background-repeat: {RPT};",
     f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
@@ -274,6 +311,11 @@ css = "\n".join([
     f"  align-items:       flex-end !important;",
     f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
+    f"/* eye direction during looking mode — :has() overrides --eye-img live */",
+    f"html:has(#urlbar:hover) #nav-bar,",
+    f"html:has(#nav-bar .toolbarbutton-1:hover) #nav-bar {{ --eye-img: {url(EYES_E)}; }}",
+    f"html:has(#PersonalToolbar:hover) #nav-bar         {{ --eye-img: {url(EYES_S)}; }}",
+    f"html:has(#browser:hover) #nav-bar                 {{ --eye-img: {url(EYES_SE)}; }}",
     f"#taskbar-tabs-favicon {{ position: absolute !important; inset: 0 !important; }}",
     f"#nav-bar-customization-target {{ position: relative !important; z-index: 1 !important; }}",
     f"",
