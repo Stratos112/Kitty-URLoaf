@@ -73,9 +73,10 @@ NAV_APP_POS = "left 91px top var(--cat-y)"  # appear uses --cat-y for PersonalTo
 # Sidebar layout
 # ---------------------------------------------------------------------------
 
-SIDEBAR_EL  = "#sidebar-box"
-SIDEBAR_TOP = "200px"         # top offset within sidebar-box — adjust to taste
-SIDEBAR_POS = "left 0px top 0px"
+SIDEBAR_EL  = ":is(#sidebar-box, #sidebar-main)"
+SIDEBAR_TOP = "200px"         # top offset within sidebar element — adjust to taste
+SIDEBAR_APP_POS = "left 0px top 200px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_POS     = "left 0px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
 
 # ---------------------------------------------------------------------------
 # Asset paths
@@ -355,7 +356,7 @@ def generate_nav_bar():
 def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
-        rest_appear_keyframes(SIDEBAR_POS),
+        rest_appear_keyframes(SIDEBAR_APP_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
