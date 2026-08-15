@@ -131,10 +131,10 @@ def rest_keyframes():
     hide        = "background-image: none;"
     pts = {}
     pts["0.0000"]              = cush_appear if appear_pct <= 0.0001 else hide
-    pts["100.0000"]            = hide
+    pts["100.0000"]            = cush_appear
     pts[f"{appear_pct:.4f}"]   = cush_appear
     pts[f"{pants_pct:.4f}"]    = show
-    pts[f"{end_pct:.4f}"]      = hide
+    pts[f"{end_pct:.4f}"]      = cush_appear
     sorted_pts = sorted(pts.items(), key=lambda x: float(x[0]))
     return "\n".join(["@keyframes pants-rest {",
                       *[f"  {p}% {{ {d} }}" for p, d in sorted_pts],
