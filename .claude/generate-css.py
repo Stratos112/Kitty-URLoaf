@@ -150,7 +150,7 @@ def head_loop_keyframes():
     awake  = f"background-image: {awake_head_imgs}; background-position: {POS};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {POS};"
     # Looking-mode awake: swap breath-eyes for var(--eye-img); var() resolves live from :has() hover rules
-    look_imgs = f"{url(AWAKE_HEAD_PATHS[0])}, var(--eye-img), {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])}"
+    look_imgs = awake_head_imgs
     looking = f"background-image: {look_imgs}; background-position: {POS};"
     span   = TRANS_SECONDS
 
@@ -270,14 +270,6 @@ css = "\n".join([
     f"  initial-value: 0px;",
     f"  inherits: false;",
     f"}}",
-    f"/* --eye-img: inheritable custom property holding the active eye-direction APNG url().",
-    f"   Set on #nav-bar; inherited by ::before. The looking-mode keyframe references var(--eye-img)",
-    f"   which Firefox resolves live every frame, so :has() hover changes take effect immediately. */",
-    f"@property --eye-img {{",
-    f"  syntax: '*';",
-    f"  initial-value: none;",
-    f"  inherits: true;",
-    f"}}",
     f"",
     f"/* Pants on nav-bar — appear once, then head loops {LOOP_CYCLE}s; ears twitch pseudo-randomly over {RANDOM_CYCLE}s */",
     f"",
@@ -310,12 +302,15 @@ css = "\n".join([
     f"  align-items:       flex-end !important;",
     f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
     f"}}",
-    f"/* eye direction during looking mode — :has() overrides --eye-img live.",
-    f"   userChrome is XUL; root is <window>, not <html>, so :root not html. */",
-    f":root:has(#urlbar:hover) #nav-bar,",
-    f":root:has(#nav-bar .toolbarbutton-1:hover) #nav-bar {{ --eye-img: {url(EYES_E)}; }}",
-    f":root:has(#PersonalToolbar:hover) #nav-bar          {{ --eye-img: {url(EYES_S)}; }}",
-    f":root:has(#browser:hover) #nav-bar                  {{ --eye-img: {url(EYES_SE)}; }}",
+    f"/* Eye tracking: !important author declarations beat animation declarations per CSS cascade spec.",
+    f"   Targeting ::before directly; no custom property indirection needed. */",
+    f":root:has(#urlbar:hover) #nav-bar::before,",
+    f":root:has(#nav-bar .toolbarbutton-1:hover) #nav-bar::before {{",
+    f"  background-image:    {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_E)}, {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])} !important;",
+    f"  background-position: {POS} !important; }}",
+    f":root:has(#PersonalToolbar:hover) #nav-bar::before {{",
+    f"  background-image:    {url(AWAKE_HEAD_PATHS[0])}, {url(EYES_S)}, {url(AWAKE_HEAD_PATHS[1])}, {url(AWAKE_HEAD_PATHS[2])} !important;",
+    f"  background-position: {POS} !important; }}",
     f"#taskbar-tabs-favicon {{ position: absolute !important; inset: 0 !important; }}",
     f"#nav-bar-customization-target {{ position: relative !important; z-index: 1 !important; }}",
     f"",
