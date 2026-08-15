@@ -42,7 +42,7 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APPEAR_SECONDS    = 1.5
+APPEAR_SECONDS    = 2.5   # ~1.5s APNG plays + 1s cushion hold before pants appear
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -140,7 +140,7 @@ LOOP_DELAY   = APPEAR_SECONDS
 loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
-appear_spec  = f"{APPEAR_SECONDS}s steps(2) 1 forwards"
+appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
 
 
 # ---------------------------------------------------------------------------
@@ -148,12 +148,10 @@ appear_spec  = f"{APPEAR_SECONDS}s steps(2) 1 forwards"
 # ---------------------------------------------------------------------------
 
 def rest_appear_keyframes(appear_pos):
-    cush_apng   = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos};"
-    cush_static = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos};"
-    show        = f"background-image: {rest_imgs}; background-position: {appear_pos};"
+    cush = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos};"
+    show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%   {{ {cush_apng} }}",
-                      f"  50%  {{ {cush_static} }}",
+                      f"  0%   {{ {cush} }}",
                       f"  100% {{ {show} }}",
                       "}"])
 
