@@ -5,8 +5,8 @@ files, so everything must be self-contained.
 
 Three-layer design:
   element background-image  → REST layer (cushion/body/paws/tail)
-  element::before            → HEAD layer (head/eyes — awake or asleep, no transitions)
-  element::after             → EAR layer (ear cycle + hover flick override)
+  element::before            → HEAD layer (head/eyes — awake/asleep with transitions)
+  element::after             → EAR layer (pseudo-random L/R twitches, independent of head cycle)
 
 Ear Y positioning:
   --ear-y is animated on the element and inherited by ::after.
@@ -15,14 +15,15 @@ Ear Y positioning:
 
 Animation cycle:
   One-time appear (APPEAR_SECONDS): cushion APNG plays, then body/head/ears snap in.
-  Infinite loop (LOOP_CYCLE, delayed by APPEAR_SECONDS):
-    awake (HOLD_SECONDS) → left ear flick (FLICK_SECS) → asleep (HOLD_SECONDS) → right ear flick → repeat
+  Head loop (LOOP_CYCLE = 23s): awake → falling → asleep → waking → repeat
+  Ear loop (RANDOM_CYCLE = 300s): pseudo-random L/R twitches at varied intervals, seeded for reproducibility
   Cat and cushion never re-appear after the initial intro.
 
 Output: static/userChrome.css
 """
 
 import base64
+import random
 from datetime import date
 from pathlib import Path
 
@@ -84,17 +85,21 @@ EAR_FLICK_SEQ = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L   = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
 EAR_FLICK_R   = [EAR_FLICK_DIR / f"R_{n}.png" for n in EAR_FLICK_SEQ]
 
-FRAME_COUNT = len(EAR_FLICK_SEQ)   # 5
-FLICK_SECS  = 0.275
-FRAME_SECS  = FLICK_SECS / FRAME_COUNT
-# awake → left flick → falling → asleep → right flick → waking → repeat
-LOOP_CYCLE  = HOLD_SECONDS * 2 + FLICK_SECS * 2 + TRANS_SECONDS * 2  # 23.55s
+FRAME_COUNT  = len(EAR_FLICK_SEQ)   # 5
+FLICK_SECS   = 0.275
+FRAME_SECS   = FLICK_SECS / FRAME_COUNT
+# head cycle: awake → falling → asleep → waking → repeat (no embedded flicks)
+LOOP_CYCLE   = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
 
-t_left_flick  = float(HOLD_SECONDS)             # 10.0s
-t_falling     = t_left_flick + FLICK_SECS       # 10.275s
-t_asleep      = t_falling + TRANS_SECONDS        # 11.775s
-t_right_flick = t_asleep + HOLD_SECONDS          # 21.775s
-t_waking      = t_right_flick + FLICK_SECS       # 22.05s
+t_falling    = float(HOLD_SECONDS)              # 10.0s
+t_asleep     = t_falling + TRANS_SECONDS         # 11.5s
+t_waking     = t_asleep + HOLD_SECONDS           # 21.5s
+
+# ear cycle: independent pseudo-random L/R twitches
+RANDOM_CYCLE = 90.0    # 90s before repeating (head cycle is 23s — they drift so it feels longer)
+RANDOM_SEED  = 10      # gives R/L/R/L at 20s, 39s, 53s, 78s
+MIN_GAP      = 10.0    # min seconds between twitches
+MAX_GAP      = 28.0    # max seconds between twitches
 
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
@@ -149,22 +154,26 @@ def head_loop_keyframes():
                       "}"])
 
 
-def ear_loop_keyframes():
+def ear_random_keyframes():
     awake  = f"background-image: {awake_ear_imgs}; background-position: {POS};"
-    R_base = url(AWAKE_EAR_PATHS[1])
-    L_base = url(AWAKE_EAR_PATHS[0])
+    # Use static rest-position PNGs (L_01 / R_01) as the base during flicks —
+    # avoids embedding the large breathing APNGs on every flick keyframe.
+    R_rest = url(EAR_FLICK_R[0])   # R_01.png = right ear at rest
+    L_rest = url(EAR_FLICK_L[0])   # L_01.png = left ear at rest
+    rng    = random.Random(RANDOM_SEED)
     pts    = [("0.0000", awake)]
-    for i, fp in enumerate(EAR_FLICK_L):
-        t = t_left_flick + i * FRAME_SECS
-        pts.append((f"{lp(t):.4f}", f"background-image: {url(fp)}, {R_base}; background-position: {POS};"))
-    pts.append((f"{lp(t_falling):.4f}", awake))   # falling: ear images unchanged, ear-y eases
-    pts.append((f"{lp(t_asleep):.4f}", awake))    # asleep: same images, ear-y now at SLEEP_DROP
-    for i, fp in enumerate(EAR_FLICK_R):
-        t = t_right_flick + i * FRAME_SECS
-        pts.append((f"{lp(t):.4f}", f"background-image: {L_base}, {url(fp)}; background-position: {POS};"))
-    pts.append((f"{lp(t_waking):.4f}", awake))    # waking: ear images unchanged, ear-y eases back
+    t = rng.uniform(MIN_GAP, MAX_GAP)
+    while t + FLICK_SECS < RANDOM_CYCLE - MIN_GAP:
+        side = rng.choice(('L', 'R'))
+        for i in range(FRAME_COUNT):
+            fp    = EAR_FLICK_L[i] if side == 'L' else EAR_FLICK_R[i]
+            imgs2 = f"{url(fp)}, {R_rest}" if side == 'L' else f"{L_rest}, {url(fp)}"
+            pts.append((f"{(t + i * FRAME_SECS) / RANDOM_CYCLE * 100:.4f}",
+                        f"background-image: {imgs2}; background-position: {POS};"))
+        pts.append((f"{(t + FLICK_SECS) / RANDOM_CYCLE * 100:.4f}", awake))
+        t += rng.uniform(MIN_GAP, MAX_GAP)
     pts.append(("100.0000", awake))
-    return "\n".join(["@keyframes pants-ear-loop {",
+    return "\n".join(["@keyframes pants-ear-random {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
                       "}"])
 
@@ -197,16 +206,17 @@ def ear_flick_keyframes():
 print("Building keyframes…")
 kf_rest_appear = rest_appear_keyframes()
 kf_head_loop   = head_loop_keyframes()
-kf_ear_loop    = ear_loop_keyframes()
+kf_ear_random  = ear_random_keyframes()
 kf_ear_y_loop  = ear_y_loop_keyframes()
 kf_ear_flick   = ear_flick_keyframes()
 
-SIZE      = f"{W} {H}"
-RPT       = "no-repeat"
-LOOP_DELAY    = APPEAR_SECONDS
-loop_spec     = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
-loop_smooth   = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"   # for --ear-y (eases during transitions)
-appear_spec   = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
+SIZE         = f"{W} {H}"
+RPT          = "no-repeat"
+LOOP_DELAY   = APPEAR_SECONDS
+loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
+loop_smooth  = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"
+ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
+appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
 
 css = "\n".join([
     f"/**",
@@ -233,14 +243,14 @@ css = "\n".join([
     f"  inherits: false;",
     f"}}",
     f"",
-    f"/* Pants on nav-bar — appear once, then loop: {HOLD_SECONDS}s awake → left flick → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → right flick → {TRANS_SECONDS}s wake */",
+    f"/* Pants on nav-bar — appear once, then head loops {LOOP_CYCLE}s; ears twitch pseudo-randomly over {RANDOM_CYCLE}s */",
     f"",
     f"/* REST layer: cushion appear once, then body stays visible forever */",
     kf_rest_appear, "",
-    f"/* HEAD layer loop: awake/asleep with 30-frame transitions at fall/wake */",
+    f"/* HEAD layer loop: {HOLD_SECONDS}s awake → {TRANS_SECONDS}s fall → {HOLD_SECONDS}s asleep → {TRANS_SECONDS}s wake */",
     kf_head_loop, "",
-    f"/* EAR layer loop: left flick at {lp(t_left_flick):.2f}%, right flick at {lp(t_right_flick):.2f}% */",
-    kf_ear_loop, "",
+    f"/* EAR layer: pseudo-random L/R twitches, seed={RANDOM_SEED}, {RANDOM_CYCLE}s cycle */",
+    kf_ear_random, "",
     f"/* --ear-y loop: eases 0→{SLEEP_DROP}px during fall, back during wake */",
     kf_ear_y_loop, "",
     f"/* ear-flick: hover/click override — both ears, holds last frame */",
@@ -287,10 +297,10 @@ css = "\n".join([
     f"  transform: translateY(var(--ear-y, 0px));",
     f"}}",
     f"",
-    f"/* pants-ear-loop in all ::after rules prevents animation restart on hover state change */",
-    f"#nav-bar::after        {{ animation: pants-ear-loop {loop_spec}; }}",
-    f"#nav-bar:hover::after  {{ animation: pants-ear-loop {loop_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {POS}; }}",
-    f"#nav-bar:has(:active)::after {{ animation: pants-ear-loop {loop_spec}, ear-flick 275ms linear 1 forwards; background-position: {POS}; }}",
+    f"/* pants-ear-random in all ::after rules prevents animation restart on hover state change */",
+    f"#nav-bar::after        {{ animation: pants-ear-random {ear_spec}; }}",
+    f"#nav-bar:hover::after  {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {POS}; }}",
+    f"#nav-bar:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {POS}; }}",
     f"#nav-bar::before       {{ animation: pants-head-loop {loop_spec}; }}",
     f"",
     f"#browser {{ overflow: visible !important; }}",
