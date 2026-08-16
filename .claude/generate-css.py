@@ -43,7 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 0.8   # transition frame preload duration
+PRELOAD_S         = 2.8   # transition frame preload duration
 SLEEP_PRELOAD_S   = 0.3   # how long sleep head shows after transition preload
 PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
 CUSH_START_S      = 2.0   # when cushion APNG begins
