@@ -42,7 +42,9 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APPEAR_SECONDS    = 4.0   # delay before pants appear
+APPEAR_SECONDS    = 4.0   # total appear animation duration
+CUSH_SWAP_S       = 2.0   # APNG → cushion_base swap time
+CAT_APPEAR_S      = 3.0   # cushion_base → rest_imgs (cat layers) time
 APNG_MS           = 1500  # cushion-appear.apng duration
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
@@ -149,14 +151,17 @@ appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 # ---------------------------------------------------------------------------
 
 def rest_appear_keyframes(appear_pos):
-    apng_pct = round(APNG_MS / 1000 / APPEAR_SECONDS * 100, 1)
-    apng = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    cush = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
+    cush_pct = round(CUSH_SWAP_S  / APPEAR_SECONDS * 100, 1)
+    cat_pct  = round(CAT_APPEAR_S / APPEAR_SECONDS * 100, 1)
+    apng  = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    cush  = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    show  = f"background-image: {rest_imgs}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    final = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%        {{ {apng} }}",
-                      f"  {apng_pct}%  {{ {cush} }}",
-                      f"  100%      {{ {show} }}",
+                      f"  0%       {{ {apng} }}",
+                      f"  {cush_pct}%   {{ {cush} }}",
+                      f"  {cat_pct}%   {{ {show} }}",
+                      f"  100%     {{ {final} }}",
                       "}"])
 
 
