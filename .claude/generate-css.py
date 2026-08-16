@@ -144,11 +144,10 @@ all_ear_preload  = ", ".join([awake_ear_imgs, *[url(p) for p in _flick_unique]])
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-loop_spec         = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-loop_smooth       = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
-ear_spec          = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
-head_preload_spec = f"{LOOP_CYCLE}s steps(1) 1 0s"
+loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
+ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 
 
 # ---------------------------------------------------------------------------
@@ -170,6 +169,17 @@ def rest_appear_keyframes(appear_pos):
         f"  100%    {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
         "}"])
 
+
+
+def head_preload_keyframes(pos):
+    frame_step = PRELOAD_S / TRANS_FRAME_COUNT
+    lines = ["@keyframes pants-head-preload {"]
+    for i, t_url in enumerate(trans_urls):
+        p = round(i * frame_step / APPEAR_SECONDS * 100, 4)
+        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}")
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def ear_appear_keyframes(pos):
@@ -301,7 +311,7 @@ def ear_animation_rules(el, pos):
         f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
         f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
         f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before             {{ animation: pants-head-loop {head_preload_spec}, pants-head-loop {loop_spec}; }}",
+        f"{el}::before             {{ animation: pants-head-preload {appear_spec}, pants-head-loop {loop_spec}; }}",
     ])
 
 
@@ -313,6 +323,7 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS),
+        head_preload_keyframes(NAV_POS),
         ear_appear_keyframes(NAV_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -383,6 +394,7 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS),
+        head_preload_keyframes(SIDEBAR_POS),
         ear_appear_keyframes(SIDEBAR_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
