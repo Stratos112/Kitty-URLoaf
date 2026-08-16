@@ -144,10 +144,11 @@ all_ear_preload  = ", ".join([awake_ear_imgs, *[url(p) for p in _flick_unique]])
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
-ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
+loop_spec         = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_smooth       = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
+ear_spec          = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
+head_preload_spec = f"{LOOP_CYCLE}s steps(1) 1 0s"
 
 
 # ---------------------------------------------------------------------------
@@ -300,7 +301,7 @@ def ear_animation_rules(el, pos):
         f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
         f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
         f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before             {{ animation: pants-head-loop {loop_spec}; }}",
+        f"{el}::before             {{ animation: pants-head-loop {head_preload_spec}, pants-head-loop {loop_spec}; }}",
     ])
 
 
