@@ -43,7 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 2.5  # preload flash duration — forces browser to decode all assets
+PRELOAD_S         = 0.8  # preload flash duration — forces browser to decode all assets
 CUSH_START_S      = 2.0   # when cushion APNG begins
 CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
 APPEAR_SECONDS    = 5.0   # when full cat appears
@@ -170,17 +170,6 @@ def rest_appear_keyframes(appear_pos):
         "}"])
 
 
-def head_appear_keyframes(pos):
-    frame_step = PRELOAD_S / TRANS_FRAME_COUNT
-    lines = ["@keyframes pants-head-appear {"]
-    for i, t_url in enumerate(trans_urls):
-        p = round(i * frame_step / APPEAR_SECONDS * 100, 4)
-        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  100% {{ {kf(awake_head_imgs, pos, last=True)} }}")
-    lines.append("}")
-    return "\n".join(lines)
-
 
 def ear_appear_keyframes(pos):
     return "\n".join(["@keyframes pants-ear-appear {",
@@ -306,13 +295,12 @@ def pseudo_base_rules(el, top):
 
 def ear_animation_rules(el, pos):
     ea = f"pants-ear-appear {appear_spec}"
-    ha = f"pants-head-appear {appear_spec}"
     return "\n".join([
-        f"/* appear listed first (lower priority); loops listed last (higher) so loops win when they start */",
+        f"/* appear listed first (lower priority); loop listed last (higher) so loop wins when it starts */",
         f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
         f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
         f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before             {{ animation: {ha}, pants-head-loop {loop_spec}; }}",
+        f"{el}::before             {{ animation: pants-head-loop {loop_spec}; }}",
     ])
 
 
@@ -324,7 +312,6 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS),
-        head_appear_keyframes(NAV_POS),
         ear_appear_keyframes(NAV_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -395,7 +382,6 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS),
-        head_appear_keyframes(SIDEBAR_POS),
         ear_appear_keyframes(SIDEBAR_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
