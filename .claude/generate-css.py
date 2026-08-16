@@ -43,7 +43,9 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 0.8  # preload flash duration — forces browser to decode all assets
+PRELOAD_S         = 0.8   # transition frame preload duration
+SLEEP_PRELOAD_S   = 0.3   # how long sleep head shows after transition preload
+PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
 CUSH_START_S      = 2.0   # when cushion APNG begins
 CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
 APPEAR_SECONDS    = 5.0   # when full cat appears
@@ -68,19 +70,22 @@ MAX_GAP      = 28.0
 # Nav-bar layout
 # ---------------------------------------------------------------------------
 
-NAV_EL      = "#nav-bar"
-NAV_Y_SHIFT = 30              # px cat overflows above nav-bar top edge
-NAV_POS     = "left 91px top 0px"
-NAV_APP_POS = "left 91px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
+NAV_EL           = "#nav-bar"
+NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
+NAV_POS          = "left 91px top 0px"
+NAV_APP_POS      = "left 91px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
+NAV_PRELOAD_POS  = f"left 91px top {PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Sidebar layout
 # ---------------------------------------------------------------------------
 
-SIDEBAR_EL  = ":is(#sidebar-container, html|sidebar-main)"
-SIDEBAR_TOP = "200px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_APP_POS = "left 0px top 200px"   # REST layer on element, matches SIDEBAR_TOP
-SIDEBAR_POS     = "left 0px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
+SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
+SIDEBAR_TOP         = "200px"         # top offset within sidebar element — adjust to taste
+SIDEBAR_APP_POS     = "left 0px top 200px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_POS         = "left 0px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
+SIDEBAR_PRELOAD_POS = f"left 0px top {PRELOAD_OFFSET}px"
+SIDEBAR_APP_PRELOAD_POS = f"left 0px top {200 + PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Asset paths
@@ -160,32 +165,35 @@ def kf(bg, pos, last=False):
     return f"background-image: {bg}; background-position: {pos};{atf}"
 
 
-def rest_appear_keyframes(appear_pos):
+def rest_appear_keyframes(appear_pos, preload_pos):
+    cush_solo_pct = pct(PRELOAD_S * 0.5)
     return "\n".join(["@keyframes pants-rest-appear {",
-        f"  0%      {{ {kf(all_main_preload,                    appear_pos)} }}",
-        f"  {pct(PRELOAD_S)}%  {{ {kf('none',                           appear_pos)} }}",
-        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),            appear_pos)} }}",
-        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'),     appear_pos)} }}",
-        f"  100%    {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
+        f"  0%              {{ {kf(all_main_preload,               preload_pos)} }}",
+        f"  {cush_solo_pct}%  {{ {kf(url(ACC / 'cushion_base.png'), preload_pos)} }}",
+        f"  {pct(PRELOAD_S)}%  {{ {kf('none',                        preload_pos)} }}",
+        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),     appear_pos)} }}",
+        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
+        f"  100%            {{ {kf(rest_imgs,                       appear_pos, last=True)} }}",
         "}"])
 
 
 
-def head_preload_keyframes(pos):
+def head_preload_keyframes(preload_pos):
     frame_step = PRELOAD_S / TRANS_FRAME_COUNT
     lines = ["@keyframes pants-head-preload {"]
     for i, t_url in enumerate(trans_urls):
         p = round(i * frame_step / APPEAR_SECONDS * 100, 4)
-        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}")
+        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {pct(PRELOAD_S + SLEEP_PRELOAD_S)}% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
     lines.append("}")
     return "\n".join(lines)
 
 
-def ear_appear_keyframes(pos):
+def ear_appear_keyframes(pos, preload_pos):
     return "\n".join(["@keyframes pants-ear-appear {",
-        f"  0%      {{ {kf(all_ear_preload, pos)} }}",
-        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
+        f"  0%      {{ {kf(all_ear_preload, preload_pos)} }}",
+        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}",
         f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
         "}"])
 
@@ -322,9 +330,9 @@ def ear_animation_rules(el, pos):
 def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
-        rest_appear_keyframes(NAV_APP_POS),
-        head_preload_keyframes(NAV_POS),
-        ear_appear_keyframes(NAV_POS),
+        rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
+        head_preload_keyframes(NAV_PRELOAD_POS),
+        ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
@@ -393,9 +401,9 @@ def generate_nav_bar():
 def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
-        rest_appear_keyframes(SIDEBAR_APP_POS),
-        head_preload_keyframes(SIDEBAR_POS),
-        ear_appear_keyframes(SIDEBAR_POS),
+        rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
+        head_preload_keyframes(SIDEBAR_PRELOAD_POS),
+        ear_appear_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
