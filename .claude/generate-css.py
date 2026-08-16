@@ -43,10 +43,10 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-CUSH_SWAP_S       = APNG_MS / 1000  # 1.5s — APNG → cushion_base ASAP
-HEAD_DELAY_S      = CUSH_SWAP_S     # head+ears appear with cushion swap
-EAR_DELAY_S       = CUSH_SWAP_S
-APPEAR_SECONDS    = 5.0             # body layers finish at 100% = 5s
+PRELOAD_S         = 0.1   # preload flash duration — forces browser to decode all assets
+CUSH_START_S      = 2.0   # when cushion APNG begins
+CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
+APPEAR_SECONDS    = 5.0   # when full cat appears
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -140,9 +140,9 @@ trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {HEAD_DELAY_S}s"
-loop_smooth  = f"{LOOP_CYCLE}s linear infinite {EAR_DELAY_S}s"
-ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {EAR_DELAY_S}s"
+loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
+ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 
 
@@ -150,31 +150,36 @@ appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 # Shared keyframe generators  (parameterized by pos)
 # ---------------------------------------------------------------------------
 
+def pct(t): return round(t / APPEAR_SECONDS * 100, 1)
+def kf(bg, pos, last=False):
+    atf = "" if last else " animation-timing-function: steps(1, end);"
+    return f"background-image: {bg}; background-position: {pos};{atf}"
+
+
 def rest_appear_keyframes(appear_pos):
-    add_order = [
-        ANIM  / "tail-flick.apng",
-        LIMBS / "left_back_paw.png",
-        LIMBS / "left_front_paw.png",
-        LIMBS / "right_back_paw.png",
-        ANIM  / "breath-rpaw.apng",
-        BODY  / "body_basic.png",
-        ANIM  / "breath.apng",
-    ]
-    step_s   = (APPEAR_SECONDS - CUSH_SWAP_S) / len(add_order)
-    cush_pct = round(CUSH_SWAP_S / APPEAR_SECONDS * 100, 1)
-    lines = ["@keyframes pants-rest-appear {"]
-    lines.append(f"  0%      {{ background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {cush_pct}%   {{ background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end); }}")
-    active = [ACC / "cushion_base.png"]
-    for i, path in enumerate(add_order):
-        active.append(path)
-        ordered = sorted(active, key=lambda p: REST_PATHS.index(p))
-        bg  = ", ".join(url(p) for p in ordered)
-        pct = round((CUSH_SWAP_S + (i + 1) * step_s) / APPEAR_SECONDS * 100, 1)
-        atf = " animation-timing-function: steps(1, end);" if i < len(add_order) - 1 else ""
-        lines.append(f"  {pct}%   {{ background-image: {bg}; background-position: {appear_pos};{atf} }}")
-    lines.append("}")
-    return "\n".join(lines)
+    return "\n".join(["@keyframes pants-rest-appear {",
+        f"  0%      {{ {kf(rest_imgs,                          appear_pos)} }}",
+        f"  {pct(PRELOAD_S)}%  {{ {kf('none',                           appear_pos)} }}",
+        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),            appear_pos)} }}",
+        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'),     appear_pos)} }}",
+        f"  100%    {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
+        "}"])
+
+
+def head_appear_keyframes(pos):
+    return "\n".join(["@keyframes pants-head-appear {",
+        f"  0%      {{ {kf(awake_head_imgs, pos)} }}",
+        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
+        f"  100%    {{ {kf(awake_head_imgs, pos, last=True)} }}",
+        "}"])
+
+
+def ear_appear_keyframes(pos):
+    return "\n".join(["@keyframes pants-ear-appear {",
+        f"  0%      {{ {kf(awake_ear_imgs, pos)} }}",
+        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
+        f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
+        "}"])
 
 
 def head_loop_keyframes(pos):
@@ -292,12 +297,14 @@ def pseudo_base_rules(el, top):
 
 
 def ear_animation_rules(el, pos):
+    ea = f"pants-ear-appear {appear_spec}"
+    ha = f"pants-head-appear {appear_spec}"
     return "\n".join([
-        f"/* pants-ear-random repeated in all ::after rules prevents restart on state change */",
-        f"{el}::after             {{ animation: pants-ear-random {ear_spec}; }}",
-        f"{el}:hover::after       {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before            {{ animation: pants-head-loop {loop_spec}; }}",
+        f"/* appear listed first (lower priority); loops listed last (higher) so loops win when they start */",
+        f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
+        f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
+        f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
+        f"{el}::before             {{ animation: {ha}, pants-head-loop {loop_spec}; }}",
     ])
 
 
@@ -309,6 +316,8 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS),
+        head_appear_keyframes(NAV_POS),
+        ear_appear_keyframes(NAV_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
@@ -378,6 +387,8 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS),
+        head_appear_keyframes(SIDEBAR_POS),
+        ear_appear_keyframes(SIDEBAR_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
