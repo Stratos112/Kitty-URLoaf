@@ -113,8 +113,7 @@ function cycle() {
 
 pants.addEventListener('click', flickEars);
 
-CAT_LAYERS.forEach(el => { el.style.opacity = '0'; });
 setTimeout(() => {
-  CAT_LAYERS.forEach(el => { el.style.opacity = ''; });
+  CAT_LAYERS.forEach(el => { el.style.opacity = '1'; });
   cycle();
 }, 4000);
