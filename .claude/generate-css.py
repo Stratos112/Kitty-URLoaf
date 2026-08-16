@@ -43,12 +43,13 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 2.8   # transition frame preload duration
+PRELOAD_S         = 0.8   # transition frame preload duration
 SLEEP_PRELOAD_S   = 0.3   # how long sleep head shows after transition preload
 PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
 CUSH_START_S      = 2.0   # when cushion APNG begins
 CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
-APPEAR_SECONDS    = 5.0   # when full cat appears
+APPEAR_SECONDS    = 9.0   # when full cat appears
+HEAD2_DELAY_S     = 6.0   # second head preload start
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -152,7 +153,8 @@ RPT          = "no-repeat"
 loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
+appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
+head_preload2_spec = f"{PRELOAD_S + SLEEP_PRELOAD_S}s linear 1 {HEAD2_DELAY_S}s forwards"
 
 
 # ---------------------------------------------------------------------------
@@ -178,14 +180,15 @@ def rest_appear_keyframes(appear_pos, preload_pos):
 
 
 
-def head_preload_keyframes(preload_pos):
+def head_preload2_keyframes(preload_pos):
+    total      = PRELOAD_S + SLEEP_PRELOAD_S
     frame_step = PRELOAD_S / TRANS_FRAME_COUNT
-    lines = ["@keyframes pants-head-preload {"]
+    lines = ["@keyframes pants-head-preload2 {"]
     for i, t_url in enumerate(trans_urls):
-        p = round(i * frame_step / APPEAR_SECONDS * 100, 4)
+        p = round(i * frame_step / total * 100, 4)
         lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {pct(PRELOAD_S + SLEEP_PRELOAD_S)}% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {round(PRELOAD_S / total * 100, 1)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  100% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
     lines.append("}")
     return "\n".join(lines)
 
@@ -319,7 +322,7 @@ def ear_animation_rules(el, pos):
         f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
         f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
         f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before             {{ animation: pants-head-preload {appear_spec}, pants-head-loop {loop_spec}; }}",
+        f"{el}::before             {{ animation: pants-head-preload2 {head_preload2_spec}, pants-head-loop {loop_spec}; }}",
     ])
 
 
@@ -331,7 +334,7 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
-        head_preload_keyframes(NAV_PRELOAD_POS),
+        head_preload2_keyframes(NAV_PRELOAD_POS),
         ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -402,7 +405,7 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
-        head_preload_keyframes(SIDEBAR_PRELOAD_POS),
+        head_preload2_keyframes(SIDEBAR_PRELOAD_POS),
         ear_appear_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
