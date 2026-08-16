@@ -43,6 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APPEAR_SECONDS    = 4.0   # delay before pants appear
+FADE_SECS         = 0.1   # cat fade-in duration
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -138,11 +139,19 @@ loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
 appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
+fade_spec    = f"{FADE_SECS}s ease {APPEAR_SECONDS}s 1 both"
 
 
 # ---------------------------------------------------------------------------
 # Shared keyframe generators  (parameterized by pos)
 # ---------------------------------------------------------------------------
+
+def fade_in_keyframes():
+    return "\n".join(["@keyframes pants-fade-in {",
+                      "  from { opacity: 0; }",
+                      "  to   { opacity: 1; }",
+                      "}"])
+
 
 def rest_appear_keyframes(appear_pos):
     show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
@@ -266,12 +275,13 @@ def pseudo_base_rules(el, top):
 
 
 def ear_animation_rules(el, pos):
+    fi = f"pants-fade-in {fade_spec}"
     return "\n".join([
-        f"/* pants-ear-random repeated in all ::after rules prevents restart on hover state change */",
-        f"{el}::after             {{ animation: pants-ear-random {ear_spec}; }}",
-        f"{el}:hover::after       {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before            {{ animation: pants-head-loop {loop_spec}; }}",
+        f"/* pants-ear-random and pants-fade-in repeated in all ::after rules prevents restart on state change */",
+        f"{el}::after             {{ animation: pants-ear-random {ear_spec}, {fi}; }}",
+        f"{el}:hover::after       {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards, {fi}; background-position: {pos}; }}",
+        f"{el}:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards, {fi}; background-position: {pos}; }}",
+        f"{el}::before            {{ animation: pants-head-loop {loop_spec}, {fi}; }}",
     ])
 
 
@@ -282,6 +292,7 @@ def ear_animation_rules(el, pos):
 def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
+        fade_in_keyframes(),
         rest_appear_keyframes(NAV_APP_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -351,6 +362,7 @@ def generate_nav_bar():
 def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
+        fade_in_keyframes(),
         rest_appear_keyframes(SIDEBAR_APP_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
