@@ -43,7 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 1  # preload flash duration — forces browser to decode all assets
+PRELOAD_S         = 2.5  # preload flash duration — forces browser to decode all assets
 CUSH_START_S      = 2.0   # when cushion APNG begins
 CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
 APPEAR_SECONDS    = 5.0   # when full cat appears
