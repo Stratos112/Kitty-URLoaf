@@ -43,9 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APPEAR_SECONDS    = 4.0   # delay before pants appear
-FADE_SECS         = 0.1   # cat fade-in duration
 APNG_MS           = 1500  # cushion-appear.apng duration
-CUSH_FADE         = 0.3   # cushion crossfade duration (s)
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -143,39 +141,22 @@ LOOP_DELAY   = APPEAR_SECONDS
 loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
-appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
-fade_spec    = f"{FADE_SECS}s ease {APPEAR_SECONDS}s 1 forwards"
-caf_dur      = APNG_MS / 1000 + CUSH_FADE
-caf_spec     = f"{caf_dur}s 0s 1 forwards"
+appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 
 
 # ---------------------------------------------------------------------------
 # Shared keyframe generators  (parameterized by pos)
 # ---------------------------------------------------------------------------
 
-def fade_in_keyframes():
-    return "\n".join(["@keyframes pants-fade-in {",
-                      "  from { opacity: 0; }",
-                      "  to   { opacity: 1; }",
-                      "}"])
-
-
-def cushion_appear_fade_keyframes(pos):
-    apng_pct = round(APNG_MS / 1000 / caf_dur * 100, 1)
-    caf = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {pos};"
-    return "\n".join(["@keyframes pants-cushion-appear-fade {",
-                      f"  0%       {{ {caf} opacity: 1; animation-timing-function: steps(1, end); }}",
-                      f"  {apng_pct}%  {{ {caf} opacity: 1; animation-timing-function: ease; }}",
-                      f"  100%     {{ {caf} opacity: 0; }}",
-                      "}"])
-
-
 def rest_appear_keyframes(appear_pos):
-    cush = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos};"
+    apng_pct = round(APNG_MS / 1000 / APPEAR_SECONDS * 100, 1)
+    apng = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    cush = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
     show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%   {{ {cush} }}",
-                      f"  100% {{ {show} }}",
+                      f"  0%        {{ {apng} }}",
+                      f"  {apng_pct}%  {{ {cush} }}",
+                      f"  100%      {{ {show} }}",
                       "}"])
 
 
@@ -285,8 +266,7 @@ def pseudo_base_rules(el, top):
         f"  pointer-events:    none;",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  opacity:           0;",
-        f"}}",
+              f"}}",
         f"/* ::after inherits --ear-y; translateY snaps ear to sleep position */",
         f"{el}::after {{",
         f"  transform: translateY(var(--ear-y, 0px));",
@@ -295,14 +275,12 @@ def pseudo_base_rules(el, top):
 
 
 def ear_animation_rules(el, pos):
-    fi  = f"pants-fade-in {fade_spec}"
-    caf = f"pants-cushion-appear-fade {caf_spec}"
     return "\n".join([
-        f"/* pants-ear-random and pants-fade-in repeated in all ::after rules prevents restart on state change */",
-        f"{el}::after             {{ animation: pants-ear-random {ear_spec}, {fi}; }}",
-        f"{el}:hover::after       {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards, {fi}; background-position: {pos}; }}",
-        f"{el}:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards, {fi}; background-position: {pos}; }}",
-        f"{el}::before            {{ animation: {caf}, pants-head-loop {loop_spec}, {fi}; }}",
+        f"/* pants-ear-random repeated in all ::after rules prevents restart on state change */",
+        f"{el}::after             {{ animation: pants-ear-random {ear_spec}; }}",
+        f"{el}:hover::after       {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
+        f"{el}:has(:active)::after {{ animation: pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
+        f"{el}::before            {{ animation: pants-head-loop {loop_spec}; }}",
     ])
 
 
@@ -313,8 +291,6 @@ def ear_animation_rules(el, pos):
 def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
-        fade_in_keyframes(),
-        cushion_appear_fade_keyframes(NAV_POS),
         rest_appear_keyframes(NAV_APP_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -384,8 +360,6 @@ def generate_nav_bar():
 def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
-        fade_in_keyframes(),
-        cushion_appear_fade_keyframes(SIDEBAR_POS),
         rest_appear_keyframes(SIDEBAR_APP_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
