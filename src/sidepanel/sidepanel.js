@@ -1,4 +1,3 @@
-const l0    = document.querySelector('.l0');
 const l7    = document.querySelector('.l7');
 const l8    = document.querySelector('.l8');
 const l9    = document.querySelector('.l9');
@@ -114,21 +113,8 @@ function cycle() {
 
 pants.addEventListener('click', flickEars);
 
-const CUSH_APPEAR_MS = 1500;
-const CUSH_HOLD_MS   = 1000;
-const CUSH_BASE      = "url('../../static/Pants/Accessories/cushion_base.png')";
-const CUSH_APNG      = "url('../../static/Pants/Anim/cushion-appear.apng')";
-
 CAT_LAYERS.forEach(el => { el.style.opacity = '0'; });
-l0.style.backgroundImage = CUSH_APNG;
-
 setTimeout(() => {
-  l0.style.backgroundImage = `${CUSH_BASE}, ${CUSH_APNG}`;
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    l0.style.backgroundImage = '';
-  }));
-  setTimeout(() => {
-    CAT_LAYERS.forEach(el => { el.style.opacity = ''; });
-    cycle();
-  }, CUSH_HOLD_MS);
-}, CUSH_APPEAR_MS);
+  CAT_LAYERS.forEach(el => { el.style.opacity = ''; });
+  cycle();
+}, 4000);

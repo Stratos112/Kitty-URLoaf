@@ -42,8 +42,7 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APPEAR_MS         = 1500  # cushion-appear.apng duration
-APPEAR_SECONDS    = 2.5   # APNG (1.5s) + cushion hold before pants appear
+APPEAR_SECONDS    = 4.0   # delay before pants appear
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -91,7 +90,6 @@ REST_PATHS = [
     BODY  / "body_basic.png",
     LIMBS / "left_front_paw.png",
     LIMBS / "left_back_paw.png",
-    ACC   / "cushion_base.png",
 ]
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
@@ -104,7 +102,6 @@ SLEEP_HEAD_PATHS = [
 ]
 AWAKE_EAR_PATHS   = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
 TRANS_FRAME_PATHS = [ANIM / "Transition" / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
-CUSH_APPEAR_PATH  = ANIM / "cushion-appear.apng"
 EAR_FLICK_DIR     = ANIM / "EarFlick"
 EAR_FLICK_SEQ     = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L       = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
@@ -116,7 +113,6 @@ FRAME_SECS  = FLICK_SECS / FRAME_COUNT
 
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
-    CUSH_APPEAR_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
@@ -130,7 +126,6 @@ def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"
 
 rest_imgs       = imgs(REST_PATHS)
-body_imgs       = imgs([p for p in REST_PATHS if p != ACC / "cushion_base.png"])
 awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
 sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
@@ -150,14 +145,9 @@ appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
 # ---------------------------------------------------------------------------
 
 def rest_appear_keyframes(appear_pos):
-    apng_pct = round(APPEAR_MS / (APPEAR_SECONDS * 10)) / 1  # e.g. 60.0
-    cush = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos};"
-    over = f"background-image: {url(ACC / 'cushion_base.png')}, {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos};"
     show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%       {{ {cush} }}",
-                      f"  {apng_pct}%  {{ {over} }}",
-                      f"  100%     {{ {show} }}",
+                      f"  100% {{ {show} }}",
                       "}"])
 
 
