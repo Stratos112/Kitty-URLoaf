@@ -1,9 +1,12 @@
+const l0    = document.querySelector('.l0');
 const l7    = document.querySelector('.l7');
 const l8    = document.querySelector('.l8');
 const l9    = document.querySelector('.l9');
 const l10   = document.querySelector('.l10');
 const l11   = document.querySelector('.l11');
 const pants = document.getElementById('pants');
+
+const CAT_LAYERS = [1,2,3,4,5,6,7,8,9,10,11].map(n => document.querySelector('.l'+n));
 
 const HOLD_MS     = 10000;
 const FRAME_COUNT = 30;
@@ -111,4 +114,16 @@ function cycle() {
 
 pants.addEventListener('click', flickEars);
 
-cycle();
+const CUSH_APPEAR_MS = 1500;
+const CUSH_HOLD_MS   = 1000;
+
+CAT_LAYERS.forEach(el => { el.style.opacity = '0'; });
+l0.style.backgroundImage = "url('../../static/Pants/Anim/cushion-appear.apng')";
+
+setTimeout(() => {
+  l0.style.backgroundImage = '';
+  setTimeout(() => {
+    CAT_LAYERS.forEach(el => { el.style.opacity = ''; });
+    cycle();
+  }, CUSH_HOLD_MS);
+}, CUSH_APPEAR_MS);

@@ -150,8 +150,7 @@ appear_spec  = f"{APPEAR_SECONDS}s steps(1) 1 forwards"
 
 def rest_appear_keyframes(appear_pos):
     cush = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos};"
-    # APNG stays in the 100% frame so the cushion layer never blanks during the snap
-    show = f"background-image: {body_imgs}, {url(CUSH_APPEAR_PATH)}, {url(ACC / 'cushion_base.png')}; background-position: {appear_pos};"
+    show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
                       f"  0%   {{ {cush} }}",
                       f"  100% {{ {show} }}",
