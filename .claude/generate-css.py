@@ -42,10 +42,12 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APPEAR_SECONDS    = 4.0   # total appear animation duration
-CUSH_SWAP_S       = 2.0   # APNG → cushion_base swap time
-CAT_APPEAR_S      = 3.0   # cushion_base → rest_imgs (cat layers) time
 APNG_MS           = 1500  # cushion-appear.apng duration
+CUSH_SWAP_S       = APNG_MS / 1000  # 1.5s — APNG → cushion_base ASAP
+HEAD_DELAY_S      = 2.5   # head loop start
+EAR_DELAY_S       = 3.5   # ear loop start
+BODY_APPEAR_S     = 5.0   # body+tail+paws snap in
+APPEAR_SECONDS    = BODY_APPEAR_S
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -139,10 +141,9 @@ trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-LOOP_DELAY   = APPEAR_SECONDS
-loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
-loop_smooth  = f"{LOOP_CYCLE}s linear infinite {LOOP_DELAY}s"
-ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {LOOP_DELAY}s"
+loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {HEAD_DELAY_S}s"
+loop_smooth  = f"{LOOP_CYCLE}s linear infinite {EAR_DELAY_S}s"
+ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {EAR_DELAY_S}s"
 appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 
 
@@ -151,17 +152,14 @@ appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 # ---------------------------------------------------------------------------
 
 def rest_appear_keyframes(appear_pos):
-    cush_pct = round(CUSH_SWAP_S  / APPEAR_SECONDS * 100, 1)
-    cat_pct  = round(CAT_APPEAR_S / APPEAR_SECONDS * 100, 1)
-    apng  = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    cush  = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    show  = f"background-image: {rest_imgs}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    final = f"background-image: {rest_imgs}; background-position: {appear_pos};"
+    cush_pct = round(CUSH_SWAP_S / APPEAR_SECONDS * 100, 1)
+    apng = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    cush = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
+    show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
     return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%       {{ {apng} }}",
-                      f"  {cush_pct}%   {{ {cush} }}",
-                      f"  {cat_pct}%   {{ {show} }}",
-                      f"  100%     {{ {final} }}",
+                      f"  0%        {{ {apng} }}",
+                      f"  {cush_pct}%    {{ {cush} }}",
+                      f"  100%      {{ {show} }}",
                       "}"])
 
 
