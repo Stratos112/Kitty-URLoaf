@@ -43,7 +43,7 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 0.1   # preload flash duration — forces browser to decode all assets
+PRELOAD_S         = 0.25  # preload flash duration — forces browser to decode all assets
 CUSH_START_S      = 2.0   # when cushion APNG begins
 CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
 APPEAR_SECONDS    = 5.0   # when full cat appears
@@ -138,6 +138,11 @@ sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
 awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
+all_main_preload = ", ".join([url(CUSH_APPEAR_PATH), rest_imgs])
+all_head_preload = ", ".join([awake_head_imgs, sleep_head_imgs, *trans_urls])
+_flick_unique    = list(dict.fromkeys([*EAR_FLICK_L, *EAR_FLICK_R]))
+all_ear_preload  = ", ".join([awake_ear_imgs, *[url(p) for p in _flick_unique]])
+
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
 loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
@@ -158,7 +163,7 @@ def kf(bg, pos, last=False):
 
 def rest_appear_keyframes(appear_pos):
     return "\n".join(["@keyframes pants-rest-appear {",
-        f"  0%      {{ {kf(rest_imgs,                          appear_pos)} }}",
+        f"  0%      {{ {kf(all_main_preload,                    appear_pos)} }}",
         f"  {pct(PRELOAD_S)}%  {{ {kf('none',                           appear_pos)} }}",
         f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),            appear_pos)} }}",
         f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'),     appear_pos)} }}",
@@ -168,7 +173,7 @@ def rest_appear_keyframes(appear_pos):
 
 def head_appear_keyframes(pos):
     return "\n".join(["@keyframes pants-head-appear {",
-        f"  0%      {{ {kf(awake_head_imgs, pos)} }}",
+        f"  0%      {{ {kf(all_head_preload, pos)} }}",
         f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
         f"  100%    {{ {kf(awake_head_imgs, pos, last=True)} }}",
         "}"])
@@ -176,7 +181,7 @@ def head_appear_keyframes(pos):
 
 def ear_appear_keyframes(pos):
     return "\n".join(["@keyframes pants-ear-appear {",
-        f"  0%      {{ {kf(awake_ear_imgs, pos)} }}",
+        f"  0%      {{ {kf(all_ear_preload, pos)} }}",
         f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
         f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
         "}"])
