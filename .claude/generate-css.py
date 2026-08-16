@@ -44,10 +44,9 @@ def data_uri(path: Path) -> str:
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng duration
 CUSH_SWAP_S       = APNG_MS / 1000  # 1.5s — APNG → cushion_base ASAP
-HEAD_DELAY_S      = 2.5   # head loop start
-EAR_DELAY_S       = 3.5   # ear loop start
-BODY_APPEAR_S     = 5.0   # body+tail+paws snap in
-APPEAR_SECONDS    = BODY_APPEAR_S
+HEAD_DELAY_S      = CUSH_SWAP_S     # head+ears appear with cushion swap
+EAR_DELAY_S       = CUSH_SWAP_S
+APPEAR_SECONDS    = 5.0             # body layers finish at 100% = 5s
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -152,15 +151,30 @@ appear_spec  = f"{APPEAR_SECONDS}s linear 1 forwards"
 # ---------------------------------------------------------------------------
 
 def rest_appear_keyframes(appear_pos):
+    add_order = [
+        ANIM  / "tail-flick.apng",
+        LIMBS / "left_back_paw.png",
+        LIMBS / "left_front_paw.png",
+        LIMBS / "right_back_paw.png",
+        ANIM  / "breath-rpaw.apng",
+        BODY  / "body_basic.png",
+        ANIM  / "breath.apng",
+    ]
+    step_s   = (APPEAR_SECONDS - CUSH_SWAP_S) / len(add_order)
     cush_pct = round(CUSH_SWAP_S / APPEAR_SECONDS * 100, 1)
-    apng = f"background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    cush = f"background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end);"
-    show = f"background-image: {rest_imgs}; background-position: {appear_pos};"
-    return "\n".join(["@keyframes pants-rest-appear {",
-                      f"  0%        {{ {apng} }}",
-                      f"  {cush_pct}%    {{ {cush} }}",
-                      f"  100%      {{ {show} }}",
-                      "}"])
+    lines = ["@keyframes pants-rest-appear {"]
+    lines.append(f"  0%      {{ background-image: {url(CUSH_APPEAR_PATH)}; background-position: {appear_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {cush_pct}%   {{ background-image: {url(ACC / 'cushion_base.png')}; background-position: {appear_pos}; animation-timing-function: steps(1, end); }}")
+    active = [ACC / "cushion_base.png"]
+    for i, path in enumerate(add_order):
+        active.append(path)
+        ordered = sorted(active, key=lambda p: REST_PATHS.index(p))
+        bg  = ", ".join(url(p) for p in ordered)
+        pct = round((CUSH_SWAP_S + (i + 1) * step_s) / APPEAR_SECONDS * 100, 1)
+        atf = " animation-timing-function: steps(1, end);" if i < len(add_order) - 1 else ""
+        lines.append(f"  {pct}%   {{ background-image: {bg}; background-position: {appear_pos};{atf} }}")
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def head_loop_keyframes(pos):
