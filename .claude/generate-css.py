@@ -139,7 +139,6 @@ awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
 trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
 all_main_preload = ", ".join([url(CUSH_APPEAR_PATH), rest_imgs])
-all_head_preload = ", ".join([awake_head_imgs, sleep_head_imgs, *trans_urls])
 _flick_unique    = list(dict.fromkeys([*EAR_FLICK_L, *EAR_FLICK_R]))
 all_ear_preload  = ", ".join([awake_ear_imgs, *[url(p) for p in _flick_unique]])
 
@@ -172,11 +171,15 @@ def rest_appear_keyframes(appear_pos):
 
 
 def head_appear_keyframes(pos):
-    return "\n".join(["@keyframes pants-head-appear {",
-        f"  0%      {{ {kf(all_head_preload, pos)} }}",
-        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}",
-        f"  100%    {{ {kf(awake_head_imgs, pos, last=True)} }}",
-        "}"])
+    frame_step = PRELOAD_S / TRANS_FRAME_COUNT
+    lines = ["@keyframes pants-head-appear {"]
+    for i, t_url in enumerate(trans_urls):
+        p = round(i * frame_step / APPEAR_SECONDS * 100, 4)
+        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {pct(PRELOAD_S)}% {{ background-image: none; background-position: {pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  100% {{ {kf(awake_head_imgs, pos, last=True)} }}")
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def ear_appear_keyframes(pos):
