@@ -212,7 +212,7 @@ def head_warmup_keyframes(pos, preload_pos):
     n_sleep = len(SLEEP_HEAD_PATHS)
     pos_trans = ", ".join([pos] * n_awake + [preload_pos])
     pos_sleep = ", ".join([pos] * n_awake + [preload_pos] * n_sleep)
-    cover     = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
+    cover     = "linear-gradient(red,red)"
 
     def wkf_trans(frame_url):
         return (f"background-image: {cover}, {awake_head_imgs}, {frame_url}; "
