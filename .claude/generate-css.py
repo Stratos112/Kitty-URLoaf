@@ -43,14 +43,12 @@ def data_uri(path: Path) -> str:
 
 HOLD_SECONDS      = 10
 APNG_MS           = 1500  # cushion-appear.apng natural duration (reference only)
-HEAD_PRELOAD_S    = 0.8   # head2 transition frame cycling duration
-SLEEP_PRELOAD_S   = 0.3   # how long sleep head shows after transition preload
+SLEEP_PRELOAD_S   = 0.3   # sleep head duration in warmup
 PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
 CUSH_START_S      = 0.1   # stage 1 render: cushion APNG begins
 CUSH_SWAP_S       = 0.8   # stage 2 preload trigger: APNG → cushion_base (APNG gets 0.7s)
 STATIC_PANTS_S    = 0.9   # stage 2 render: static pants body visible
 STAGE3_PRELOAD_S  = 1.0   # stage 3 preload: ear flick + tail-flick + awake ears
-HEAD2_DELAY_S     = 1.1   # stage 4 preload: head transition + sleep + awake head
 APPEAR_SECONDS    = 1.2   # final render: full animated cat + loop start
 WARMUP_DELAY_S    = APPEAR_SECONDS + 5.0  # 5s into loop, sidebar prerender warmup
 TRANS_SECONDS     = 1.5
@@ -163,13 +161,12 @@ all_ear_preload  = ", ".join([awake_ear_imgs, url(ANIM / "tail-flick.apng"), *[u
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s backwards"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
-head_preload2_spec = f"{HEAD_PRELOAD_S + SLEEP_PRELOAD_S}s linear 1 {HEAD2_DELAY_S}s forwards"
 WARMUP_TOTAL_S     = TRANS_SECONDS + SLEEP_PRELOAD_S
-warmup_spec        = f"{WARMUP_TOTAL_S}s steps(1) 1 {WARMUP_DELAY_S}s none"
+warmup_spec        = f"{WARMUP_TOTAL_S}s steps(1) 1 {WARMUP_DELAY_S}s backwards"
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +180,7 @@ def kf(bg, pos, last=False):
 
 
 def rest_appear_keyframes(appear_pos, preload_pos):
-    cover = "linear-gradient(red,red)"
+    cover = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
     return "\n".join(["@keyframes pants-rest-appear {",
         f"  0%              {{ background-image: {cover}, {cush_preload}; background-position: {preload_pos}, {preload_pos}; background-size: 100% 9999px, {SIZE}; animation-timing-function: steps(1, end); }}",
         f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
@@ -192,26 +189,6 @@ def rest_appear_keyframes(appear_pos, preload_pos):
         f"  100%            {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
         "}"])
 
-
-
-def head_preload2_keyframes(preload_pos):
-    total      = HEAD_PRELOAD_S + SLEEP_PRELOAD_S
-    frame_step = HEAD_PRELOAD_S / TRANS_FRAME_COUNT
-    cover      = "linear-gradient(red,red)"
-    def kf(imgs):
-        return (f"background-image: {cover}, {imgs}; "
-                f"background-position: {preload_pos}, {preload_pos}; "
-                f"background-size: 100% 9999px, {SIZE}; "
-                f"animation-timing-function: steps(1, end);")
-    lines = ["@keyframes pants-head-preload2 {",
-             f"  0% {{ {kf(awake_head_imgs)} }}"]
-    for i, t_url in enumerate(trans_urls):
-        p = round((0.5 + i) * frame_step / total * 100, 4)
-        lines.append(f"  {p}% {{ {kf(t_url)} }}")
-    lines.append(f"  {round(HEAD_PRELOAD_S / total * 100, 1)}% {{ {kf(sleep_head_imgs)} }}")
-    lines.append(f"  100% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append("}")
-    return "\n".join(lines)
 
 
 def head_warmup_keyframes(pos, preload_pos):
@@ -242,7 +219,7 @@ def head_warmup_keyframes(pos, preload_pos):
 
 
 def ear_appear_keyframes(pos, preload_pos):
-    cover = "linear-gradient(red,red)"
+    cover = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
     def ckf(imgs):
         return (f"background-image: {cover}, {imgs}; "
                 f"background-position: {preload_pos}, {preload_pos}; "
@@ -372,7 +349,7 @@ def pseudo_base_rules(el, top):
 
 def ear_animation_rules(el, pos, before_extra=""):
     ea           = f"pants-ear-appear {appear_spec}"
-    before_anim  = f"pants-head-preload2 {head_preload2_spec}, pants-head-loop {loop_spec}"
+    before_anim  = f"pants-head-loop {loop_spec}"
     if before_extra:
         before_anim += f", {before_extra}"
     return "\n".join([
@@ -392,7 +369,6 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
-        head_preload2_keyframes(NAV_PRELOAD_POS),
         ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -463,7 +439,6 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
-        head_preload2_keyframes(SIDEBAR_PRELOAD_POS),
         head_warmup_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         ear_appear_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         head_loop_keyframes(SIDEBAR_POS),
