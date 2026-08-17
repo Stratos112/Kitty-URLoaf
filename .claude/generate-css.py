@@ -196,12 +196,18 @@ def rest_appear_keyframes(appear_pos, preload_pos):
 def head_preload2_keyframes(preload_pos):
     total      = HEAD_PRELOAD_S + SLEEP_PRELOAD_S
     frame_step = HEAD_PRELOAD_S / TRANS_FRAME_COUNT
+    cover      = "linear-gradient(red,red)"
+    def kf(imgs):
+        return (f"background-image: {cover}, {imgs}; "
+                f"background-position: {preload_pos}, {preload_pos}; "
+                f"background-size: 100% 9999px, {SIZE}; "
+                f"animation-timing-function: steps(1, end);")
     lines = ["@keyframes pants-head-preload2 {",
-             f"  0% {{ background-image: {awake_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}"]
+             f"  0% {{ {kf(awake_head_imgs)} }}"]
     for i, t_url in enumerate(trans_urls):
         p = round((0.5 + i) * frame_step / total * 100, 4)
-        lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {round(HEAD_PRELOAD_S / total * 100, 1)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+        lines.append(f"  {p}% {{ {kf(t_url)} }}")
+    lines.append(f"  {round(HEAD_PRELOAD_S / total * 100, 1)}% {{ {kf(sleep_head_imgs)} }}")
     lines.append(f"  100% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
     lines.append("}")
     return "\n".join(lines)
