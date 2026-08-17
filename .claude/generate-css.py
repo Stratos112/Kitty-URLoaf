@@ -190,12 +190,14 @@ def head_appear_keyframes(pos):
 
 def rest_appear_keyframes(appear_pos, preload_pos):
     cover = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
+    def rkf(bg, pos, last=False):
+        return kf(bg, pos, last) + f" background-size: {SIZE};"
     return "\n".join(["@keyframes pants-rest-appear {",
         f"  0%              {{ background-image: {cover}, {cush_preload}; background-position: {preload_pos}, {preload_pos}; background-size: 100% 9999px, {SIZE}; animation-timing-function: steps(1, end); }}",
-        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
-        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
-        f"  {pct(STATIC_PANTS_S)}%  {{ {kf(static_rest_imgs,          appear_pos)} }}",
-        f"  100%            {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
+        f"  {pct(CUSH_START_S)}%  {{ {rkf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
+        f"  {pct(CUSH_SWAP_S)}%  {{ {rkf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
+        f"  {pct(STATIC_PANTS_S)}%  {{ {rkf(static_rest_imgs,          appear_pos)} }}",
+        f"  100%            {{ {rkf(rest_imgs,                          appear_pos, last=True)} }}",
         "}"])
 
 
