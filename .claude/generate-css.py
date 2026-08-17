@@ -212,7 +212,7 @@ def head_warmup_keyframes(pos, preload_pos):
     n_sleep = len(SLEEP_HEAD_PATHS)
     pos_trans = ", ".join([pos] * n_awake + [preload_pos])
     pos_sleep = ", ".join([pos] * n_awake + [preload_pos] * n_sleep)
-    cover     = "linear-gradient(red,red)"
+    cover     = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
 
     def wkf_trans(frame_url):
         return (f"background-image: {cover}, {awake_head_imgs}, {frame_url}; "
@@ -479,7 +479,7 @@ def generate_sidebar():
         f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
-        f"{el}::before {{ height: {H}; }}", "",
+        f"{el}::before {{ height: {H}; clip-path: inset(0 0 calc(100% - {H}) 0); }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
     ])
 
