@@ -161,12 +161,13 @@ all_ear_preload  = ", ".join([awake_ear_imgs, url(ANIM / "tail-flick.apng"), *[u
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
-loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s backwards"
-loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
-ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_spec         = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_smooth       = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
+ear_spec          = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
-WARMUP_TOTAL_S     = TRANS_SECONDS + SLEEP_PRELOAD_S
-warmup_spec        = f"{WARMUP_TOTAL_S}s steps(1) 1 {WARMUP_DELAY_S}s backwards"
+head_appear_spec  = f"{APPEAR_SECONDS - STATIC_PANTS_S}s steps(1) 1 {STATIC_PANTS_S}s forwards"
+WARMUP_TOTAL_S    = TRANS_SECONDS + SLEEP_PRELOAD_S
+warmup_spec       = f"{WARMUP_TOTAL_S}s steps(1) 1 {WARMUP_DELAY_S}s none"
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +178,14 @@ def pct(t): return round(t / APPEAR_SECONDS * 100, 1)
 def kf(bg, pos, last=False):
     atf = "" if last else " animation-timing-function: steps(1, end);"
     return f"background-image: {bg}; background-position: {pos};{atf}"
+
+
+def head_appear_keyframes(pos):
+    return "\n".join([
+        "@keyframes pants-head-appear {",
+        f"  0%   {{ background-image: {awake_head_imgs}; background-position: {pos}; animation-timing-function: steps(1, end); }}",
+        f"  100% {{ background-image: {awake_head_imgs}; background-position: {pos}; }}",
+        "}"])
 
 
 def rest_appear_keyframes(appear_pos, preload_pos):
@@ -208,9 +217,10 @@ def head_warmup_keyframes(pos, preload_pos):
                 f"background-position: {preload_pos}, {pos_sleep}; "
                 f"animation-timing-function: steps(1, end);")
 
-    lines = ["@keyframes pants-head-warmup {"]
+    lines = ["@keyframes pants-head-warmup {",
+             f"  0% {{ background-image: {awake_head_imgs}; background-position: {pos}; animation-timing-function: steps(1, end); }}"]
     for i, t_url in enumerate(trans_urls):
-        p = round(i / TRANS_FRAME_COUNT * TRANS_SECONDS / WARMUP_TOTAL_S * 100, 4)
+        p = round((i + 1) / TRANS_FRAME_COUNT * TRANS_SECONDS / WARMUP_TOTAL_S * 100, 4)
         lines.append(f"  {p}% {{ {wkf_trans(t_url)} }}")
     lines.append(f"  {round(TRANS_SECONDS / WARMUP_TOTAL_S * 100, 4)}% {{ {wkf_sleep()} }}")
     lines.append(f"  100% {{ background-image: {awake_head_imgs}; background-position: {pos}; }}")
@@ -349,7 +359,7 @@ def pseudo_base_rules(el, top):
 
 def ear_animation_rules(el, pos, before_extra=""):
     ea           = f"pants-ear-appear {appear_spec}"
-    before_anim  = f"pants-head-loop {loop_spec}"
+    before_anim  = f"pants-head-appear {head_appear_spec}, pants-head-loop {loop_spec}"
     if before_extra:
         before_anim += f", {before_extra}"
     return "\n".join([
@@ -369,6 +379,7 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
+        head_appear_keyframes(NAV_POS),
         ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
@@ -439,6 +450,7 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
+        head_appear_keyframes(SIDEBAR_POS),
         head_warmup_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         ear_appear_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         head_loop_keyframes(SIDEBAR_POS),
