@@ -183,8 +183,9 @@ def kf(bg, pos, last=False):
 
 
 def rest_appear_keyframes(appear_pos, preload_pos):
+    cover = "linear-gradient(red,red)"
     return "\n".join(["@keyframes pants-rest-appear {",
-        f"  0%              {{ {kf(cush_preload,                       preload_pos)} }}",
+        f"  0%              {{ background-image: {cover}, {cush_preload}; background-position: {preload_pos}, {preload_pos}; background-size: 100% 9999px, {SIZE}; animation-timing-function: steps(1, end); }}",
         f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
         f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
         f"  {pct(STATIC_PANTS_S)}%  {{ {kf(static_rest_imgs,          appear_pos)} }}",
@@ -485,7 +486,7 @@ def generate_sidebar():
         f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
-        f"{el}::before {{ height: {H}; outline: 5px solid red !important; }}", "",
+        f"{el}::before {{ height: {H}; }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
     ])
 
