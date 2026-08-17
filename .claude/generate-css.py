@@ -478,7 +478,7 @@ def generate_sidebar():
         f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
-        f"{el}::before {{ mask: linear-gradient(black {H}, transparent {H}) no-repeat; }}", "",
+        f"{el}::before {{ height: {H}; }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
     ])
 
