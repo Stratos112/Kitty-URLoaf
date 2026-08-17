@@ -480,6 +480,22 @@ def generate_sidebar():
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
+        "/* opaque cover — hides preload render area below the cat */",
+        "#sidebar-box {",
+        "  position: relative !important;",
+        "  overflow: visible !important;",
+        "}",
+        "#sidebar-box::after {",
+        "  content: '';",
+        "  position: absolute;",
+        f"  top: {int(SIDEBAR_TOP.rstrip('px')) + int(H.rstrip('px'))}px;",
+        "  left: 0;",
+        "  right: 0;",
+        "  bottom: 0;",
+        "  background: var(--sidebar-background-color, #2b2a33);",
+        "  pointer-events: none;",
+        "  z-index: 1;",
+        "}", "",
     ])
 
     OUT_SIDEBAR.write_text(css)
