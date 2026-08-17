@@ -168,7 +168,8 @@ loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
 head_preload2_spec = f"{HEAD_PRELOAD_S + SLEEP_PRELOAD_S}s linear 1 {HEAD2_DELAY_S}s forwards"
-warmup_spec        = f"{TRANS_SECONDS}s steps(1) 1 {WARMUP_DELAY_S}s none"
+WARMUP_TOTAL_S     = TRANS_SECONDS + SLEEP_PRELOAD_S
+warmup_spec        = f"{WARMUP_TOTAL_S}s steps(1) 1 {WARMUP_DELAY_S}s none"
 
 
 # ---------------------------------------------------------------------------
@@ -207,17 +208,26 @@ def head_preload2_keyframes(preload_pos):
 
 
 def head_warmup_keyframes(pos, preload_pos):
-    n_pos = ", ".join([pos] * len(AWAKE_HEAD_PATHS) + [preload_pos])
+    n_awake = len(AWAKE_HEAD_PATHS)
+    n_sleep = len(SLEEP_HEAD_PATHS)
+    pos_trans = ", ".join([pos] * n_awake + [preload_pos])
+    pos_sleep = ", ".join([pos] * n_awake + [preload_pos] * n_sleep)
 
-    def wkf(frame_url):
+    def wkf_trans(frame_url):
         return (f"background-image: {awake_head_imgs}, {frame_url}; "
-                f"background-position: {n_pos}; "
+                f"background-position: {pos_trans}; "
+                f"animation-timing-function: steps(1, end);")
+
+    def wkf_sleep():
+        return (f"background-image: {awake_head_imgs}, {sleep_head_imgs}; "
+                f"background-position: {pos_sleep}; "
                 f"animation-timing-function: steps(1, end);")
 
     lines = ["@keyframes pants-head-warmup {"]
     for i, t_url in enumerate(trans_urls):
-        p = round(i / TRANS_FRAME_COUNT * 100, 4)
-        lines.append(f"  {p}% {{ {wkf(t_url)} }}")
+        p = round(i / TRANS_FRAME_COUNT * TRANS_SECONDS / WARMUP_TOTAL_S * 100, 4)
+        lines.append(f"  {p}% {{ {wkf_trans(t_url)} }}")
+    lines.append(f"  {round(TRANS_SECONDS / WARMUP_TOTAL_S * 100, 4)}% {{ {wkf_sleep()} }}")
     lines.append(f"  100% {{ background-image: {awake_head_imgs}; background-position: {pos}; }}")
     lines.append("}")
     return "\n".join(lines)
@@ -468,6 +478,7 @@ def generate_sidebar():
         f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
+        f"{el}::before {{ mask: linear-gradient(black {H}, transparent {H}); }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
     ])
 
