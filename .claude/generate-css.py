@@ -42,14 +42,16 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APNG_MS           = 1500  # cushion-appear.apng duration
-PRELOAD_S         = 0.8   # transition frame preload duration
+APNG_MS           = 1500  # cushion-appear.apng natural duration (reference only)
+HEAD_PRELOAD_S    = 0.8   # head2 transition frame cycling duration
 SLEEP_PRELOAD_S   = 0.3   # how long sleep head shows after transition preload
 PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
-CUSH_START_S      = 2.0   # when cushion APNG begins
-CUSH_SWAP_S       = CUSH_START_S + APNG_MS / 1000  # 3.5s — APNG → cushion_base
-APPEAR_SECONDS    = 9.0   # when full cat appears
-HEAD2_DELAY_S     = 6.0   # second head preload start
+CUSH_START_S      = 0.1   # stage 1 render: cushion APNG begins
+CUSH_SWAP_S       = 0.8   # stage 2 preload trigger: APNG → cushion_base (APNG gets 0.7s)
+STATIC_PANTS_S    = 0.9   # stage 2 render: static pants body visible
+STAGE3_PRELOAD_S  = 1.0   # stage 3 preload: ear flick + tail-flick + awake ears
+HEAD2_DELAY_S     = 1.1   # stage 4 preload: head transition + sleep + awake head
+APPEAR_SECONDS    = 1.2   # final render: full animated cat + loop start
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -123,9 +125,12 @@ FRAME_COUNT = len(EAR_FLICK_SEQ)
 FLICK_SECS  = 0.275
 FRAME_SECS  = FLICK_SECS / FRAME_COUNT
 
+STATIC_TAIL_PATH = LIMBS / "flick_00(base).png"
+
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
     CUSH_APPEAR_PATH,
+    STATIC_TAIL_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
@@ -138,15 +143,22 @@ def imgs(ps): return ", ".join(url(p) for p in ps)
 def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"
 
-rest_imgs       = imgs(REST_PATHS)
-awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
-sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
-awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
-trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
-
-all_main_preload = ", ".join([url(CUSH_APPEAR_PATH), rest_imgs])
+rest_imgs        = imgs(REST_PATHS)
+awake_head_imgs  = imgs(AWAKE_HEAD_PATHS)
+sleep_head_imgs  = imgs(SLEEP_HEAD_PATHS)
+awake_ear_imgs   = imgs(AWAKE_EAR_PATHS)
+trans_urls       = [url(p) for p in TRANS_FRAME_PATHS]
+static_rest_imgs = imgs([
+    STATIC_TAIL_PATH,
+    LIMBS / "right_back_paw.png",
+    BODY  / "body_basic.png",
+    LIMBS / "left_front_paw.png",
+    LIMBS / "left_back_paw.png",
+    ACC   / "cushion_base.png",
+])
+cush_preload     = ", ".join([url(CUSH_APPEAR_PATH), url(ACC / "cushion_base.png")])
 _flick_unique    = list(dict.fromkeys([*EAR_FLICK_L, *EAR_FLICK_R]))
-all_ear_preload  = ", ".join([awake_ear_imgs, *[url(p) for p in _flick_unique]])
+all_ear_preload  = ", ".join([awake_ear_imgs, url(ANIM / "tail-flick.apng"), *[url(p) for p in _flick_unique]])
 
 SIZE         = f"{W} {H}"
 RPT          = "no-repeat"
@@ -154,7 +166,7 @@ loop_spec    = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 loop_smooth  = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
 ear_spec     = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
-head_preload2_spec = f"{PRELOAD_S + SLEEP_PRELOAD_S}s linear 1 {HEAD2_DELAY_S}s forwards"
+head_preload2_spec = f"{HEAD_PRELOAD_S + SLEEP_PRELOAD_S}s linear 1 {HEAD2_DELAY_S}s forwards"
 
 
 # ---------------------------------------------------------------------------
@@ -168,26 +180,25 @@ def kf(bg, pos, last=False):
 
 
 def rest_appear_keyframes(appear_pos, preload_pos):
-    cush_solo_pct = pct(PRELOAD_S * 0.5)
     return "\n".join(["@keyframes pants-rest-appear {",
-        f"  0%              {{ {kf(all_main_preload,               preload_pos)} }}",
-        f"  {cush_solo_pct}%  {{ {kf(url(ACC / 'cushion_base.png'), preload_pos)} }}",
-        f"  {pct(PRELOAD_S)}%  {{ {kf('none',                        preload_pos)} }}",
-        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),     appear_pos)} }}",
+        f"  0%              {{ {kf(cush_preload,                       preload_pos)} }}",
+        f"  {pct(CUSH_START_S)}%  {{ {kf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
         f"  {pct(CUSH_SWAP_S)}%  {{ {kf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
-        f"  100%            {{ {kf(rest_imgs,                       appear_pos, last=True)} }}",
+        f"  {pct(STATIC_PANTS_S)}%  {{ {kf(static_rest_imgs,          appear_pos)} }}",
+        f"  100%            {{ {kf(rest_imgs,                          appear_pos, last=True)} }}",
         "}"])
 
 
 
 def head_preload2_keyframes(preload_pos):
-    total      = PRELOAD_S + SLEEP_PRELOAD_S
-    frame_step = PRELOAD_S / TRANS_FRAME_COUNT
-    lines = ["@keyframes pants-head-preload2 {"]
+    total      = HEAD_PRELOAD_S + SLEEP_PRELOAD_S
+    frame_step = HEAD_PRELOAD_S / TRANS_FRAME_COUNT
+    lines = ["@keyframes pants-head-preload2 {",
+             f"  0% {{ background-image: {awake_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}"]
     for i, t_url in enumerate(trans_urls):
-        p = round(i * frame_step / total * 100, 4)
+        p = round((0.5 + i) * frame_step / total * 100, 4)
         lines.append(f"  {p}% {{ background-image: {t_url}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
-    lines.append(f"  {round(PRELOAD_S / total * 100, 1)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
+    lines.append(f"  {round(HEAD_PRELOAD_S / total * 100, 1)}% {{ background-image: {sleep_head_imgs}; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
     lines.append(f"  100% {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}")
     lines.append("}")
     return "\n".join(lines)
@@ -195,8 +206,9 @@ def head_preload2_keyframes(preload_pos):
 
 def ear_appear_keyframes(pos, preload_pos):
     return "\n".join(["@keyframes pants-ear-appear {",
-        f"  0%      {{ {kf(all_ear_preload, preload_pos)} }}",
-        f"  {pct(PRELOAD_S)}%  {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}",
+        f"  0%      {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}",
+        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(static_rest_imgs, preload_pos)} }}",
+        f"  {pct(STAGE3_PRELOAD_S)}%  {{ {kf(all_ear_preload, preload_pos)} }}",
         f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
         "}"])
 
