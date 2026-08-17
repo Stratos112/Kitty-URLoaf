@@ -242,10 +242,16 @@ def head_warmup_keyframes(pos, preload_pos):
 
 
 def ear_appear_keyframes(pos, preload_pos):
+    cover = "linear-gradient(red,red)"
+    def ckf(imgs):
+        return (f"background-image: {cover}, {imgs}; "
+                f"background-position: {preload_pos}, {preload_pos}; "
+                f"background-size: 100% 9999px, {SIZE}; "
+                f"animation-timing-function: steps(1, end);")
     return "\n".join(["@keyframes pants-ear-appear {",
         f"  0%      {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}",
-        f"  {pct(CUSH_SWAP_S)}%  {{ {kf(static_rest_imgs, preload_pos)} }}",
-        f"  {pct(STAGE3_PRELOAD_S)}%  {{ {kf(all_ear_preload, preload_pos)} }}",
+        f"  {pct(CUSH_SWAP_S)}%  {{ {ckf(static_rest_imgs)} }}",
+        f"  {pct(STAGE3_PRELOAD_S)}%  {{ {ckf(all_ear_preload)} }}",
         f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
         "}"])
 
