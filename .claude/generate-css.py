@@ -59,10 +59,11 @@ C_H               = 166       # cat canvas height
 PT_H              = 34        # PersonalToolbar height (nav-bar only)
 W, H              = "364px", "266px"
 
-LOOP_CYCLE = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
-t_falling  = float(HOLD_SECONDS)
-t_asleep   = t_falling + TRANS_SECONDS
-t_waking   = t_asleep  + HOLD_SECONDS
+LOOP_CYCLE        = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
+HEAD_LOOP_PREROLL = 0.5   # seconds of awake before first transition fires at loop start
+t_fall_s  = HEAD_LOOP_PREROLL
+t_sleep_s = t_fall_s + TRANS_SECONDS
+t_wake_s  = t_sleep_s + HOLD_SECONDS
 
 RANDOM_CYCLE = 90.0
 RANDOM_SEED  = 10
@@ -227,9 +228,9 @@ def head_loop_keyframes(pos):
 
     pts = (
         [("0.0000", awake)]
-        + trans(t_falling)
-        + [(f"{lp(t_asleep):.4f}", asleep)]
-        + trans(t_waking, reverse=True)
+        + trans(t_fall_s)
+        + [(f"{lp(t_sleep_s):.4f}", asleep)]
+        + trans(t_wake_s, reverse=True)
         + [("100.0000", awake)]
     )
     return "\n".join(["@keyframes pants-head-loop {",
@@ -264,9 +265,9 @@ def ear_y_loop_keyframes():
     sy   = f"{SLEEP_DROP}px"
     pts  = {
         "0.0000":               "--ear-y: 0px;",
-        f"{lp(t_falling):.4f}": f"--ear-y: 0px; {ease}",
-        f"{lp(t_asleep):.4f}":  f"--ear-y: {sy};",
-        f"{lp(t_waking):.4f}":  f"--ear-y: {sy}; {ease}",
+        f"{lp(t_fall_s):.4f}":  f"--ear-y: 0px; {ease}",
+        f"{lp(t_sleep_s):.4f}": f"--ear-y: {sy};",
+        f"{lp(t_wake_s):.4f}":  f"--ear-y: {sy}; {ease}",
         "100.0000":             "--ear-y: 0px;",
     }
     return "\n".join(["@keyframes pants-ear-y-loop {",
@@ -346,7 +347,7 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
-        head_preload2_keyframes(NAV_POS, NAV_PRELOAD_POS),
+        head_preload2_keyframes(NAV_PRELOAD_POS, NAV_PRELOAD_POS),
         ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
