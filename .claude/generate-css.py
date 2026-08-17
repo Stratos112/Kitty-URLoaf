@@ -212,15 +212,16 @@ def head_warmup_keyframes(pos, preload_pos):
     n_sleep = len(SLEEP_HEAD_PATHS)
     pos_trans = ", ".join([pos] * n_awake + [preload_pos])
     pos_sleep = ", ".join([pos] * n_awake + [preload_pos] * n_sleep)
+    cover     = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
 
     def wkf_trans(frame_url):
-        return (f"background-image: {awake_head_imgs}, {frame_url}; "
-                f"background-position: {pos_trans}; "
+        return (f"background-image: {cover}, {awake_head_imgs}, {frame_url}; "
+                f"background-position: {preload_pos}, {pos_trans}; "
                 f"animation-timing-function: steps(1, end);")
 
     def wkf_sleep():
-        return (f"background-image: {awake_head_imgs}, {sleep_head_imgs}; "
-                f"background-position: {pos_sleep}; "
+        return (f"background-image: {cover}, {awake_head_imgs}, {sleep_head_imgs}; "
+                f"background-position: {preload_pos}, {pos_sleep}; "
                 f"animation-timing-function: steps(1, end);")
 
     lines = ["@keyframes pants-head-warmup {"]
@@ -480,22 +481,6 @@ def generate_sidebar():
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
         ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
-        "/* opaque cover — hides preload render area below the cat */",
-        "#sidebar-box {",
-        "  position: relative !important;",
-        "  overflow: visible !important;",
-        "}",
-        "#sidebar-box::after {",
-        "  content: '';",
-        "  position: absolute;",
-        f"  top: {int(SIDEBAR_TOP.rstrip('px')) + int(H.rstrip('px'))}px;",
-        "  left: 0;",
-        "  right: 0;",
-        "  bottom: 0;",
-        "  background: var(--sidebar-background-color, #2b2a33);",
-        "  pointer-events: none;",
-        "  z-index: 1;",
-        "}", "",
     ])
 
     OUT_SIDEBAR.write_text(css)
