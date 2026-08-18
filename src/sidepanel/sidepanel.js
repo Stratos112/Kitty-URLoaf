@@ -33,6 +33,19 @@ const P = {
   entrFg:    `${BASE}Accessories/entrance_door_foreground.png`,
 };
 
+const EYE_PATHS = {
+  n:  `${BASE}Anim/eyes-n.apng`,
+  ne: `${BASE}Anim/eyes-ne.apng`,
+  e:  `${BASE}Anim/eyes-e.apng`,
+  se: `${BASE}Anim/eyes-se.apng`,
+  s:  `${BASE}Anim/eyes-s.apng`,
+  sw: `${BASE}Anim/eyes-sw.apng`,
+  w:  `${BASE}Anim/eyes-w.apng`,
+  nw: `${BASE}Anim/eyes-nw.apng`,
+};
+const EYE_X_PCT = 0.57;
+const EYE_Y_PCT = 0.25;
+
 const CUSH_PATHS  = Array.from({ length: 10 }, (_, i) =>
   `${BASE}Accessories/Cushion appear/cush_appear_${i}.png`);
 
@@ -111,6 +124,35 @@ function easeInOutCubic(t) {
 
 let transitioning = false;
 let flickTimer    = null;
+let gazing        = false;
+
+function dirFromAngle(dx, dy) {
+  const deg = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
+  if (deg >= 337.5 || deg < 22.5)  return 'e';
+  if (deg < 67.5)  return 'se';
+  if (deg < 112.5) return 's';
+  if (deg < 157.5) return 'sw';
+  if (deg < 202.5) return 'w';
+  if (deg < 247.5) return 'nw';
+  if (deg < 292.5) return 'n';
+  return 'ne';
+}
+
+function gazeAt(x, y) {
+  if (!gazing) return;
+  const r   = stage.getBoundingClientRect();
+  const dir = dirFromAngle(x - (r.left + r.width * EYE_X_PCT), y - (r.top + r.height * EYE_Y_PCT));
+  l8.style.backgroundImage = u(EYE_PATHS[dir]);
+}
+
+document.addEventListener('mousemove', e => gazeAt(e.clientX, e.clientY));
+
+browser.runtime.onMessage.addListener(msg => {
+  if (msg.type !== 'gaze' || !gazing) return;
+  // content page is always to the right of sidebar; use y for vertical angle
+  const dir = msg.y < 0.35 ? 'ne' : msg.y > 0.65 ? 'se' : 'e';
+  l8.style.backgroundImage = u(EYE_PATHS[dir]);
+});
 
 function cancelFlick() {
   if (flickTimer === null) return;
@@ -121,6 +163,7 @@ function cancelFlick() {
 }
 
 function setAwake() {
+  gazing = true;
   pants.classList.remove('sleeping');
   l7.style.backgroundImage  = u(P.awakeHead);
   l8.style.backgroundImage  = '';
@@ -130,6 +173,7 @@ function setAwake() {
 }
 
 function setAsleep() {
+  gazing = false;
   pants.classList.add('sleeping');
   l7.style.backgroundImage  = u(P.sleepHead);
   l8.style.backgroundImage  = u(P.sleepEyes);
@@ -139,6 +183,7 @@ function setAsleep() {
 }
 
 function runTransition(paths, gen, onDone, toSleep = false) {
+  gazing = false;
   cancelFlick();
   transitioning = true;
   l8.style.backgroundImage = 'none';
@@ -251,6 +296,7 @@ function runEntrance() {
   cancelFlick();
   pants.removeEventListener('click', flickEars);
 
+  gazing = false;
   if (!gpuWarmed) { gpuWarmup(runEntrance); return; }
 
   // reset entrance layers
