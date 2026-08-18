@@ -1,37 +1,63 @@
-const l0    = document.querySelector('.l0');
-const l7    = document.querySelector('.l7');
-const l8    = document.querySelector('.l8');
-const l9    = document.querySelector('.l9');
-const l10   = document.querySelector('.l10');
-const l11   = document.querySelector('.l11');
-const pants = document.getElementById('pants');
+const BASE    = '../../static/Pants/';
+const stage   = document.getElementById('stage');
+const pants   = document.getElementById('pants');
+const cush    = document.getElementById('cush');
+const entrance = document.getElementById('entrance');
+const l7  = pants.querySelector('.l7');
+const l8  = pants.querySelector('.l8');
+const l9  = pants.querySelector('.l9');
+const l10 = pants.querySelector('.l10');
+const l11 = pants.querySelector('.l11');
 
-const CAT_LAYERS = [1,2,3,4,5,6,7,8,9,10,11].map(n => document.querySelector('.l'+n));
+// ── timing ───────────────────────────────────────────────────────────────────
 
 const HOLD_MS     = 10000;
 const FRAME_COUNT = 30;
 const FRAME_MS    = 1500 / FRAME_COUNT;
 
-const AWAKE_HEAD = "url('../../static/Pants/Anim/breath-head.apng')";
-const BLINK      = "url('../../static/Pants/Anim/blink-overlay.apng')";
-const SLEEP_HEAD = "url('../../static/Pants/Anim/breath-head-sleep.apng')";
-const SLEEP_EYES = "url('../../static/Pants/Anim/breath-eyes-sleep.apng')";
+const CUSH_FRAME_MS = 80;  // ~12fps for cushion appear
+const DOOR_FRAME_MS = 42;  // ~24fps for entrance door
+
+// ── asset refs ───────────────────────────────────────────────────────────────
+
+const AWAKE_HEAD = `url('${BASE}Anim/breath-head.apng')`;
+const BLINK      = `url('${BASE}Anim/blink-overlay.apng')`;
+const SLEEP_HEAD = `url('${BASE}Anim/breath-head-sleep.apng')`;
+const SLEEP_EYES = `url('${BASE}Anim/breath-eyes-sleep.apng')`;
 
 const TRANS     = Array.from({ length: FRAME_COUNT }, (_, i) =>
-  `url('../../static/Pants/Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
+  `url('${BASE}Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
 const TRANS_REV = [...TRANS].reverse();
 
 const FLICK_SEQ = ['01', '02', '03', '02', '01'];
-const FLICK_L   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/L_${n}.png')`);
-const FLICK_R   = FLICK_SEQ.map(n => `url('../../static/Pants/Anim/EarFlick/R_${n}.png')`);
+const FLICK_L   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/L_${n}.png')`);
+const FLICK_R   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/R_${n}.png')`);
 const FLICK_MS  = 275 / FLICK_SEQ.length;
 
-/* matches SLEEP_DROP / DISPLAY_H — ears slide with the head during transitions */
+const CUSH_FRAMES = Array.from({ length: 10 }, (_, i) =>
+  `${BASE}Accessories/Cushion appear/cush_appear_${i}.png`);
+
+const ENTRANCE_FRAMES = Array.from({ length: 38 }, (_, i) =>
+  `${BASE}Accessories/Entrance_appear/entrance_door${String(i).padStart(2, '0')}.png`);
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
 const SLEEP_PCT = 70 / 530 * 100;
 
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
+
+function playFrames(el, frames, ms, onDone) {
+  let i = 0;
+  (function step() {
+    if (i >= frames.length) { if (onDone) onDone(); return; }
+    el.style.backgroundImage = `url('${frames[i++]}')`;
+    setTimeout(step, ms);
+  })();
+}
+
+// ── idle cycle ───────────────────────────────────────────────────────────────
 
 let transitioning = false;
 let flickTimer    = null;
@@ -62,8 +88,6 @@ function setAsleep() {
   l11.style.backgroundImage = '';
 }
 
-/* Ears slide with the head: inline transform eases from 0↔SLEEP_PCT each frame,
-   then clears so the CSS .sleeping rule takes over at the same final value — no jump. */
 function runTransition(frames, onDone, toSleep = false) {
   cancelFlick();
   transitioning = true;
@@ -112,33 +136,37 @@ function cycle() {
   }, true), HOLD_MS);
 }
 
-pants.addEventListener('click', flickEars);
+// ── entrance sequence ────────────────────────────────────────────────────────
 
-const APNG_MS = 1500;
-const FADE_MS = 300;
+function runEntrance() {
+  stage.hidden = false;
 
-const cushAppear = document.createElement('div');
-Object.assign(cushAppear.style, {
-  position:            'absolute',
-  inset:               '0',
-  backgroundSize:      '100% 100%',
-  backgroundRepeat:    'no-repeat',
-  backgroundPosition:  'top left',
-  backgroundImage:     "url('../../static/Pants/Anim/cushion-appear.apng')",
-  zIndex:              '0',
-  opacity:             '1',
-  transition:          `opacity ${FADE_MS}ms`,
+  // Phase 1: cushion appear (10 frames, ~800ms)
+  playFrames(cush, CUSH_FRAMES, CUSH_FRAME_MS, () => {
+    cush.style.backgroundImage = ''; // CSS cushion_base.png takes over
+
+    // Phase 2: entrance door sequence (38 frames, ~1.6s)
+    playFrames(entrance, ENTRANCE_FRAMES, DOOR_FRAME_MS, () => {
+      entrance.style.transition = 'opacity 0.35s';
+      entrance.style.opacity    = '0';
+      setTimeout(() => { entrance.style.display = 'none'; }, 350);
+      setTimeout(() => {
+        cycle();
+        pants.addEventListener('click', flickEars);
+      }, 200);
+    });
+
+    // Phase 2b: cat slides in 300ms after door starts
+    setTimeout(() => pants.classList.add('entering'), 300);
+  });
+}
+
+// ── init ─────────────────────────────────────────────────────────────────────
+
+chrome.storage.local.get({ edition: 'simple' }, ({ edition }) => {
+  if (edition !== 'deluxe') {
+    document.getElementById('simple-notice').hidden = false;
+    return;
+  }
+  runEntrance();
 });
-l0.after(cushAppear);
-
-setTimeout(() => {
-  l0.style.transition = `opacity ${FADE_MS}ms`;
-  l0.style.opacity    = '1';
-  cushAppear.style.opacity = '0';
-  setTimeout(() => cushAppear.remove(), FADE_MS);
-}, APNG_MS);
-
-setTimeout(() => {
-  CAT_LAYERS.forEach(el => { el.style.opacity = '1'; });
-  cycle();
-}, 4000);

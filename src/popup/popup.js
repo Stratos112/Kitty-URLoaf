@@ -14,6 +14,10 @@ function selectEdition(ed) {
   next0.disabled    = ed === 'deluxe';
   next0.textContent = ed === 'deluxe' ? 'coming soon' : 'next →';
   chrome.storage.local.set({ edition: ed });
+  if (typeof browser !== 'undefined' && browser.sidebarAction) {
+    if (ed === 'deluxe') browser.sidebarAction.enable();
+    else browser.sidebarAction.disable();
+  }
 }
 
 cards.simple.addEventListener('click', () => selectEdition('simple'));
