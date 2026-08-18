@@ -10,7 +10,7 @@ Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', () =>
   btn.classList.add('on');
   chrome.storage.local.set({ cssLocation: loc });
   delete dlBtn.dataset.ready;
-  dlBtn.textContent = 'download ↓';
+  dlBtn.textContent = 'generate ↓';
 }));
 
 function goTo(n, save = true) {
@@ -20,7 +20,10 @@ function goTo(n, save = true) {
 }
 
 async function triggerDownload() {
+  dlBtn.textContent = 'generating…';
+  dlBtn.disabled = true;
   await downloadCSS();
+  dlBtn.disabled = false;
   dlBtn.textContent = 'next →';
   dlBtn.dataset.ready = '1';
   chrome.storage.local.set({ downloaded: true });
@@ -44,7 +47,7 @@ document.getElementById('back5').addEventListener('click', () => goTo(2));
 document.getElementById('next5').addEventListener('click', () => goTo(4));
 
 document.getElementById('startOverBtn').addEventListener('click', () => {
-  dlBtn.textContent = 'download ↓';
+  dlBtn.textContent = 'generate ↓';
   delete dlBtn.dataset.ready;
   chrome.storage.local.set({ wizardPage: 0, downloaded: false });
   track.style.transition = 'none';
@@ -90,9 +93,40 @@ function renderSteps() {
   document.getElementById('steps-c').innerHTML = steps.slice(6).map(row).join('');
 }
 
+function toHex(color) {
+  if (Array.isArray(color)) {
+    return '#' + color.slice(0, 3).map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
+  const m = String(color).match(/\d+(\.\d+)?/g);
+  if (m?.length >= 3) {
+    return '#' + m.slice(0, 3).map(v => Math.round(+v).toString(16).padStart(2, '0')).join('');
+  }
+  return String(color);
+}
+
+async function getThemeBackground() {
+  if (typeof browser !== 'undefined' && browser.theme?.getCurrent) {
+    try {
+      const theme = await browser.theme.getCurrent();
+      const c = theme.colors ?? {};
+      const color = cssLocation === 'sidebar'
+        ? (c.sidebar ?? c.toolbar ?? c.frame)
+        : (c.frame  ?? c.toolbar);
+      if (color) return toHex(color);
+    } catch (e) {}
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? '#2b2a33' : '#f0f0f4';
+}
+
+function generate(css, bgColor) {
+  return css;
+}
+
 async function downloadCSS() {
-  const file = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
-  const blob = await fetch(`../../static/${file}`).then(r => r.blob());
+  const file   = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
+  const raw    = await fetch(`../../static/${file}`).then(r => r.text());
+  const bgColor = await getThemeBackground();
+  const blob   = new Blob([generate(raw, bgColor)], { type: 'text/css' });
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css',
