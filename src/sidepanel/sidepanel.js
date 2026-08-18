@@ -84,7 +84,8 @@ function fade(els, opacity, ms, onDone) {
   if (onDone) setTimeout(onDone, ms);
 }
 
-let cycleGen = 0;
+let cycleGen  = 0;
+let gpuWarmed = false;
 
 // rAF-based frame player — self-cancels when gen no longer matches cycleGen
 function playFrames(el, paths, ms, gen, onDone) {
@@ -194,6 +195,37 @@ function cycle(gen) {
   }, HOLD_MS);
 }
 
+// ── GPU warmup ───────────────────────────────────────────────────────────────
+// <img> preload warms CPU decoded cache but not GPU texture cache.
+// Cycling frames on actual elements at near-zero opacity forces GPU uploads.
+
+function gpuWarmup(onDone) {
+  stage.style.opacity = '0.001';
+  stage.hidden = false;
+  entranceAnim.style.transition = 'none';
+  entranceAnim.style.opacity    = '1';
+
+  const warmPaths = [...CUSH_PATHS, ...DOOR_PATHS];
+  let i = 0;
+  function step() {
+    if (i < CUSH_PATHS.length) {
+      cush.style.backgroundImage = u(warmPaths[i]);
+    } else {
+      entranceAnim.style.backgroundImage = u(warmPaths[i]);
+    }
+    i++;
+    if (i < warmPaths.length) { requestAnimationFrame(step); return; }
+    cush.style.backgroundImage         = '';
+    entranceAnim.style.backgroundImage = '';
+    entranceAnim.style.opacity         = '0';
+    stage.hidden        = true;
+    stage.style.opacity = '';
+    gpuWarmed = true;
+    onDone();
+  }
+  requestAnimationFrame(step);
+}
+
 // ── entrance sequence ────────────────────────────────────────────────────────
 
 function runEntrance() {
@@ -201,6 +233,8 @@ function runEntrance() {
   const gen = cycleGen;
   cancelFlick();
   pants.removeEventListener('click', flickEars);
+
+  if (!gpuWarmed) { gpuWarmup(runEntrance); return; }
 
   // reset entrance layers
   [entranceBg, entranceFg, entranceAnim].forEach(el => {
