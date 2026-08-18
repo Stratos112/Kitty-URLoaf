@@ -156,6 +156,34 @@
       font-weight: 600; cursor: pointer;
       text-decoration: underline; text-underline-offset: 2px;
     }
+
+    /* location toggle */
+    .tog-wrap {
+      display: flex;
+      background: var(--deep);
+      border-radius: 99px;
+      padding: 3px;
+      margin-bottom: 14px;
+      gap: 2px;
+    }
+    .tog {
+      flex: 1;
+      border: none;
+      border-radius: 99px;
+      padding: 7px 0;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.22s var(--spring);
+    }
+    .tog.on {
+      background: linear-gradient(135deg, var(--pink) 0%, var(--pink-lo) 120%);
+      color: #fff;
+      box-shadow: 0 2px 10px var(--glow);
+    }
   </style>
 </head>
 <body>
@@ -178,6 +206,10 @@
 
       <!-- page 0: download -->
       <div class="page">
+        <div class="tog-wrap">
+          <button class="tog on" id="togSidebar">sidebar</button>
+          <button class="tog"    id="togNav">url bar</button>
+        </div>
         <div class="dl-box">
           <div class="pants-dl-icon"></div>
           <div class="lbl">userChrome.css</div>

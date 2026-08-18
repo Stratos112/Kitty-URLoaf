@@ -2,6 +2,17 @@ const track = document.getElementById('track');
 const dots  = [0,1,2,3,4].map(i => document.getElementById(`d${i}`));
 const dlBtn = document.getElementById('dlBtn');
 
+let cssLocation = 'sidebar';
+const togs = { sidebar: document.getElementById('togSidebar'), nav: document.getElementById('togNav') };
+Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', () => {
+  cssLocation = loc;
+  Object.values(togs).forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  chrome.storage.local.set({ cssLocation: loc });
+  delete dlBtn.dataset.ready;
+  dlBtn.textContent = 'download ↓';
+}));
+
 function goTo(n, save = true) {
   track.style.transform = `translateX(-${n * 300}px)`;
   dots.forEach((d, i) => d.classList.toggle('on', i === n));
@@ -41,7 +52,10 @@ document.getElementById('startOverBtn').addEventListener('click', () => {
   requestAnimationFrame(() => { track.style.transition = ''; });
 });
 
-chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '' }, (data) => {
+chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLocation: 'sidebar' }, (data) => {
+  cssLocation = data.cssLocation;
+  Object.values(togs).forEach(t => t.classList.remove('on'));
+  (togs[cssLocation] ?? togs.sidebar).classList.add('on');
   const currentVersion = chrome.runtime.getManifest().version;
   if (data.version !== currentVersion) {
     chrome.storage.local.set({ wizardPage: 0, downloaded: false, version: currentVersion });
@@ -77,7 +91,8 @@ function renderSteps() {
 }
 
 async function downloadCSS() {
-  const blob = await fetch('../../static/userChrome-sidebar.css').then(r => r.blob());
+  const file = cssLocation === 'nav' ? 'userChrome.css' : 'userChrome-sidebar.css';
+  const blob = await fetch(`../../static/${file}`).then(r => r.blob());
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css',
