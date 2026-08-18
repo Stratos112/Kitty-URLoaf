@@ -74,7 +74,7 @@ MAX_GAP      = 28.0
 # ---------------------------------------------------------------------------
 
 NAV_EL           = "#nav-bar"
-NAV_Y_SHIFT      = 100             # px cat overflows above nav-bar top edge
+NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
 NAV_POS          = "left 31px top 0px"
 NAV_APP_POS      = "left 31px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
 NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
