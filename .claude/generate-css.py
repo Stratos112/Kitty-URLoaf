@@ -482,7 +482,7 @@ def generate_sidebar():
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
-        ear_animation_rules(el, SIDEBAR_POS, before_extra=f"pants-head-warmup {warmup_spec}"), "",
+        ear_animation_rules(el, SIDEBAR_POS), "",
     ])
 
     OUT_SIDEBAR.write_text(css)
