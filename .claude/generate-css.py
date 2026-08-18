@@ -57,7 +57,7 @@ SLEEP_DROP        = 35        # px ear drops during sleep
 C_H               = 166       # cat canvas height
 PT_H              = 34        # PersonalToolbar height (nav-bar only)
 W, H              = "364px", "266px"
-SIDEBAR_W         = "304px"
+SIDEBAR_W         = "254px"
 
 LOOP_CYCLE = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
 t_falling  = float(HOLD_SECONDS)
@@ -75,9 +75,9 @@ MAX_GAP      = 28.0
 
 NAV_EL           = "#nav-bar"
 NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
-NAV_POS          = "left 61px top 0px"
-NAV_APP_POS      = "left 61px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
-NAV_PRELOAD_POS  = f"left 61px top {PRELOAD_OFFSET}px"
+NAV_POS          = "left 31px top 0px"
+NAV_APP_POS      = "left 31px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
+NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Sidebar layout
@@ -85,10 +85,10 @@ NAV_PRELOAD_POS  = f"left 61px top {PRELOAD_OFFSET}px"
 
 SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
 SIDEBAR_TOP         = "200px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_APP_POS     = "left -30px top 200px"   # REST layer on element, matches SIDEBAR_TOP
-SIDEBAR_POS         = "left -30px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
-SIDEBAR_PRELOAD_POS = f"left -30px top {PRELOAD_OFFSET}px"
-SIDEBAR_APP_PRELOAD_POS = f"left -30px top {200 + PRELOAD_OFFSET}px"
+SIDEBAR_APP_POS     = "left -60px top 200px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_POS         = "left -60px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
+SIDEBAR_PRELOAD_POS = f"left -60px top {PRELOAD_OFFSET}px"
+SIDEBAR_APP_PRELOAD_POS = f"left -60px top {200 + PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Asset paths
