@@ -14,58 +14,81 @@ const l11 = pants.querySelector('.l11');
 
 // ── timing ───────────────────────────────────────────────────────────────────
 
-const HOLD_MS       = 10000;
-const FRAME_COUNT   = 30;
-const FRAME_MS      = 1500 / FRAME_COUNT;
-const CUSH_FRAME_MS = 120;   // 10 frames = 1.2s
-const DOOR_FRAME_MS = 100;   // 38 frames = 3.8s
-const CROSSFADE_MS  = 450;
-const SLIDE_MS      = 1500;
+const HOLD_MS        = 10000;
+const FRAME_COUNT    = 30;
+const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
+const CUSH_FRAME_MS  = 180;   // 10 × 180 = 1.8s
+const DOOR_FRAME_MS  = 200;   // 38 × 200 = 7.6s each way
+const CROSSFADE_MS   = 600;
+const SLIDE_MS       = 2200;
 
-// ── asset refs ───────────────────────────────────────────────────────────────
+// ── raw paths (no url() wrapper) ─────────────────────────────────────────────
 
-const AWAKE_HEAD = `url('${BASE}Anim/breath-head.apng')`;
-const BLINK      = `url('${BASE}Anim/blink-overlay.apng')`;
-const SLEEP_HEAD = `url('${BASE}Anim/breath-head-sleep.apng')`;
-const SLEEP_EYES = `url('${BASE}Anim/breath-eyes-sleep.apng')`;
+const P = {
+  awakeHead: `${BASE}Anim/breath-head.apng`,
+  blink:     `${BASE}Anim/blink-overlay.apng`,
+  sleepHead: `${BASE}Anim/breath-head-sleep.apng`,
+  sleepEyes: `${BASE}Anim/breath-eyes-sleep.apng`,
+  entrBg:    `${BASE}Accessories/entrance_door_background.png`,
+  entrFg:    `${BASE}Accessories/entrance_door_foreground.png`,
+};
 
-const TRANS     = Array.from({ length: FRAME_COUNT }, (_, i) =>
-  `url('${BASE}Anim/Transition/frame-${String(i).padStart(2, '0')}.png')`);
-const TRANS_REV = [...TRANS].reverse();
-
-const FLICK_SEQ = ['01', '02', '03', '02', '01'];
-const FLICK_L   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/L_${n}.png')`);
-const FLICK_R   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/R_${n}.png')`);
-const FLICK_MS  = 275 / FLICK_SEQ.length;
-
-const CUSH_FRAMES     = Array.from({ length: 10 }, (_, i) =>
+const CUSH_PATHS  = Array.from({ length: 10 }, (_, i) =>
   `${BASE}Accessories/Cushion appear/cush_appear_${i}.png`);
-const ENTRANCE_FRAMES = Array.from({ length: 38 }, (_, i) =>
+
+const DOOR_PATHS  = Array.from({ length: 38 }, (_, i) =>
   `${BASE}Accessories/Entrance_appear/entrance_door${String(i).padStart(2, '0')}.png`);
-const ENTRANCE_BG_URL = `url('${BASE}Accessories/entrance_door_background.png')`;
-const ENTRANCE_FG_URL = `url('${BASE}Accessories/entrance_door_foreground.png')`;
+const DOOR_PATHS_REV = [...DOOR_PATHS].reverse();
+
+const TRANS_PATHS = Array.from({ length: FRAME_COUNT }, (_, i) =>
+  `${BASE}Anim/Transition/frame-${String(i).padStart(2, '0')}.png`);
+const TRANS_PATHS_REV = [...TRANS_PATHS].reverse();
+
+const FLICK_SEQ     = ['01', '02', '03', '02', '01'];
+const FLICK_MS      = 275 / FLICK_SEQ.length;
+const FLICK_L_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/L_${n}.png`);
+const FLICK_R_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/R_${n}.png`);
+
+// ── preload ──────────────────────────────────────────────────────────────────
+
+const readyPromise = Promise.all([
+  ...CUSH_PATHS,
+  ...DOOR_PATHS,
+  ...TRANS_PATHS,
+  ...FLICK_L_PATHS,
+  ...FLICK_R_PATHS,
+  P.entrBg, P.entrFg,
+].map(src => new Promise(resolve => {
+  const img = new Image();
+  img.onload = img.onerror = resolve;
+  img.src = src;
+})));
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+const u = path => `url('${path}')`;
+
+function fade(els, opacity, ms, onDone) {
+  els.forEach(el => {
+    el.style.transition = `opacity ${ms}ms`;
+    el.style.opacity    = String(opacity);
+  });
+  if (onDone) setTimeout(onDone, ms);
+}
+
+function playFrames(el, paths, ms, onDone) {
+  let i = 0;
+  (function step() {
+    if (i >= paths.length) { if (onDone) onDone(); return; }
+    el.style.backgroundImage = u(paths[i++]);
+    setTimeout(step, ms);
+  })();
+}
 
 const SLEEP_PCT = 70 / 530 * 100;
 
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-function fade(els, opacity, ms, onDone) {
-  const t = `opacity ${ms}ms`;
-  els.forEach(el => { el.style.transition = t; el.style.opacity = String(opacity); });
-  if (onDone) setTimeout(onDone, ms);
-}
-
-function playFrames(el, frames, ms, onDone) {
-  let i = 0;
-  (function step() {
-    if (i >= frames.length) { if (onDone) onDone(); return; }
-    el.style.backgroundImage = `url('${frames[i++]}')`;
-    setTimeout(step, ms);
-  })();
 }
 
 // ── idle cycle ───────────────────────────────────────────────────────────────
@@ -84,30 +107,30 @@ function cancelFlick() {
 
 function setAwake() {
   pants.classList.remove('sleeping');
-  l7.style.backgroundImage  = AWAKE_HEAD;
+  l7.style.backgroundImage  = u(P.awakeHead);
   l8.style.backgroundImage  = '';
-  l9.style.backgroundImage  = BLINK;
+  l9.style.backgroundImage  = u(P.blink);
   l10.style.backgroundImage = '';
   l11.style.backgroundImage = '';
 }
 
 function setAsleep() {
   pants.classList.add('sleeping');
-  l7.style.backgroundImage  = SLEEP_HEAD;
-  l8.style.backgroundImage  = SLEEP_EYES;
+  l7.style.backgroundImage  = u(P.sleepHead);
+  l8.style.backgroundImage  = u(P.sleepEyes);
   l9.style.backgroundImage  = 'none';
   l10.style.backgroundImage = '';
   l11.style.backgroundImage = '';
 }
 
-function runTransition(frames, onDone, toSleep = false) {
+function runTransition(paths, onDone, toSleep = false) {
   cancelFlick();
   transitioning = true;
   l8.style.backgroundImage = 'none';
   l9.style.backgroundImage = 'none';
   let i = 0;
   (function step() {
-    if (i >= frames.length) {
+    if (i >= paths.length) {
       l10.style.transform = '';
       l11.style.transform = '';
       transitioning = false;
@@ -116,10 +139,10 @@ function runTransition(frames, onDone, toSleep = false) {
     }
     const progress = toSleep ? i / FRAME_COUNT : (FRAME_COUNT - i) / FRAME_COUNT;
     const ty = `translateY(${easeInOutCubic(progress) * SLEEP_PCT}%)`;
-    l10.style.transform = ty;
-    l11.style.transform = ty;
-    l7.style.backgroundImage = frames[i++];
-    setTimeout(step, FRAME_MS);
+    l10.style.transform      = ty;
+    l11.style.transform      = ty;
+    l7.style.backgroundImage = u(paths[i++]);
+    setTimeout(step, TRANS_FRAME_MS);
   })();
 }
 
@@ -127,14 +150,14 @@ function flickEars() {
   if (transitioning || flickTimer !== null) return;
   let i = 0;
   (function step() {
-    if (i >= FLICK_L.length) {
+    if (i >= FLICK_L_PATHS.length) {
       flickTimer = null;
       l10.style.backgroundImage = '';
       l11.style.backgroundImage = '';
       return;
     }
-    l10.style.backgroundImage = FLICK_L[i];
-    l11.style.backgroundImage = FLICK_R[i];
+    l10.style.backgroundImage = u(FLICK_L_PATHS[i]);
+    l11.style.backgroundImage = u(FLICK_R_PATHS[i]);
     i++;
     flickTimer = setTimeout(step, FLICK_MS);
   })();
@@ -145,12 +168,12 @@ function cycle(gen) {
   setAwake();
   setTimeout(() => {
     if (gen !== cycleGen) return;
-    runTransition(TRANS, () => {
+    runTransition(TRANS_PATHS, () => {
       if (gen !== cycleGen) return;
       setAsleep();
       setTimeout(() => {
         if (gen !== cycleGen) return;
-        runTransition(TRANS_REV, () => cycle(gen));
+        runTransition(TRANS_PATHS_REV, () => cycle(gen));
       }, HOLD_MS);
     }, true);
   }, HOLD_MS);
@@ -164,79 +187,78 @@ function runEntrance() {
   cancelFlick();
   pants.removeEventListener('click', flickEars);
 
-  // reset all entrance layers instantly
   [entranceBg, entranceFg, entranceAnim].forEach(el => {
     el.style.transition      = 'none';
     el.style.opacity         = '0';
     el.style.backgroundImage = '';
   });
-
-  // snap cat off-screen left, no transition
   pants.style.transition = 'none';
   pants.style.transform  = 'translateX(-110%)';
+  cush.style.backgroundImage = '';
   void pants.offsetWidth;
 
   stage.hidden    = false;
   debugBtn.hidden = false;
 
-  // Phase 1: cushion appear (10 frames × 120ms = 1.2s)
-  playFrames(cush, CUSH_FRAMES, CUSH_FRAME_MS, () => {
+  // 1. Cushion appear
+  playFrames(cush, CUSH_PATHS, CUSH_FRAME_MS, () => {
     if (gen !== cycleGen) return;
-    cush.style.backgroundImage = ''; // CSS cushion_base.png takes over
+    cush.style.backgroundImage = '';
 
-    // Phase 2: door animation (38 frames × 100ms = 3.8s)
+    // 2. Door opens (forward)
     entranceAnim.style.opacity = '1';
-    playFrames(entranceAnim, ENTRANCE_FRAMES, DOOR_FRAME_MS, () => {
+    playFrames(entranceAnim, DOOR_PATHS, DOOR_FRAME_MS, () => {
       if (gen !== cycleGen) return;
 
-      // Phase 3: crossfade animation → static bg + fg
-      entranceBg.style.backgroundImage = ENTRANCE_BG_URL;
-      entranceFg.style.backgroundImage = ENTRANCE_FG_URL;
+      // 3. Crossfade: anim → static bg + fg
+      entranceBg.style.backgroundImage = u(P.entrBg);
+      entranceFg.style.backgroundImage = u(P.entrFg);
       fade([entranceBg, entranceFg], 1, CROSSFADE_MS);
-      fade([entranceAnim],           0, CROSSFADE_MS);
-
-      // Phase 4: hold, then slide cat in
-      setTimeout(() => {
+      fade([entranceAnim], 0, CROSSFADE_MS, () => {
         if (gen !== cycleGen) return;
-        pants.style.transition = `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
-        pants.style.transform  = 'translateX(0)';
 
-        // Phase 5: after slide — final frame → fade out all
+        // 4. Hold, then slide cat in
         setTimeout(() => {
           if (gen !== cycleGen) return;
+          pants.style.transition = `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+          pants.style.transform  = 'translateX(0)';
 
-          // show final animation frame on top, replace static assets
-          entranceAnim.style.backgroundImage = `url('${ENTRANCE_FRAMES[ENTRANCE_FRAMES.length - 1]}')`;
-          fade([entranceAnim], 1, 250, () => {
+          // 5. Cat settled → crossfade static → final frame, then door closes
+          setTimeout(() => {
             if (gen !== cycleGen) return;
-            fade([entranceBg], 0, 250);
-
-            // then fade everything out
-            setTimeout(() => {
+            entranceAnim.style.backgroundImage = u(DOOR_PATHS[DOOR_PATHS.length - 1]);
+            fade([entranceBg, entranceFg], 0, CROSSFADE_MS);
+            fade([entranceAnim], 1, CROSSFADE_MS, () => {
               if (gen !== cycleGen) return;
-              fade([entranceFg, entranceAnim], 0, 500, () => {
+
+              // 6. Door closes (reverse)
+              playFrames(entranceAnim, DOOR_PATHS_REV, DOOR_FRAME_MS, () => {
                 if (gen !== cycleGen) return;
-                cycle(gen);
-                pants.addEventListener('click', flickEars);
+
+                // 7. Fade out, begin idle
+                fade([entranceAnim], 0, CROSSFADE_MS, () => {
+                  if (gen !== cycleGen) return;
+                  cycle(gen);
+                  pants.addEventListener('click', flickEars);
+                });
               });
-            }, 250);
-          });
+            });
+          }, SLIDE_MS + 400);
 
-        }, SLIDE_MS + 300);
-
-      }, CROSSFADE_MS + 300);
+        }, 400);
+      });
     });
   });
 }
 
 // ── init ─────────────────────────────────────────────────────────────────────
 
-debugBtn.addEventListener('click', runEntrance);
+debugBtn.addEventListener('click', () => readyPromise.then(runEntrance));
 
 chrome.storage.local.get({ edition: 'simple' }, ({ edition }) => {
   if (edition !== 'deluxe') {
     document.getElementById('simple-notice').hidden = false;
     return;
   }
-  runEntrance();
+  readyPromise.then(runEntrance);
 });
