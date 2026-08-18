@@ -145,7 +145,8 @@ function gazeAt(x, y) {
   l8.style.backgroundImage = u(EYE_PATHS[dir]);
 }
 
-document.addEventListener('mousemove', e => gazeAt(e.clientX, e.clientY));
+document.addEventListener('mousemove',  e => gazeAt(e.clientX, e.clientY));
+document.addEventListener('mouseleave', () => { if (gazing) l8.style.backgroundImage = ''; });
 
 browser.runtime.onMessage.addListener(msg => {
   if (msg.type !== 'gaze' || !gazing) return;
