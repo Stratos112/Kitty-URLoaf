@@ -56,7 +56,7 @@ TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
 C_H               = 166       # cat canvas height
 PT_H              = 34        # PersonalToolbar height (nav-bar only)
-W, H              = "364px", "266px"
+W, H              = "304px", "266px"
 
 LOOP_CYCLE = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
 t_falling  = float(HOLD_SECONDS)
@@ -74,9 +74,9 @@ MAX_GAP      = 28.0
 
 NAV_EL           = "#nav-bar"
 NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
-NAV_POS          = "left 91px top 0px"
-NAV_APP_POS      = "left 91px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
-NAV_PRELOAD_POS  = f"left 91px top {PRELOAD_OFFSET}px"
+NAV_POS          = "left 61px top 0px"
+NAV_APP_POS      = "left 61px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
+NAV_PRELOAD_POS  = f"left 61px top {PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Sidebar layout
