@@ -28,80 +28,91 @@
     }
 
     /* header */
-    .w-head {
-      text-align: center;
-      padding: 22px 20px 10px;
-    }
+    .w-head { text-align: center; padding: 22px 20px 10px; }
     .w-head h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
     .w-head p  { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
     /* dots */
     .dots {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      padding-bottom: 12px;
+      display: flex; justify-content: center; align-items: center;
+      gap: 6px; padding-bottom: 12px;
     }
     .dot {
-      width: 6px; height: 6px;
-      border-radius: 99px;
-      background: var(--deep);
-      transition: all 0.35s var(--spring);
-      flex-shrink: 0;
+      width: 6px; height: 6px; border-radius: 99px;
+      background: var(--deep); transition: all 0.35s var(--spring); flex-shrink: 0;
     }
-    .dot.on {
-      width: 20px;
-      background: var(--pink);
-      box-shadow: 0 0 8px var(--glow);
-    }
+    .dot.on { width: 20px; background: var(--pink); box-shadow: 0 0 8px var(--glow); }
 
     /* slide track */
     .clip { overflow: hidden; }
-    .track {
-      display: flex;
-      transition: transform 0.42s var(--spring);
-      will-change: transform;
-    }
+    .track { display: flex; transition: transform 0.42s var(--spring); will-change: transform; }
     .page {
-      width: 300px;
-      flex-shrink: 0;
-      padding: 0 18px 20px;
-      height: 268px;
-      overflow-y: auto;
-      scrollbar-width: none;
+      width: 300px; flex-shrink: 0; padding: 0 18px 20px;
+      height: 268px; overflow-y: auto; scrollbar-width: none;
     }
     .page::-webkit-scrollbar { display: none; }
 
+    /* edition cards */
+    .cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,68,187,0.08);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      opacity: 0.42;
+      transition: opacity 0.25s, border-color 0.25s, box-shadow 0.25s;
+    }
+    .card.on {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 1px var(--pink-lo), 0 4px 18px var(--glow);
+      opacity: 1;
+      cursor: default;
+    }
+    .card-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .card-title { font-size: 13px; font-weight: 700; flex: 1; }
+    .card-sub   { font-size: 10.5px; color: var(--muted); }
+    .card-detail {
+      font-size: 10px; color: var(--muted); line-height: 1.55;
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.28s ease, margin-top 0.28s;
+    }
+    .card.expanded .card-detail { max-height: 80px; margin-top: 7px; }
+    .qmark {
+      width: 15px; height: 15px; border-radius: 99px;
+      border: 1px solid var(--muted); background: transparent;
+      color: var(--muted); font-size: 8px; font-weight: 900; font-family: inherit;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .qmark:hover { border-color: var(--pink); color: var(--pink); }
+    .soon {
+      font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted);
+      border: 1px solid currentColor; border-radius: 99px; padding: 1px 6px;
+    }
+    .card .tog-wrap { margin-bottom: 0; margin-top: 10px; }
+
     /* download box */
     .dl-box {
-      background: var(--surface);
-      border: 1px solid rgba(255,68,187,0.14);
-      border-radius: 18px;
-      padding: 26px 20px;
-      text-align: center;
-      margin-bottom: 14px;
-      box-shadow: inset 0 1px 0 rgba(255,68,187,0.08);
+      background: var(--surface); border: 1px solid rgba(255,68,187,0.14);
+      border-radius: 18px; padding: 26px 20px; text-align: center;
+      margin-bottom: 14px; box-shadow: inset 0 1px 0 rgba(255,68,187,0.08);
     }
-    .dl-box .ico  { font-size: 42px; line-height: 1; }
     .pants-dl-icon {
-      width:  200px;
-      height: 200px;
-      margin: 0 auto;
+      width: 200px; height: 200px; margin: 0 auto;
       background-image: url('../../static/icons/icon-200.png');
-      background-size:  200px 200px;
-      background-repeat: no-repeat;
-      cursor: pointer;
-      transition: opacity 0.2s;
+      background-size: 200px 200px; background-repeat: no-repeat;
+      cursor: pointer; transition: opacity 0.2s;
     }
-    .dl-box .lbl  { font-size: 13px; font-weight: 700; margin-top: 10px; }
-    .dl-box .sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    .dl-box .lbl { font-size: 13px; font-weight: 700; margin-top: 10px; }
+    .dl-box .sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
     /* steps */
     .step-label {
       font-size: 10px; font-weight: 700; letter-spacing: 0.07em;
-      text-transform: uppercase; color: var(--muted);
-      margin-bottom: 14px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
     }
     .bullets { display: flex; flex-direction: column; gap: 11px; margin-bottom: 16px; }
     .bullet  { display: flex; gap: 9px; align-items: flex-start; font-size: 12px; line-height: 1.6; }
@@ -114,14 +125,9 @@
 
     /* done */
     .done {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      gap: 10px;
-      padding: 8px 0 16px;
+      height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; gap: 10px; padding: 8px 0 16px;
     }
     .done .big { font-size: 54px; line-height: 1; }
     .done h2   { font-size: 20px; font-weight: 800; }
@@ -131,19 +137,13 @@
     .row { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
     .row.c { justify-content: center; }
     .btn {
-      border: none;
-      border-radius: 99px;
-      padding: 9px 20px;
-      font-size: 12.5px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      transition: all 0.18s var(--spring);
+      border: none; border-radius: 99px; padding: 9px 20px;
+      font-size: 12.5px; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.18s var(--spring);
     }
     .p {
       background: linear-gradient(135deg, var(--pink) 0%, var(--pink-lo) 120%);
-      color: #fff;
-      box-shadow: 0 3px 14px var(--glow);
+      color: #fff; box-shadow: 0 3px 14px var(--glow);
     }
     .p:hover  { transform: translateY(-2px) scale(1.04); box-shadow: 0 6px 22px var(--glow); }
     .p:active { transform: scale(0.97); }
@@ -159,30 +159,18 @@
 
     /* location toggle */
     .tog-wrap {
-      display: flex;
-      background: var(--deep);
-      border-radius: 99px;
-      padding: 3px;
-      margin-bottom: 14px;
-      gap: 2px;
+      display: flex; background: var(--deep);
+      border-radius: 99px; padding: 3px; margin-bottom: 14px; gap: 2px;
     }
     .tog {
-      flex: 1;
-      border: none;
-      border-radius: 99px;
-      padding: 7px 0;
-      font-size: 12px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      background: transparent;
-      color: var(--muted);
+      flex: 1; border: none; border-radius: 99px; padding: 7px 0;
+      font-size: 12px; font-weight: 700; font-family: inherit;
+      cursor: pointer; background: transparent; color: var(--muted);
       transition: all 0.22s var(--spring);
     }
     .tog.on {
       background: linear-gradient(135deg, var(--pink) 0%, var(--pink-lo) 120%);
-      color: #fff;
-      box-shadow: 0 2px 10px var(--glow);
+      color: #fff; box-shadow: 0 2px 10px var(--glow);
     }
   </style>
 </head>
@@ -200,16 +188,47 @@
     <span class="dot"    id="d2"></span>
     <span class="dot"    id="d3"></span>
     <span class="dot"    id="d4"></span>
+    <span class="dot"    id="d5"></span>
   </div>
   <div class="clip">
     <div class="track" id="track">
 
-      <!-- page 0: download -->
-      <div class="page">
-        <div class="tog-wrap">
-          <button class="tog on" id="togSidebar">sidebar</button>
-          <button class="tog"    id="togNav">nav bar</button>
+      <!-- page 0: edition select -->
+      <div class="page" style="padding-top:8px">
+        <p class="step-label" style="margin-bottom:10px">pick your style</p>
+        <div class="cards">
+
+          <div class="card on" id="cardSimple">
+            <div class="card-head">
+              <span class="card-title">keep it simple</span>
+              <button class="qmark" id="qSimple">?</button>
+            </div>
+            <div class="card-sub">pure CSS · always on</div>
+            <div class="card-detail">A lightweight animation baked into your browser theme. Completely passive — no scripts, no overhead. The cat is simply there whenever Firefox is open.</div>
+            <div class="tog-wrap">
+              <button class="tog on" id="togSidebar">sidebar</button>
+              <button class="tog"    id="togNav">nav bar</button>
+            </div>
+          </div>
+
+          <div class="card" id="cardDeluxe">
+            <div class="card-head">
+              <span class="card-title">deluxe kitty</span>
+              <button class="qmark" id="qDeluxe">?</button>
+              <span class="soon">coming soon</span>
+            </div>
+            <div class="card-sub">smarter · more alive</div>
+            <div class="card-detail">A richer experience with dynamic behavior, interactive responses, and the ability to move between browser locations. Requires one extra setup step.</div>
+          </div>
+
         </div>
+        <div class="row">
+          <button class="btn p" id="next0">next →</button>
+        </div>
+      </div>
+
+      <!-- page 1: download -->
+      <div class="page">
         <div class="dl-box">
           <div class="pants-dl-icon"></div>
           <div class="lbl">userChrome.css</div>
@@ -223,7 +242,7 @@
         </div>
       </div>
 
-      <!-- page 3: step 1 -->
+      <!-- page 2: step 1 -->
       <div class="page">
         <p class="step-label">step 1</p>
         <div class="bullets" id="steps-a"></div>
@@ -233,7 +252,7 @@
         </div>
       </div>
 
-      <!-- page 4: step 2 -->
+      <!-- page 3: step 2 -->
       <div class="page">
         <p class="step-label">step 2</p>
         <div class="bullets" id="steps-b"></div>
@@ -243,7 +262,7 @@
         </div>
       </div>
 
-      <!-- page 5: step 3 -->
+      <!-- page 4: step 3 -->
       <div class="page">
         <p class="step-label">step 3</p>
         <div class="bullets" id="steps-c"></div>

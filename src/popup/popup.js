@@ -1,10 +1,39 @@
 const track = document.getElementById('track');
-const dots  = [0,1,2,3,4].map(i => document.getElementById(`d${i}`));
+const dots  = [0,1,2,3,4,5].map(i => document.getElementById(`d${i}`));
 const dlBtn = document.getElementById('dlBtn');
+
+// ── edition selection ────────────────────────────────────────────────────────
+
+let selectedEdition = 'simple';
+const cards  = { simple: document.getElementById('cardSimple'), deluxe: document.getElementById('cardDeluxe') };
+const next0  = document.getElementById('next0');
+
+function selectEdition(ed) {
+  selectedEdition = ed;
+  Object.entries(cards).forEach(([k, el]) => el.classList.toggle('on', k === ed));
+  next0.disabled    = ed === 'deluxe';
+  next0.textContent = ed === 'deluxe' ? 'coming soon' : 'next →';
+  chrome.storage.local.set({ edition: ed });
+}
+
+cards.simple.addEventListener('click', () => selectEdition('simple'));
+cards.deluxe.addEventListener('click', () => selectEdition('deluxe'));
+
+// ? expand/collapse
+[['qSimple','cardSimple'],['qDeluxe','cardDeluxe']].forEach(([qId, cardId]) => {
+  document.getElementById(qId).addEventListener('click', e => {
+    e.stopPropagation();
+    const card = document.getElementById(cardId);
+    card.classList.toggle('expanded');
+  });
+});
+
+// ── location toggle ──────────────────────────────────────────────────────────
 
 let cssLocation = 'sidebar';
 const togs = { sidebar: document.getElementById('togSidebar'), nav: document.getElementById('togNav') };
-Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', () => {
+Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', e => {
+  e.stopPropagation();
   cssLocation = loc;
   Object.values(togs).forEach(t => t.classList.remove('on'));
   btn.classList.add('on');
@@ -13,11 +42,15 @@ Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', () =>
   dlBtn.textContent = 'generate ↓';
 }));
 
+// ── navigation ───────────────────────────────────────────────────────────────
+
 function goTo(n, save = true) {
   track.style.transform = `translateX(-${n * 300}px)`;
   dots.forEach((d, i) => d.classList.toggle('on', i === n));
   if (save) chrome.storage.local.set({ wizardPage: n });
 }
+
+next0.addEventListener('click', () => goTo(1));
 
 async function triggerDownload() {
   dlBtn.textContent = 'generating…';
@@ -30,21 +63,21 @@ async function triggerDownload() {
 }
 
 dlBtn.addEventListener('click', async () => {
-  if (dlBtn.dataset.ready) { renderSteps(); goTo(1); return; }
+  if (dlBtn.dataset.ready) { renderSteps(); goTo(2); return; }
   triggerDownload();
 });
 
-document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(1); });
+document.getElementById('skipDl').addEventListener('click', () => { renderSteps(); goTo(2); });
 document.querySelector('.pants-dl-icon').addEventListener('click', () => triggerDownload());
 
-document.getElementById('back3').addEventListener('click', () => goTo(0));
-document.getElementById('next3').addEventListener('click', () => goTo(2));
+document.getElementById('back3').addEventListener('click', () => goTo(1));
+document.getElementById('next3').addEventListener('click', () => goTo(3));
 
-document.getElementById('back4').addEventListener('click', () => goTo(1));
-document.getElementById('next4').addEventListener('click', () => goTo(3));
+document.getElementById('back4').addEventListener('click', () => goTo(2));
+document.getElementById('next4').addEventListener('click', () => goTo(4));
 
-document.getElementById('back5').addEventListener('click', () => goTo(2));
-document.getElementById('next5').addEventListener('click', () => goTo(4));
+document.getElementById('back5').addEventListener('click', () => goTo(3));
+document.getElementById('next5').addEventListener('click', () => goTo(5));
 
 document.getElementById('startOverBtn').addEventListener('click', () => {
   dlBtn.textContent = 'generate ↓';
@@ -55,10 +88,15 @@ document.getElementById('startOverBtn').addEventListener('click', () => {
   requestAnimationFrame(() => { track.style.transition = ''; });
 });
 
-chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLocation: 'sidebar' }, (data) => {
+// ── restore state ────────────────────────────────────────────────────────────
+
+chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLocation: 'sidebar', edition: 'simple' }, (data) => {
   cssLocation = data.cssLocation;
   Object.values(togs).forEach(t => t.classList.remove('on'));
   (togs[cssLocation] ?? togs.sidebar).classList.add('on');
+
+  selectEdition(data.edition ?? 'simple');
+
   const currentVersion = chrome.runtime.getManifest().version;
   if (data.version !== currentVersion) {
     chrome.storage.local.set({ wizardPage: 0, downloaded: false, version: currentVersion });
@@ -69,11 +107,13 @@ chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLoc
     dlBtn.textContent = 'next →';
     dlBtn.dataset.ready = '1';
   }
-  if (data.wizardPage >= 1) renderSteps();
+  if (data.wizardPage >= 2) renderSteps();
   track.style.transition = 'none';
   goTo(data.wizardPage, false);
   requestAnimationFrame(() => { track.style.transition = ''; });
 });
+
+// ── steps content ────────────────────────────────────────────────────────────
 
 function renderSteps() {
   const steps = [
@@ -92,6 +132,8 @@ function renderSteps() {
   document.getElementById('steps-b').innerHTML = steps.slice(3, 6).map(row).join('');
   document.getElementById('steps-c').innerHTML = steps.slice(6).map(row).join('');
 }
+
+// ── generate ─────────────────────────────────────────────────────────────────
 
 function toHex(color) {
   if (Array.isArray(color)) {
@@ -134,10 +176,10 @@ async function generate(css, bgColor) {
 }
 
 async function downloadCSS() {
-  const file   = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
-  const raw    = await fetch(`../../static/${file}`).then(r => r.text());
+  const file    = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
+  const raw     = await fetch(`../../static/${file}`).then(r => r.text());
   const bgColor = await getThemeBackground();
-  const blob   = new Blob([await generate(raw, bgColor)], { type: 'text/css' });
+  const blob    = new Blob([await generate(raw, bgColor)], { type: 'text/css' });
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css',
@@ -145,4 +187,3 @@ async function downloadCSS() {
   a.click();
   URL.revokeObjectURL(a.href);
 }
-
