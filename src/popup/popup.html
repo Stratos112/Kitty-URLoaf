@@ -17,7 +17,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 300px;
+      width: 400px;
       background:
         radial-gradient(ellipse at 50% -10%, rgba(255,68,187,0.13) 0%, transparent 60%),
         var(--bg);
@@ -47,20 +47,22 @@
     .clip { overflow: hidden; }
     .track { display: flex; transition: transform 0.42s var(--spring); will-change: transform; }
     .page {
-      width: 300px; flex-shrink: 0; padding: 0 18px 20px;
-      height: 268px; overflow-y: auto; scrollbar-width: none;
+      width: 400px; flex-shrink: 0; padding: 0 22px 24px;
+      height: 440px; overflow-y: auto; scrollbar-width: none;
     }
     .page::-webkit-scrollbar { display: none; }
 
     /* edition cards */
-    .cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
     .card {
       background: var(--surface);
       border: 1px solid rgba(255,68,187,0.08);
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 14px 16px;
       cursor: pointer;
       opacity: 0.42;
+      position: relative;
+      overflow: hidden;
       transition: opacity 0.25s, border-color 0.25s, box-shadow 0.25s;
     }
     .card.on {
@@ -69,19 +71,29 @@
       opacity: 1;
       cursor: default;
     }
-    .card-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+    .card-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
     .card-title { font-size: 13px; font-weight: 700; flex: 1; }
-    .card-sub   { font-size: 10.5px; color: var(--muted); }
-    .card-detail {
-      font-size: 10px; color: var(--muted); line-height: 1.55;
-      max-height: 0; overflow: hidden;
-      transition: max-height 0.28s ease, margin-top 0.28s;
+    .card-sub   { font-size: 11px; color: var(--muted); }
+    .card-tip {
+      position: absolute; inset: 0;
+      background: var(--deep);
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 11.5px; color: var(--text); line-height: 1.65;
+      display: flex; align-items: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      z-index: 5; cursor: pointer;
     }
-    .card.expanded .card-detail { max-height: 80px; margin-top: 7px; }
+    .card-tip-x {
+      position: absolute; top: 10px; right: 12px;
+      font-size: 16px; color: var(--muted); line-height: 1;
+    }
+    .card.tip-open .card-tip { opacity: 1; pointer-events: auto; }
     .qmark {
-      width: 15px; height: 15px; border-radius: 99px;
+      width: 16px; height: 16px; border-radius: 99px;
       border: 1px solid var(--muted); background: transparent;
-      color: var(--muted); font-size: 8px; font-weight: 900; font-family: inherit;
+      color: var(--muted); font-size: 9px; font-weight: 900; font-family: inherit;
       cursor: pointer; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       transition: border-color 0.15s, color 0.15s;
@@ -92,12 +104,12 @@
       text-transform: uppercase; color: var(--muted);
       border: 1px solid currentColor; border-radius: 99px; padding: 1px 6px;
     }
-    .card .tog-wrap { margin-bottom: 0; margin-top: 10px; }
+    .card .tog-wrap { margin-bottom: 0; margin-top: 12px; }
 
     /* download box */
     .dl-box {
       background: var(--surface); border: 1px solid rgba(255,68,187,0.14);
-      border-radius: 18px; padding: 26px 20px; text-align: center;
+      border-radius: 18px; padding: 16px 20px; text-align: center;
       margin-bottom: 14px; box-shadow: inset 0 1px 0 rgba(255,68,187,0.08);
     }
     .pants-dl-icon {
@@ -204,10 +216,13 @@
               <button class="qmark" id="qSimple">?</button>
             </div>
             <div class="card-sub">pure CSS · always on</div>
-            <div class="card-detail">A lightweight animation baked into your browser theme. Completely passive — no scripts, no overhead. The cat is simply there whenever Firefox is open.</div>
             <div class="tog-wrap">
               <button class="tog on" id="togSidebar">sidebar</button>
               <button class="tog"    id="togNav">nav bar</button>
+            </div>
+            <div class="card-tip" id="tipSimple">
+              <span class="card-tip-x">×</span>
+              A lightweight animation baked into your browser theme. Completely passive — no scripts, no overhead. The cat is simply there whenever Firefox is open.
             </div>
           </div>
 
@@ -218,7 +233,10 @@
               <span class="soon">coming soon</span>
             </div>
             <div class="card-sub">smarter · more alive</div>
-            <div class="card-detail">A richer experience with dynamic behavior, interactive responses, and the ability to move between browser locations. Requires one extra setup step.</div>
+            <div class="card-tip" id="tipDeluxe">
+              <span class="card-tip-x">×</span>
+              A richer experience with dynamic behavior, interactive responses, and the ability to move between browser locations. Requires one extra setup step.
+            </div>
           </div>
 
         </div>
@@ -228,16 +246,16 @@
       </div>
 
       <!-- page 1: download -->
-      <div class="page">
+      <div class="page" style="padding-top:20px">
+        <div class="row c" style="margin-bottom:20px">
+          <button class="btn p" id="dlBtn">generate ↓</button>
+        </div>
         <div class="dl-box">
           <div class="pants-dl-icon"></div>
           <div class="lbl">userChrome.css</div>
           <div class="sub">your plushy toolbar magic~</div>
         </div>
-        <div class="row">
-          <button class="btn p" id="dlBtn">generate ↓</button>
-        </div>
-        <div style="text-align:center;margin-top:8px">
+        <div style="text-align:center;margin-top:12px">
           <button class="lnk" id="skipDl">i already have it</button>
         </div>
       </div>

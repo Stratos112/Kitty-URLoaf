@@ -19,12 +19,15 @@ function selectEdition(ed) {
 cards.simple.addEventListener('click', () => selectEdition('simple'));
 cards.deluxe.addEventListener('click', () => selectEdition('deluxe'));
 
-// ? expand/collapse
+// ? overlay open/close
 [['qSimple','cardSimple'],['qDeluxe','cardDeluxe']].forEach(([qId, cardId]) => {
   document.getElementById(qId).addEventListener('click', e => {
     e.stopPropagation();
-    const card = document.getElementById(cardId);
-    card.classList.toggle('expanded');
+    document.getElementById(cardId).classList.add('tip-open');
+  });
+  document.getElementById(cardId).querySelector('.card-tip').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById(cardId).classList.remove('tip-open');
   });
 });
 
@@ -45,7 +48,7 @@ Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', e => 
 // ── navigation ───────────────────────────────────────────────────────────────
 
 function goTo(n, save = true) {
-  track.style.transform = `translateX(-${n * 300}px)`;
+  track.style.transform = `translateX(-${n * 400}px)`;
   dots.forEach((d, i) => d.classList.toggle('on', i === n));
   if (save) chrome.storage.local.set({ wizardPage: n });
 }
