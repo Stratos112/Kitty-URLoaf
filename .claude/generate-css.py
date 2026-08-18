@@ -56,7 +56,8 @@ TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
 C_H               = 166       # cat canvas height
 PT_H              = 34        # PersonalToolbar height (nav-bar only)
-W, H              = "304px", "266px"
+W, H              = "364px", "266px"
+SIDEBAR_W         = "304px"
 
 LOOP_CYCLE = HOLD_SECONDS * 2 + TRANS_SECONDS * 2  # 23s
 t_falling  = float(HOLD_SECONDS)
@@ -84,10 +85,10 @@ NAV_PRELOAD_POS  = f"left 61px top {PRELOAD_OFFSET}px"
 
 SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
 SIDEBAR_TOP         = "200px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_APP_POS     = "left 0px top 200px"   # REST layer on element, matches SIDEBAR_TOP
-SIDEBAR_POS         = "left 0px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
-SIDEBAR_PRELOAD_POS = f"left 0px top {PRELOAD_OFFSET}px"
-SIDEBAR_APP_PRELOAD_POS = f"left 0px top {200 + PRELOAD_OFFSET}px"
+SIDEBAR_APP_POS     = "left -30px top 200px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_POS         = "left -30px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
+SIDEBAR_PRELOAD_POS = f"left -30px top {PRELOAD_OFFSET}px"
+SIDEBAR_APP_PRELOAD_POS = f"left -30px top {200 + PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Asset paths
@@ -466,7 +467,7 @@ def generate_sidebar():
         f"{el} {{",
         f"  position:          relative !important;",
         f"  overflow:          visible !important;",
-        f"  min-width:         {W} !important;",
+        f"  min-width:         {SIDEBAR_W} !important;",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
         f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
