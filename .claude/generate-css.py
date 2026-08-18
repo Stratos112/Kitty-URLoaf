@@ -287,11 +287,16 @@ def ear_flick_keyframes(pos):
 
 def head_warmup_keyframes(preload_pos, pos):
     awake_pos = ", ".join([pos] * len(AWAKE_HEAD_PATHS))
+    sleep_pos = ", ".join([preload_pos] * len(SLEEP_HEAD_PATHS))
     def wkf(frame_url):
         return (f"background-image: {frame_url}, {awake_head_imgs}; "
                 f"background-position: {preload_pos}, {awake_pos};")
-    pts = [(f"{i / TRANS_FRAME_COUNT * 100:.4f}", wkf(trans_urls[i]))
-           for i in range(TRANS_FRAME_COUNT)]
+    def sleep_wkf():
+        return (f"background-image: {sleep_head_imgs}, {awake_head_imgs}; "
+                f"background-position: {sleep_pos}, {awake_pos};")
+    pts = [("0.0000", sleep_wkf())]
+    pts += [(f"{i / TRANS_FRAME_COUNT * 100:.4f}", wkf(trans_urls[i]))
+            for i in range(1, TRANS_FRAME_COUNT)]
     pts.append(("100.0000", wkf(trans_urls[-1])))
     return "\n".join(["@keyframes pants-head-warmup {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
