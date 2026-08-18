@@ -42,14 +42,8 @@ def data_uri(path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 HOLD_SECONDS      = 10
-APNG_MS           = 1500  # cushion-appear.apng natural duration (reference only)
-SLEEP_PRELOAD_S   = 0.3
-PRELOAD_OFFSET    = 300   # px — preload renders this far below the real cat
-CUSH_START_S      = 0.1   # stage 1 render: cushion APNG begins
-CUSH_SWAP_S       = 0.8   # stage 2 preload trigger: APNG → cushion_base (APNG gets 0.7s)
-STATIC_PANTS_S    = 0.9   # stage 2 render: static pants body visible
-STAGE3_PRELOAD_S  = 1.0   # stage 3 preload: ear flick + tail-flick + awake ears
-APPEAR_SECONDS    = 1.2   # final render: full animated cat + loop start
+PRELOAD_OFFSET    = 300   # px — warmup renders this far below the real cat
+APPEAR_SECONDS    = 1.0   # delay before animation loops start
 WARMUP_HEAD_START_S = 7.0
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
@@ -76,7 +70,8 @@ MAX_GAP      = 28.0
 NAV_EL           = "#nav-bar"
 NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
 NAV_POS          = "left 31px top 0px"
-NAV_APP_POS      = "left 31px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
+NAV_REST_POS     = f"left 31px top -{NAV_Y_SHIFT}px"
+NAV_PT_REST_POS  = f"left 31px top -{NAV_Y_SHIFT + C_H}px"
 NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
@@ -85,10 +80,9 @@ NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
 
 SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
 SIDEBAR_TOP         = "130px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_APP_POS     = "left -60px top 130px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_REST_POS    = "left -60px top 130px"   # REST layer on element, matches SIDEBAR_TOP
 SIDEBAR_POS         = "left -60px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
 SIDEBAR_PRELOAD_POS = f"left -60px top {PRELOAD_OFFSET}px"
-SIDEBAR_APP_PRELOAD_POS = f"left -60px top {130 + PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Asset paths
@@ -104,7 +98,6 @@ REST_PATHS = [
     LIMBS / "left_back_paw.png",
     ACC   / "cushion_base.png",
 ]
-CUSH_APPEAR_PATH  = ANIM / "cushion-appear.apng"
 AWAKE_HEAD_PATHS = [
     ANIM / "blink-overlay.apng",
     ANIM / "breath-eyes.apng",
@@ -125,12 +118,8 @@ FRAME_COUNT = len(EAR_FLICK_SEQ)
 FLICK_SECS  = 0.275
 FRAME_SECS  = FLICK_SECS / FRAME_COUNT
 
-STATIC_TAIL_PATH = LIMBS / "flick_00(base).png"
-
 print("Loading assets…")
 all_paths = list(dict.fromkeys([
-    CUSH_APPEAR_PATH,
-    STATIC_TAIL_PATH,
     *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
     *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
     *EAR_FLICK_L, *EAR_FLICK_R,
@@ -143,77 +132,23 @@ def imgs(ps): return ", ".join(url(p) for p in ps)
 def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"
 
-rest_imgs        = imgs(REST_PATHS)
-awake_head_imgs  = imgs(AWAKE_HEAD_PATHS)
-sleep_head_imgs  = imgs(SLEEP_HEAD_PATHS)
-awake_ear_imgs   = imgs(AWAKE_EAR_PATHS)
-trans_urls       = [url(p) for p in TRANS_FRAME_PATHS]
-static_rest_imgs = imgs([
-    STATIC_TAIL_PATH,
-    LIMBS / "right_back_paw.png",
-    BODY  / "body_basic.png",
-    LIMBS / "left_front_paw.png",
-    LIMBS / "left_back_paw.png",
-    ACC   / "cushion_base.png",
-])
-cush_preload     = ", ".join([url(CUSH_APPEAR_PATH), url(ACC / "cushion_base.png")])
-_flick_unique    = list(dict.fromkeys([*EAR_FLICK_L, *EAR_FLICK_R]))
-all_ear_preload  = ", ".join([awake_ear_imgs, url(ANIM / "tail-flick.apng"), *[url(p) for p in _flick_unique]])
+rest_imgs       = imgs(REST_PATHS)
+awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
+sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
+awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
+trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
 
-SIZE         = f"{W} {H}"
-RPT          = "no-repeat"
-loop_spec         = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-loop_smooth       = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
-ear_spec          = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
-appear_spec       = f"{APPEAR_SECONDS}s linear 1 forwards"
-head_appear_spec  = f"{APPEAR_SECONDS - STATIC_PANTS_S}s steps(1) 1 {STATIC_PANTS_S}s forwards"
+SIZE        = f"{W} {H}"
+RPT         = "no-repeat"
+loop_spec   = f"{LOOP_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
+loop_smooth = f"{LOOP_CYCLE}s linear infinite {APPEAR_SECONDS}s"
+ear_spec    = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 
 
 # ---------------------------------------------------------------------------
 # Shared keyframe generators  (parameterized by pos)
 # ---------------------------------------------------------------------------
 
-def pct(t): return round(t / APPEAR_SECONDS * 100, 1)
-def kf(bg, pos, last=False):
-    atf = "" if last else " animation-timing-function: steps(1, end);"
-    return f"background-image: {bg}; background-position: {pos};{atf}"
-
-
-def head_appear_keyframes(pos):
-    return "\n".join([
-        "@keyframes pants-head-appear {",
-        f"  0%   {{ background-image: {awake_head_imgs}; background-position: {pos}; animation-timing-function: steps(1, end); }}",
-        f"  100% {{ background-image: {awake_head_imgs}; background-position: {pos}; }}",
-        "}"])
-
-
-def rest_appear_keyframes(appear_pos, preload_pos):
-    cover = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
-    def rkf(bg, pos, last=False):
-        return kf(bg, pos, last) + f" background-size: {SIZE};"
-    return "\n".join(["@keyframes pants-rest-appear {",
-        f"  0%              {{ background-image: {cover}, {cush_preload}; background-position: {preload_pos}, {preload_pos}; background-size: 100% 9999px, {SIZE}; animation-timing-function: steps(1, end); }}",
-        f"  {pct(CUSH_START_S)}%  {{ {rkf(url(CUSH_APPEAR_PATH),      appear_pos)} }}",
-        f"  {pct(CUSH_SWAP_S)}%  {{ {rkf(url(ACC / 'cushion_base.png'), appear_pos)} }}",
-        f"  {pct(STATIC_PANTS_S)}%  {{ {rkf(static_rest_imgs,          appear_pos)} }}",
-        f"  100%            {{ {rkf(rest_imgs,                          appear_pos, last=True)} }}",
-        "}"])
-
-
-
-def ear_appear_keyframes(pos, preload_pos):
-    cover = "linear-gradient(var(--sidebar-background-color,#2b2a33),var(--sidebar-background-color,#2b2a33))"
-    def ckf(imgs):
-        return (f"background-image: {cover}, {imgs}; "
-                f"background-position: {preload_pos}, {preload_pos}; "
-                f"background-size: 100% 9999px, {SIZE}; "
-                f"animation-timing-function: steps(1, end);")
-    return "\n".join(["@keyframes pants-ear-appear {",
-        f"  0%      {{ background-image: none; background-position: {preload_pos}; animation-timing-function: steps(1, end); }}",
-        f"  {pct(CUSH_SWAP_S)}%  {{ {ckf(static_rest_imgs)} }}",
-        f"  {pct(STAGE3_PRELOAD_S)}%  {{ {ckf(all_ear_preload)} }}",
-        f"  100%    {{ {kf(awake_ear_imgs, pos, last=True)} }}",
-        "}"])
 
 
 def head_loop_keyframes(pos):
@@ -349,16 +284,15 @@ def pseudo_base_rules(el, top):
 
 
 def ear_animation_rules(el, pos, before_extra=""):
-    ea           = f"pants-ear-appear {appear_spec}"
-    before_anim  = f"pants-head-appear {head_appear_spec}, pants-head-loop {loop_spec}"
+    before_anim = f"pants-head-loop {loop_spec}"
     if before_extra:
         before_anim += f", {before_extra}"
+    ear_anim = f"pants-ear-random {ear_spec}"
     return "\n".join([
-        f"/* appear listed first (lower priority); loop listed last (higher) so loop wins when it starts */",
-        f"{el}::after              {{ animation: {ea}, pants-ear-random {ear_spec}; }}",
-        f"{el}:hover::after        {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}:has(:active)::after {{ animation: {ea}, pants-ear-random {ear_spec}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
-        f"{el}::before             {{ animation: {before_anim}; }}",
+        f"{el}::before             {{ background-image: {awake_head_imgs}; background-position: {pos}; animation: {before_anim}; }}",
+        f"{el}::after              {{ background-image: {awake_ear_imgs};  background-position: {pos}; animation: {ear_anim}; }}",
+        f"{el}:hover::after        {{ animation: {ear_anim}, ear-flick 275ms 200ms linear 1 forwards; background-position: {pos}; }}",
+        f"{el}:has(:active)::after {{ animation: {ear_anim}, ear-flick 275ms linear 1 forwards; background-position: {pos}; }}",
     ])
 
 
@@ -370,9 +304,6 @@ def generate_nav_bar():
     print("Building nav-bar keyframes…")
     warmup_spec = f"pants-head-warmup {TRANS_SECONDS}s steps(1) 1 {WARMUP_HEAD_START_S}s"
     kfs = "\n\n".join([
-        rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
-        head_appear_keyframes(NAV_POS),
-        ear_appear_keyframes(NAV_POS, NAV_PRELOAD_POS),
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
@@ -389,11 +320,6 @@ def generate_nav_bar():
         "  syntax: '<length>';",
         "  initial-value: 0px;",
         "  inherits: true;",
-        "}",
-        "@property --cat-y {",
-        "  syntax: '<length>';",
-        "  initial-value: 0px;",
-        "  inherits: false;",
         "}", "",
         f"/* Pants on nav-bar — {LOOP_CYCLE}s head loop, {RANDOM_CYCLE}s ear cycle */", "",
         kfs, "",
@@ -406,10 +332,11 @@ def generate_nav_bar():
         f"  position:          relative;",
         f"  overflow:          visible !important;",
         f"  z-index:           2 !important;",
-        f"  --cat-y:           -{NAV_Y_SHIFT}px;",
+        f"  background-image:  {rest_imgs};",
+        f"  background-position: {NAV_REST_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth};",
         f"  min-height:        {px(C_H + PT_H)} !important;",
         f"  align-items:       flex-end !important;",
         f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
@@ -420,11 +347,11 @@ def generate_nav_bar():
         ear_animation_rules(el, NAV_POS, before_extra=warmup_spec), "",
         "#browser { overflow: visible !important; }",
         f"#PersonalToolbar {{",
-        f"  --cat-y:           -{NAV_Y_SHIFT + C_H}px;",
         f"  position:          relative;",
+        f"  background-image:  {rest_imgs};",
+        f"  background-position: {NAV_PT_REST_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec};",
         f"}}",
         f"#navigator-toolbox:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {px(C_H)} !important; }}",
         "",
@@ -443,9 +370,6 @@ def generate_sidebar():
     print("Building sidebar keyframes…")
     warmup_spec = f"pants-head-warmup {TRANS_SECONDS}s steps(1) 1 {WARMUP_HEAD_START_S}s"
     kfs = "\n\n".join([
-        rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
-        head_appear_keyframes(SIDEBAR_POS),
-        ear_appear_keyframes(SIDEBAR_POS, SIDEBAR_PRELOAD_POS),
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
@@ -468,9 +392,11 @@ def generate_sidebar():
         f"  position:          relative !important;",
         f"  overflow:          visible !important;",
         f"  min-width:         {SIDEBAR_W} !important;",
+        f"  background-image:  {rest_imgs};",
+        f"  background-position: {SIDEBAR_REST_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-rest-appear {appear_spec}, pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
