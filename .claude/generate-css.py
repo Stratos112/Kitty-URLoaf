@@ -74,7 +74,7 @@ MAX_GAP      = 28.0
 # ---------------------------------------------------------------------------
 
 NAV_EL           = "#nav-bar"
-NAV_Y_SHIFT      = 30              # px cat overflows above nav-bar top edge
+NAV_Y_SHIFT      = 100             # px cat overflows above nav-bar top edge
 NAV_POS          = "left 31px top 0px"
 NAV_APP_POS      = "left 31px top var(--cat-y)"  # appear uses --cat-y for PersonalToolbar dual-use
 NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
@@ -84,11 +84,11 @@ NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
 # ---------------------------------------------------------------------------
 
 SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
-SIDEBAR_TOP         = "200px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_APP_POS     = "left -60px top 200px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_TOP         = "130px"         # top offset within sidebar element — adjust to taste
+SIDEBAR_APP_POS     = "left -60px top 130px"   # REST layer on element, matches SIDEBAR_TOP
 SIDEBAR_POS         = "left -60px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
 SIDEBAR_PRELOAD_POS = f"left -60px top {PRELOAD_OFFSET}px"
-SIDEBAR_APP_PRELOAD_POS = f"left -60px top {200 + PRELOAD_OFFSET}px"
+SIDEBAR_APP_PRELOAD_POS = f"left -60px top {130 + PRELOAD_OFFSET}px"
 
 # ---------------------------------------------------------------------------
 # Asset paths
