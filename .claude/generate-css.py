@@ -30,7 +30,7 @@ LIMBS = PANTS / "Limbs"
 BODY  = PANTS / "Body"
 ACC   = PANTS / "Accessories"
 
-OUT_NAV     = ROOT / "static" / "userChrome.css"
+OUT_NAV     = ROOT / "static" / "userChrome-navbar.css"
 OUT_SIDEBAR = ROOT / "static" / "userChrome-sidebar.css"
 
 def data_uri(path: Path) -> str:
@@ -79,8 +79,8 @@ NAV_PRELOAD_POS  = f"left 31px top {PRELOAD_OFFSET}px"
 # ---------------------------------------------------------------------------
 
 SIDEBAR_EL          = ":is(#sidebar-container, html|sidebar-main)"
-SIDEBAR_TOP         = "130px"         # top offset within sidebar element — adjust to taste
-SIDEBAR_REST_POS    = "left -60px top 130px"   # REST layer on element, matches SIDEBAR_TOP
+SIDEBAR_TOP         = "10px"           # top offset within sidebar element — adjust to taste
+SIDEBAR_REST_POS    = "left -60px top 10px"    # REST layer on element, matches SIDEBAR_TOP
 SIDEBAR_POS         = "left -60px top 0px"     # HEAD/EAR layers on pseudo-elements (already offset)
 SIDEBAR_PRELOAD_POS = f"left -60px top {PRELOAD_OFFSET}px"
 

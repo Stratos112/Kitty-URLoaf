@@ -91,7 +91,7 @@ function renderSteps() {
 }
 
 async function downloadCSS() {
-  const file = cssLocation === 'nav' ? 'userChrome.css' : 'userChrome-sidebar.css';
+  const file = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
   const blob = await fetch(`../../static/${file}`).then(r => r.blob());
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
