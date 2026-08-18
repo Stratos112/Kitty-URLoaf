@@ -35,6 +35,18 @@
     #simple-notice .title { font-size: 14px; font-weight: 700; }
     #simple-notice .sub   { font-size: 11px; color: var(--muted); line-height: 1.7; }
 
+    /* ── debug button ────────────────────────────────────────── */
+    #debugBtn {
+      position: fixed; top: 10px; right: 10px;
+      background: transparent;
+      border: 1px solid var(--muted);
+      color: var(--muted);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: 10px; font-family: inherit; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s; z-index: 999;
+    }
+    #debugBtn:hover { border-color: var(--pink); color: var(--pink); }
+
     /* ── stage ───────────────────────────────────────────────── */
     #stage {
       width: 130%;
@@ -43,15 +55,18 @@
       margin-top: auto;
     }
 
-    #scene, #pants, #entrance {
+    /* z-order: scene(0) < entrance-bg(1) < cat(2) < entrance-fg(10) < entrance-anim(11) */
+    #scene, #pants, #entrance-bg, #entrance-fg, #entrance-anim {
       position: absolute; inset: 0;
     }
-    #scene    { z-index: 0; }
-    #pants    { z-index: 1; }
-    #entrance { z-index: 12; pointer-events: none;
-                background-size: 100% 100%;
-                background-repeat: no-repeat;
-                background-position: top left; }
+    #scene        { z-index: 0; }
+    #entrance-bg  { z-index: 1;  opacity: 0; pointer-events: none;
+                    background: no-repeat top left / 100% 100%; }
+    #pants        { z-index: 2; }
+    #entrance-fg  { z-index: 10; opacity: 0; pointer-events: none;
+                    background: no-repeat top left / 100% 100%; }
+    #entrance-anim { z-index: 11; opacity: 0; pointer-events: none;
+                    background: no-repeat top left / 100% 100%; }
 
     #cush {
       position: absolute; inset: 0;
@@ -78,13 +93,6 @@
     .l10 { z-index: 10; background-image: url('../../static/Pants/Anim/breath-ear-L.apng');    }
     .l11 { z-index: 11; background-image: url('../../static/Pants/Anim/breath-ear-R.apng');    }
 
-    /* ── cat slide-in ────────────────────────────────────────── */
-    #pants { transform: translateX(-110%); }
-    #pants.entering {
-      transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
-      transform: translateX(0);
-    }
-
     /* ── sleep ear drop ──────────────────────────────────────── */
     #pants.sleeping .l10,
     #pants.sleeping .l11 { transform: translateY(calc(70 / 530 * 100%)); }
@@ -109,10 +117,13 @@
   <p class="sub">kitty's home panel is a deluxe feature.<br>reinstall with deluxe edition to unlock.</p>
 </div>
 
+<button id="debugBtn" hidden>↩ replay</button>
+
 <div id="stage" hidden>
   <div id="scene">
     <div id="cush"></div>
   </div>
+  <div id="entrance-bg"></div>
   <div id="pants">
     <div class="l1"></div>
     <div class="l2"></div>
@@ -132,7 +143,8 @@
       <div class="z br"></div>
     </div>
   </div>
-  <div id="entrance"></div>
+  <div id="entrance-fg"></div>
+  <div id="entrance-anim"></div>
 </div>
 
 <script src="sidepanel.js"></script>

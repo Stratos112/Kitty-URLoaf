@@ -1,8 +1,11 @@
-const BASE    = '../../static/Pants/';
-const stage   = document.getElementById('stage');
-const pants   = document.getElementById('pants');
-const cush    = document.getElementById('cush');
-const entrance = document.getElementById('entrance');
+const BASE        = '../../static/Pants/';
+const stage       = document.getElementById('stage');
+const debugBtn    = document.getElementById('debugBtn');
+const pants       = document.getElementById('pants');
+const cush        = document.getElementById('cush');
+const entranceBg  = document.getElementById('entrance-bg');
+const entranceFg  = document.getElementById('entrance-fg');
+const entranceAnim = document.getElementById('entrance-anim');
 const l7  = pants.querySelector('.l7');
 const l8  = pants.querySelector('.l8');
 const l9  = pants.querySelector('.l9');
@@ -11,12 +14,13 @@ const l11 = pants.querySelector('.l11');
 
 // ── timing ───────────────────────────────────────────────────────────────────
 
-const HOLD_MS     = 10000;
-const FRAME_COUNT = 30;
-const FRAME_MS    = 1500 / FRAME_COUNT;
-
-const CUSH_FRAME_MS = 80;  // ~12fps for cushion appear
-const DOOR_FRAME_MS = 42;  // ~24fps for entrance door
+const HOLD_MS       = 10000;
+const FRAME_COUNT   = 30;
+const FRAME_MS      = 1500 / FRAME_COUNT;
+const CUSH_FRAME_MS = 120;   // 10 frames = 1.2s
+const DOOR_FRAME_MS = 100;   // 38 frames = 3.8s
+const CROSSFADE_MS  = 450;
+const SLIDE_MS      = 1500;
 
 // ── asset refs ───────────────────────────────────────────────────────────────
 
@@ -34,11 +38,12 @@ const FLICK_L   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/L_${n}.png')`);
 const FLICK_R   = FLICK_SEQ.map(n => `url('${BASE}Anim/EarFlick/R_${n}.png')`);
 const FLICK_MS  = 275 / FLICK_SEQ.length;
 
-const CUSH_FRAMES = Array.from({ length: 10 }, (_, i) =>
+const CUSH_FRAMES     = Array.from({ length: 10 }, (_, i) =>
   `${BASE}Accessories/Cushion appear/cush_appear_${i}.png`);
-
 const ENTRANCE_FRAMES = Array.from({ length: 38 }, (_, i) =>
   `${BASE}Accessories/Entrance_appear/entrance_door${String(i).padStart(2, '0')}.png`);
+const ENTRANCE_BG_URL = `url('${BASE}Accessories/entrance_door_background.png')`;
+const ENTRANCE_FG_URL = `url('${BASE}Accessories/entrance_door_foreground.png')`;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +51,12 @@ const SLEEP_PCT = 70 / 530 * 100;
 
 function easeInOutCubic(t) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function fade(els, opacity, ms, onDone) {
+  const t = `opacity ${ms}ms`;
+  els.forEach(el => { el.style.transition = t; el.style.opacity = String(opacity); });
+  if (onDone) setTimeout(onDone, ms);
 }
 
 function playFrames(el, frames, ms, onDone) {
@@ -59,6 +70,7 @@ function playFrames(el, frames, ms, onDone) {
 
 // ── idle cycle ───────────────────────────────────────────────────────────────
 
+let cycleGen      = 0;
 let transitioning = false;
 let flickTimer    = null;
 
@@ -128,40 +140,98 @@ function flickEars() {
   })();
 }
 
-function cycle() {
+function cycle(gen) {
+  if (gen !== cycleGen) return;
   setAwake();
-  setTimeout(() => runTransition(TRANS, () => {
-    setAsleep();
-    setTimeout(() => runTransition(TRANS_REV, cycle), HOLD_MS);
-  }, true), HOLD_MS);
+  setTimeout(() => {
+    if (gen !== cycleGen) return;
+    runTransition(TRANS, () => {
+      if (gen !== cycleGen) return;
+      setAsleep();
+      setTimeout(() => {
+        if (gen !== cycleGen) return;
+        runTransition(TRANS_REV, () => cycle(gen));
+      }, HOLD_MS);
+    }, true);
+  }, HOLD_MS);
 }
 
 // ── entrance sequence ────────────────────────────────────────────────────────
 
 function runEntrance() {
-  stage.hidden = false;
+  cycleGen++;
+  const gen = cycleGen;
+  cancelFlick();
+  pants.removeEventListener('click', flickEars);
 
-  // Phase 1: cushion appear (10 frames, ~800ms)
+  // reset all entrance layers instantly
+  [entranceBg, entranceFg, entranceAnim].forEach(el => {
+    el.style.transition      = 'none';
+    el.style.opacity         = '0';
+    el.style.backgroundImage = '';
+  });
+
+  // snap cat off-screen left, no transition
+  pants.style.transition = 'none';
+  pants.style.transform  = 'translateX(-110%)';
+  void pants.offsetWidth;
+
+  stage.hidden    = false;
+  debugBtn.hidden = false;
+
+  // Phase 1: cushion appear (10 frames × 120ms = 1.2s)
   playFrames(cush, CUSH_FRAMES, CUSH_FRAME_MS, () => {
+    if (gen !== cycleGen) return;
     cush.style.backgroundImage = ''; // CSS cushion_base.png takes over
 
-    // Phase 2: entrance door sequence (38 frames, ~1.6s)
-    playFrames(entrance, ENTRANCE_FRAMES, DOOR_FRAME_MS, () => {
-      entrance.style.transition = 'opacity 0.35s';
-      entrance.style.opacity    = '0';
-      setTimeout(() => { entrance.style.display = 'none'; }, 350);
-      setTimeout(() => {
-        cycle();
-        pants.addEventListener('click', flickEars);
-      }, 200);
-    });
+    // Phase 2: door animation (38 frames × 100ms = 3.8s)
+    entranceAnim.style.opacity = '1';
+    playFrames(entranceAnim, ENTRANCE_FRAMES, DOOR_FRAME_MS, () => {
+      if (gen !== cycleGen) return;
 
-    // Phase 2b: cat slides in 300ms after door starts
-    setTimeout(() => pants.classList.add('entering'), 300);
+      // Phase 3: crossfade animation → static bg + fg
+      entranceBg.style.backgroundImage = ENTRANCE_BG_URL;
+      entranceFg.style.backgroundImage = ENTRANCE_FG_URL;
+      fade([entranceBg, entranceFg], 1, CROSSFADE_MS);
+      fade([entranceAnim],           0, CROSSFADE_MS);
+
+      // Phase 4: hold, then slide cat in
+      setTimeout(() => {
+        if (gen !== cycleGen) return;
+        pants.style.transition = `transform ${SLIDE_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+        pants.style.transform  = 'translateX(0)';
+
+        // Phase 5: after slide — final frame → fade out all
+        setTimeout(() => {
+          if (gen !== cycleGen) return;
+
+          // show final animation frame on top, replace static assets
+          entranceAnim.style.backgroundImage = `url('${ENTRANCE_FRAMES[ENTRANCE_FRAMES.length - 1]}')`;
+          fade([entranceAnim], 1, 250, () => {
+            if (gen !== cycleGen) return;
+            fade([entranceBg], 0, 250);
+
+            // then fade everything out
+            setTimeout(() => {
+              if (gen !== cycleGen) return;
+              fade([entranceFg, entranceAnim], 0, 500, () => {
+                if (gen !== cycleGen) return;
+                cycle(gen);
+                pants.addEventListener('click', flickEars);
+              });
+            }, 250);
+          });
+
+        }, SLIDE_MS + 300);
+
+      }, CROSSFADE_MS + 300);
+    });
   });
 }
 
 // ── init ─────────────────────────────────────────────────────────────────────
+
+debugBtn.addEventListener('click', runEntrance);
 
 chrome.storage.local.get({ edition: 'simple' }, ({ edition }) => {
   if (edition !== 'deluxe') {
