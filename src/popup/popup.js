@@ -58,7 +58,8 @@ next0.addEventListener('click', () => goTo(1));
 async function triggerDownload() {
   dlBtn.textContent = 'generating…';
   dlBtn.disabled = true;
-  await downloadCSS();
+  if (selectedEdition === 'deluxe') await downloadJS();
+  else await downloadCSS();
   dlBtn.disabled = false;
   dlBtn.textContent = 'next →';
   dlBtn.dataset.ready = '1';
@@ -176,6 +177,21 @@ async function generate(css, bgColor) {
     uris[token] = `data:${mime};base64,${btoa(binary)}`;
   }));
   return css.replace(/PANTS_URI:([^"]+)/g, (_, t) => uris[t]);
+}
+
+async function downloadJS() {
+  const top  = cssLocation === 'nav' ? -30 : 10;
+  const left = cssLocation === 'nav' ? 31  : -60;
+  let raw = await fetch('../../static/userChrome-deluxe.js').then(r => r.text());
+  raw = raw.replace('PANTS_TOP_PX', top).replace('PANTS_LEFT_PX', left);
+  const bgColor = await getThemeBackground();
+  const blob = new Blob([await generate(raw, bgColor)], { type: 'application/javascript' });
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: 'userChrome.js',
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 async function downloadCSS() {
