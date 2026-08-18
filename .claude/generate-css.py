@@ -50,7 +50,7 @@ CUSH_SWAP_S       = 0.8   # stage 2 preload trigger: APNG → cushion_base (APNG
 STATIC_PANTS_S    = 0.9   # stage 2 render: static pants body visible
 STAGE3_PRELOAD_S  = 1.0   # stage 3 preload: ear flick + tail-flick + awake ears
 APPEAR_SECONDS    = 1.2   # final render: full animated cat + loop start
-WARMUP_DELAY_S    = APPEAR_SECONDS + 5.0
+WARMUP_HEAD_START_S = 7.0
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
@@ -285,6 +285,17 @@ def ear_flick_keyframes(pos):
     return "\n".join(lines)
 
 
+def head_warmup_keyframes(preload_pos):
+    pts = [(f"{i / TRANS_FRAME_COUNT * 100:.4f}",
+            f"background-image: {trans_urls[i]}; background-position: {preload_pos};")
+           for i in range(TRANS_FRAME_COUNT)]
+    pts.append(("100.0000",
+                f"background-image: {trans_urls[-1]}; background-position: {preload_pos};"))
+    return "\n".join(["@keyframes pants-head-warmup {",
+                      *[f"  {p}% {{ {d} }}" for p, d in pts],
+                      "}"])
+
+
 # ---------------------------------------------------------------------------
 # Shared CSS fragment builders
 # ---------------------------------------------------------------------------
@@ -349,6 +360,7 @@ def ear_animation_rules(el, pos, before_extra=""):
 
 def generate_nav_bar():
     print("Building nav-bar keyframes…")
+    warmup_spec = f"pants-head-warmup {TRANS_SECONDS}s steps(1) 1 {WARMUP_HEAD_START_S}s"
     kfs = "\n\n".join([
         rest_appear_keyframes(NAV_APP_POS, NAV_PRELOAD_POS),
         head_appear_keyframes(NAV_POS),
@@ -357,6 +369,7 @@ def generate_nav_bar():
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
         ear_flick_keyframes(NAV_POS),
+        head_warmup_keyframes(NAV_PRELOAD_POS),
     ])
 
     top = f"-{NAV_Y_SHIFT}px"
@@ -396,7 +409,7 @@ def generate_nav_bar():
         "#taskbar-tabs-favicon { position: absolute !important; inset: 0 !important; }",
         "#nav-bar-customization-target { position: relative !important; z-index: 1 !important; }", "",
         pseudo_base_rules(el, top), "",
-        ear_animation_rules(el, NAV_POS), "",
+        ear_animation_rules(el, NAV_POS, before_extra=warmup_spec), "",
         "#browser { overflow: visible !important; }",
         f"#PersonalToolbar {{",
         f"  --cat-y:           -{NAV_Y_SHIFT + C_H}px;",
@@ -420,6 +433,7 @@ def generate_nav_bar():
 
 def generate_sidebar():
     print("Building sidebar keyframes…")
+    warmup_spec = f"pants-head-warmup {TRANS_SECONDS}s steps(1) 1 {WARMUP_HEAD_START_S}s"
     kfs = "\n\n".join([
         rest_appear_keyframes(SIDEBAR_APP_POS, SIDEBAR_APP_PRELOAD_POS),
         head_appear_keyframes(SIDEBAR_POS),
@@ -428,6 +442,7 @@ def generate_sidebar():
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
         ear_flick_keyframes(SIDEBAR_POS),
+        head_warmup_keyframes(SIDEBAR_PRELOAD_POS),
     ])
 
     el = SIDEBAR_EL
@@ -451,7 +466,7 @@ def generate_sidebar():
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
-        ear_animation_rules(el, SIDEBAR_POS), "",
+        ear_animation_rules(el, SIDEBAR_POS, before_extra=warmup_spec), "",
     ])
 
     OUT_SIDEBAR.write_text(css)
