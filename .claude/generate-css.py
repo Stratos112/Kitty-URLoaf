@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Pre-build userChrome.css and userChrome-sidebar.css with all assets inlined as data URIs.
-userChrome.css lives in the Firefox profile and cannot reference extension
-files, so everything must be self-contained.
+"""Pre-build CSS templates for userChrome-navbar.css and userChrome-sidebar.css.
+Images are referenced as PANTS_URI:<relative-to-static/Pants/> placeholder tokens.
+The extension's generate() function in popup.js resolves these to data URIs at
+download time, so the shipped CSS templates stay small.
 
 Three-layer design (shared across locations):
   element background-image  → REST layer (cushion/body/paws/tail)
@@ -9,16 +10,14 @@ Three-layer design (shared across locations):
   element::after             → EAR layer (pseudo-random L/R twitches)
 
 Animation cycle (shared):
-  One-time appear (APPEAR_SECONDS): cushion APNG plays, then body/head/ears snap in.
   Head loop (LOOP_CYCLE = 23s): awake → falling → asleep → waking → repeat
   Ear loop (RANDOM_CYCLE = 90s): pseudo-random L/R twitches, seeded for reproducibility
 
 Outputs:
-  static/userChrome.css         — nav-bar location (NW corner)
+  static/userChrome-navbar.css  — nav-bar location (NW corner)
   static/userChrome-sidebar.css — sidebar location
 """
 
-import base64
 import random
 from datetime import date
 from pathlib import Path
@@ -32,10 +31,6 @@ ACC   = PANTS / "Accessories"
 
 OUT_NAV     = ROOT / "static" / "userChrome-navbar.css"
 OUT_SIDEBAR = ROOT / "static" / "userChrome-sidebar.css"
-
-def data_uri(path: Path) -> str:
-    mime = "image/apng" if path.suffix == ".apng" else "image/png"
-    return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
 # ---------------------------------------------------------------------------
 # Shared animation constants
@@ -118,16 +113,7 @@ FRAME_COUNT = len(EAR_FLICK_SEQ)
 FLICK_SECS  = 0.275
 FRAME_SECS  = FLICK_SECS / FRAME_COUNT
 
-print("Loading assets…")
-all_paths = list(dict.fromkeys([
-    *REST_PATHS, *AWAKE_HEAD_PATHS, *SLEEP_HEAD_PATHS,
-    *AWAKE_EAR_PATHS, *TRANS_FRAME_PATHS,
-    *EAR_FLICK_L, *EAR_FLICK_R,
-]))
-uri = {p: data_uri(p) for p in all_paths}
-print(f"  {len(uri)} files loaded")
-
-def url(p):   return f'url("{uri[p]}")'
+def url(p):   return f'url("PANTS_URI:{p.relative_to(PANTS).as_posix()}")'
 def imgs(ps): return ", ".join(url(p) for p in ps)
 def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"

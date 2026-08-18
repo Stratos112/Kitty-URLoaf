@@ -118,15 +118,26 @@ async function getThemeBackground() {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? '#2b2a33' : '#f0f0f4';
 }
 
-function generate(css, bgColor) {
-  return css;
+async function generate(css, bgColor) {
+  const tokens = [...new Set([...css.matchAll(/PANTS_URI:([^"]+)/g)].map(m => m[1]))];
+  const uris   = {};
+  await Promise.all(tokens.map(async token => {
+    const mime = token.endsWith('.apng') ? 'image/apng' : 'image/png';
+    const buf  = await fetch(chrome.runtime.getURL(`static/Pants/${token}`)).then(r => r.arrayBuffer());
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 0x8000)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    uris[token] = `data:${mime};base64,${btoa(binary)}`;
+  }));
+  return css.replace(/PANTS_URI:([^"]+)/g, (_, t) => uris[t]);
 }
 
 async function downloadCSS() {
   const file   = cssLocation === 'nav' ? 'userChrome-navbar.css' : 'userChrome-sidebar.css';
   const raw    = await fetch(`../../static/${file}`).then(r => r.text());
   const bgColor = await getThemeBackground();
-  const blob   = new Blob([generate(raw, bgColor)], { type: 'text/css' });
+  const blob   = new Blob([await generate(raw, bgColor)], { type: 'text/css' });
   const a = Object.assign(document.createElement('a'), {
     href: URL.createObjectURL(blob),
     download: 'userChrome.css',
