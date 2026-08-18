@@ -179,9 +179,26 @@ function flickEars() {
   })();
 }
 
+function warmupTrans(gen) {
+  if (gen !== cycleGen) return;
+  entranceAnim.style.transition = 'none';
+  entranceAnim.style.opacity    = '0.001';
+  let i = 0;
+  (function step() {
+    if (gen !== cycleGen || i >= TRANS_PATHS.length) {
+      entranceAnim.style.opacity         = '0';
+      entranceAnim.style.backgroundImage = '';
+      return;
+    }
+    entranceAnim.style.backgroundImage = u(TRANS_PATHS[i++]);
+    requestAnimationFrame(step);
+  })();
+}
+
 function cycle(gen) {
   if (gen !== cycleGen) return;
   setAwake();
+  setTimeout(() => warmupTrans(gen), HOLD_MS - 2000);
   setTimeout(() => {
     if (gen !== cycleGen) return;
     runTransition(TRANS_PATHS, gen, () => {
