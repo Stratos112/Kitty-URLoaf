@@ -285,12 +285,14 @@ def ear_flick_keyframes(pos):
     return "\n".join(lines)
 
 
-def head_warmup_keyframes(preload_pos):
-    pts = [(f"{i / TRANS_FRAME_COUNT * 100:.4f}",
-            f"background-image: {trans_urls[i]}; background-position: {preload_pos};")
+def head_warmup_keyframes(preload_pos, pos):
+    awake_pos = ", ".join([pos] * len(AWAKE_HEAD_PATHS))
+    def wkf(frame_url):
+        return (f"background-image: {frame_url}, {awake_head_imgs}; "
+                f"background-position: {preload_pos}, {awake_pos};")
+    pts = [(f"{i / TRANS_FRAME_COUNT * 100:.4f}", wkf(trans_urls[i]))
            for i in range(TRANS_FRAME_COUNT)]
-    pts.append(("100.0000",
-                f"background-image: {trans_urls[-1]}; background-position: {preload_pos};"))
+    pts.append(("100.0000", wkf(trans_urls[-1])))
     return "\n".join(["@keyframes pants-head-warmup {",
                       *[f"  {p}% {{ {d} }}" for p, d in pts],
                       "}"])
@@ -369,7 +371,7 @@ def generate_nav_bar():
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
         ear_flick_keyframes(NAV_POS),
-        head_warmup_keyframes(NAV_PRELOAD_POS),
+        head_warmup_keyframes(NAV_PRELOAD_POS, NAV_POS),
     ])
 
     top = f"-{NAV_Y_SHIFT}px"
@@ -442,7 +444,7 @@ def generate_sidebar():
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
         ear_flick_keyframes(SIDEBAR_POS),
-        head_warmup_keyframes(SIDEBAR_PRELOAD_POS),
+        head_warmup_keyframes(SIDEBAR_PRELOAD_POS, SIDEBAR_POS),
     ])
 
     el = SIDEBAR_EL
