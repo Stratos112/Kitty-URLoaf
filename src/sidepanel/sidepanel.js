@@ -49,25 +49,28 @@ const FLICK_MS      = 275 / FLICK_SEQ.length;
 const FLICK_L_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/L_${n}.png`);
 const FLICK_R_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/R_${n}.png`);
 
-// ── preload: CSS off-screen divs force decode into the CSS renderer cache ────
+// ── preload ──────────────────────────────────────────────────────────────────
+// Hidden <img> elements: reliable onload events + Firefox shares their decoded
+// image cache with CSS background-image, so each frame is ready before use.
 
-(function preload() {
-  const allPaths = [
-    ...CUSH_PATHS, ...DOOR_PATHS,
-    ...TRANS_PATHS, ...FLICK_L_PATHS, ...FLICK_R_PATHS,
-    P.entrBg, P.entrFg,
-  ];
+const ALL_PATHS = [
+  ...CUSH_PATHS, ...DOOR_PATHS,
+  ...TRANS_PATHS, ...FLICK_L_PATHS, ...FLICK_R_PATHS,
+  P.entrBg, P.entrFg,
+];
+
+const ready = new Promise(resolve => {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none;';
-  allPaths.forEach(path => {
-    const d = document.createElement('div');
-    d.style.backgroundImage = `url('${path}')`;
-    wrap.appendChild(d);
+  wrap.style.cssText = 'position:fixed;left:-9999px;top:0;pointer-events:none;overflow:hidden;width:0;height:0;';
+  let done = 0;
+  ALL_PATHS.forEach(src => {
+    const img = document.createElement('img');
+    img.onload = img.onerror = () => { if (++done >= ALL_PATHS.length) { wrap.remove(); resolve(); } };
+    img.src = src;
+    wrap.appendChild(img);
   });
   document.documentElement.appendChild(wrap);
-  // Remove after a short paint window so the browser has decoded them
-  requestAnimationFrame(() => requestAnimationFrame(() => wrap.remove()));
-})();
+});
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -272,12 +275,12 @@ function runEntrance() {
 
 // ── init ─────────────────────────────────────────────────────────────────────
 
-debugBtn.addEventListener('click', runEntrance);
+debugBtn.addEventListener('click', () => ready.then(runEntrance));
 
 chrome.storage.local.get({ edition: 'simple' }, ({ edition }) => {
   if (edition !== 'deluxe') {
     document.getElementById('simple-notice').hidden = false;
     return;
   }
-  runEntrance();
+  ready.then(runEntrance);
 });
