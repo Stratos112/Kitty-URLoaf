@@ -1,0 +1,29 @@
+/**
+ * Pants The Cat. Kitty-URLoaf CSS.
+ * Sky Vercauteren. All Rights Reserved.
+ * Authored August 2026
+ * Generated 2026-08-19
+ */
+
+/* Kitty URLoaf ~ userChrome.css */
+/* toolkit.legacyUserProfileCustomizations.stylesheets must be true in about:config */
+
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+@namespace html url("http://www.w3.org/1999/xhtml");
+
+/* works alongside userChrome.js — JS sets data-pants-loc on :root */
+
+/* ── always-on: stacking + overflow ──────────────────────────────── */
+#navigator-toolbox { position: relative !important; z-index: 9999 !important; overflow: visible !important; }
+#TabsToolbar        { position: relative !important; z-index: 1    !important; }
+#browser            { overflow: visible !important; }
+#nav-bar .titlebar-spacer, #vertical-spacer { -moz-window-dragging: no-drag !important; }
+#nav-bar { position: relative !important; overflow: visible !important; z-index: 2 !important; transition: min-height 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+:is(#sidebar-container, html|sidebar-main)  { position: relative !important; overflow: visible !important; transition: min-width 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ── nav-bar: expand when cat is present ─────────────────────────── */
+:root[data-pants-loc="nav"] #nav-bar { min-height: 200.00px !important; align-items: flex-end !important; }
+:root[data-pants-loc="nav"]:has(#PersonalToolbar:not([collapsed])) #nav-bar { min-height: 166.00px !important; }
+
+/* ── sidebar: expand when cat is present ─────────────────────────── */
+:root[data-pants-loc="sidebar"] :is(#sidebar-container, html|sidebar-main) { min-width: 254px !important; }

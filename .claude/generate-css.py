@@ -31,6 +31,7 @@ ACC   = PANTS / "Accessories"
 
 OUT_NAV     = ROOT / "static" / "userChrome-navbar.css"
 OUT_SIDEBAR = ROOT / "static" / "userChrome-sidebar.css"
+OUT_DELUXE  = ROOT / "static" / "userChrome-deluxe.css"
 
 # ---------------------------------------------------------------------------
 # Shared animation constants
@@ -395,7 +396,40 @@ def generate_sidebar():
 
 
 # ---------------------------------------------------------------------------
+# Location: deluxe (structural only — no image tokens, works with userChrome.js)
+# JS sets data-pants-loc="nav"|"sidebar" on :root; CSS expands the right area.
+# ---------------------------------------------------------------------------
+
+def generate_deluxe():
+    print("Building deluxe CSS…")
+    nav_h    = px(C_H + PT_H)
+    nav_h_pt = px(C_H)
+    easing   = "0.5s cubic-bezier(0.22, 1, 0.36, 1)"
+    el_sb    = ":is(#sidebar-container, html|sidebar-main)"
+    css = "\n".join([
+        css_header(), "",
+        "/* works alongside userChrome.js — JS sets data-pants-loc on :root */", "",
+        "/* ── always-on: stacking + overflow ──────────────────────────────── */",
+        "#navigator-toolbox { position: relative !important; z-index: 9999 !important; overflow: visible !important; }",
+        "#TabsToolbar        { position: relative !important; z-index: 1    !important; }",
+        "#browser            { overflow: visible !important; }",
+        "#nav-bar .titlebar-spacer, #vertical-spacer { -moz-window-dragging: no-drag !important; }",
+        f"#nav-bar {{ position: relative !important; overflow: visible !important; z-index: 2 !important; transition: min-height {easing}; }}",
+        f"{el_sb}  {{ position: relative !important; overflow: visible !important; transition: min-width {easing}; }}", "",
+        "/* ── nav-bar: expand when cat is present ─────────────────────────── */",
+        f':root[data-pants-loc="nav"] #nav-bar {{ min-height: {nav_h} !important; align-items: flex-end !important; }}',
+        f':root[data-pants-loc="nav"]:has(#PersonalToolbar:not([collapsed])) #nav-bar {{ min-height: {nav_h_pt} !important; }}', "",
+        "/* ── sidebar: expand when cat is present ─────────────────────────── */",
+        f':root[data-pants-loc="sidebar"] {el_sb} {{ min-width: {SIDEBAR_W} !important; }}',
+        "",
+    ])
+    OUT_DELUXE.write_text(css)
+    print(f"  {OUT_DELUXE.relative_to(ROOT)}")
+
+
+# ---------------------------------------------------------------------------
 
 generate_nav_bar()
 generate_sidebar()
+generate_deluxe()
 print("\ndone.")

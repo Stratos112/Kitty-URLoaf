@@ -186,16 +186,27 @@ async function generate(css, bgColor) {
 async function downloadJS() {
   const top  = cssLocation === 'nav' ? -30 : 10;
   const left = cssLocation === 'nav' ? 31  : -60;
+  const loc  = cssLocation === 'nav' ? 'nav' : 'sidebar';
+
   let raw = await fetch('../../static/userChrome-deluxe.js').then(r => r.text());
-  raw = raw.replace('PANTS_TOP_PX', top).replace('PANTS_LEFT_PX', left);
+  raw = raw.replace('PANTS_TOP_PX', top).replace('PANTS_LEFT_PX', left).replace('PANTS_LOC', loc);
   const bgColor = await getThemeBackground();
-  const blob = new Blob([await generate(raw, bgColor)], { type: 'application/javascript' });
+  const jsBlob = new Blob([await generate(raw, bgColor)], { type: 'application/javascript' });
   const a = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(blob),
+    href: URL.createObjectURL(jsBlob),
     download: 'userChrome.js',
   });
   a.click();
   URL.revokeObjectURL(a.href);
+
+  const cssRaw  = await fetch('../../static/userChrome-deluxe.css').then(r => r.text());
+  const cssBlob = new Blob([cssRaw], { type: 'text/css' });
+  const b = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(cssBlob),
+    download: 'userChrome-deluxe.css',
+  });
+  b.click();
+  URL.revokeObjectURL(b.href);
 }
 
 async function downloadCSS() {

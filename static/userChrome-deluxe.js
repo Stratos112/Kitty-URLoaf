@@ -6,6 +6,7 @@ var SLEEP_MS =  7000;
 
 var POS_TOP  = PANTS_TOP_PX;
 var POS_LEFT = PANTS_LEFT_PX;
+var LOC      = 'PANTS_LOC';
 
 var A = {
   cushion:   'url("PANTS_URI:Accessories/cushion_base.png")',
@@ -60,6 +61,7 @@ function boot() {
   });
   root.style.top  = POS_TOP  + 'px';
   root.style.left = POS_LEFT + 'px';
+  document.documentElement.dataset.pantsLoc = LOC;
   document.documentElement.appendChild(root);
 }
 
