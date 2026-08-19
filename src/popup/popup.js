@@ -4,7 +4,7 @@ const dlBtn = document.getElementById('dlBtn');
 
 // ── edition selection ────────────────────────────────────────────────────────
 
-let selectedEdition = 'simple';
+let selectedEdition = 'deluxe';
 const cards  = { simple: document.getElementById('cardSimple'), deluxe: document.getElementById('cardDeluxe') };
 const next0  = document.getElementById('next0');
 
@@ -107,13 +107,13 @@ document.getElementById('startOverBtn').addEventListener('click', () => {
 
 // ── restore state ────────────────────────────────────────────────────────────
 
-chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLocation: 'sidebar', edition: 'simple' }, (data) => {
+chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLocation: 'sidebar', edition: 'deluxe' }, (data) => {
   cssLocation = data.cssLocation;
   Object.values(togs).forEach(t => t.classList.remove('on'));
   (togs[cssLocation] ?? togs.sidebar).classList.add('on');
   setLocPreview(cssLocation);
 
-  selectEdition(data.edition ?? 'simple');
+  selectEdition(data.edition ?? 'deluxe');
 
   const currentVersion = chrome.runtime.getManifest().version;
   if (data.version !== currentVersion) {
