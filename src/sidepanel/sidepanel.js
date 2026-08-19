@@ -14,7 +14,7 @@ const l11 = pants.querySelector('.l11');
 
 // ── timing ───────────────────────────────────────────────────────────────────
 
-const HOLD_MS        = 10000;
+const HOLD_MS        = 20000;
 const FRAME_COUNT    = 30;
 const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
 const CUSH_FRAME_MS  = 100;   // 10 × 100 = 1s

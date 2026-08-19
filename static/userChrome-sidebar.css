@@ -2,7 +2,7 @@
  * Pants The Cat. Kitty-URLoaf CSS.
  * Sky Vercauteren. All Rights Reserved.
  * Authored August 2026
- * Generated 2026-08-18
+ * Generated 2026-08-19
  */
 
 /* Kitty URLoaf ~ userChrome.css */
@@ -17,71 +17,71 @@
   inherits: true;
 }
 
-/* Pants in sidebar — 23.0s head loop, 90.0s ear cycle */
+/* Pants in sidebar — 43.0s head loop, 90.0s ear cycle */
 
 @keyframes pants-head-loop {
   0.0000% { background-image: url("PANTS_URI:Anim/blink-overlay.apng"), url("PANTS_URI:Anim/breath-eyes.apng"), url("PANTS_URI:Anim/breath-head.apng"); background-position: left -60px top 0px; }
-  43.4783% { background-image: url("PANTS_URI:Anim/Transition/frame-00.png"); background-position: left -60px top 0px; }
-  43.6957% { background-image: url("PANTS_URI:Anim/Transition/frame-01.png"); background-position: left -60px top 0px; }
-  43.9130% { background-image: url("PANTS_URI:Anim/Transition/frame-02.png"); background-position: left -60px top 0px; }
-  44.1304% { background-image: url("PANTS_URI:Anim/Transition/frame-03.png"); background-position: left -60px top 0px; }
-  44.3478% { background-image: url("PANTS_URI:Anim/Transition/frame-04.png"); background-position: left -60px top 0px; }
-  44.5652% { background-image: url("PANTS_URI:Anim/Transition/frame-05.png"); background-position: left -60px top 0px; }
-  44.7826% { background-image: url("PANTS_URI:Anim/Transition/frame-06.png"); background-position: left -60px top 0px; }
-  45.0000% { background-image: url("PANTS_URI:Anim/Transition/frame-07.png"); background-position: left -60px top 0px; }
-  45.2174% { background-image: url("PANTS_URI:Anim/Transition/frame-08.png"); background-position: left -60px top 0px; }
-  45.4348% { background-image: url("PANTS_URI:Anim/Transition/frame-09.png"); background-position: left -60px top 0px; }
-  45.6522% { background-image: url("PANTS_URI:Anim/Transition/frame-10.png"); background-position: left -60px top 0px; }
-  45.8696% { background-image: url("PANTS_URI:Anim/Transition/frame-11.png"); background-position: left -60px top 0px; }
-  46.0870% { background-image: url("PANTS_URI:Anim/Transition/frame-12.png"); background-position: left -60px top 0px; }
-  46.3043% { background-image: url("PANTS_URI:Anim/Transition/frame-13.png"); background-position: left -60px top 0px; }
-  46.5217% { background-image: url("PANTS_URI:Anim/Transition/frame-14.png"); background-position: left -60px top 0px; }
-  46.7391% { background-image: url("PANTS_URI:Anim/Transition/frame-15.png"); background-position: left -60px top 0px; }
-  46.9565% { background-image: url("PANTS_URI:Anim/Transition/frame-16.png"); background-position: left -60px top 0px; }
-  47.1739% { background-image: url("PANTS_URI:Anim/Transition/frame-17.png"); background-position: left -60px top 0px; }
-  47.3913% { background-image: url("PANTS_URI:Anim/Transition/frame-18.png"); background-position: left -60px top 0px; }
-  47.6087% { background-image: url("PANTS_URI:Anim/Transition/frame-19.png"); background-position: left -60px top 0px; }
-  47.8261% { background-image: url("PANTS_URI:Anim/Transition/frame-20.png"); background-position: left -60px top 0px; }
-  48.0435% { background-image: url("PANTS_URI:Anim/Transition/frame-21.png"); background-position: left -60px top 0px; }
-  48.2609% { background-image: url("PANTS_URI:Anim/Transition/frame-22.png"); background-position: left -60px top 0px; }
-  48.4783% { background-image: url("PANTS_URI:Anim/Transition/frame-23.png"); background-position: left -60px top 0px; }
-  48.6957% { background-image: url("PANTS_URI:Anim/Transition/frame-24.png"); background-position: left -60px top 0px; }
-  48.9130% { background-image: url("PANTS_URI:Anim/Transition/frame-25.png"); background-position: left -60px top 0px; }
-  49.1304% { background-image: url("PANTS_URI:Anim/Transition/frame-26.png"); background-position: left -60px top 0px; }
-  49.3478% { background-image: url("PANTS_URI:Anim/Transition/frame-27.png"); background-position: left -60px top 0px; }
-  49.5652% { background-image: url("PANTS_URI:Anim/Transition/frame-28.png"); background-position: left -60px top 0px; }
-  49.7826% { background-image: url("PANTS_URI:Anim/Transition/frame-29.png"); background-position: left -60px top 0px; }
+  46.5116% { background-image: url("PANTS_URI:Anim/Transition/frame-00.png"); background-position: left -60px top 0px; }
+  46.6279% { background-image: url("PANTS_URI:Anim/Transition/frame-01.png"); background-position: left -60px top 0px; }
+  46.7442% { background-image: url("PANTS_URI:Anim/Transition/frame-02.png"); background-position: left -60px top 0px; }
+  46.8605% { background-image: url("PANTS_URI:Anim/Transition/frame-03.png"); background-position: left -60px top 0px; }
+  46.9767% { background-image: url("PANTS_URI:Anim/Transition/frame-04.png"); background-position: left -60px top 0px; }
+  47.0930% { background-image: url("PANTS_URI:Anim/Transition/frame-05.png"); background-position: left -60px top 0px; }
+  47.2093% { background-image: url("PANTS_URI:Anim/Transition/frame-06.png"); background-position: left -60px top 0px; }
+  47.3256% { background-image: url("PANTS_URI:Anim/Transition/frame-07.png"); background-position: left -60px top 0px; }
+  47.4419% { background-image: url("PANTS_URI:Anim/Transition/frame-08.png"); background-position: left -60px top 0px; }
+  47.5581% { background-image: url("PANTS_URI:Anim/Transition/frame-09.png"); background-position: left -60px top 0px; }
+  47.6744% { background-image: url("PANTS_URI:Anim/Transition/frame-10.png"); background-position: left -60px top 0px; }
+  47.7907% { background-image: url("PANTS_URI:Anim/Transition/frame-11.png"); background-position: left -60px top 0px; }
+  47.9070% { background-image: url("PANTS_URI:Anim/Transition/frame-12.png"); background-position: left -60px top 0px; }
+  48.0233% { background-image: url("PANTS_URI:Anim/Transition/frame-13.png"); background-position: left -60px top 0px; }
+  48.1395% { background-image: url("PANTS_URI:Anim/Transition/frame-14.png"); background-position: left -60px top 0px; }
+  48.2558% { background-image: url("PANTS_URI:Anim/Transition/frame-15.png"); background-position: left -60px top 0px; }
+  48.3721% { background-image: url("PANTS_URI:Anim/Transition/frame-16.png"); background-position: left -60px top 0px; }
+  48.4884% { background-image: url("PANTS_URI:Anim/Transition/frame-17.png"); background-position: left -60px top 0px; }
+  48.6047% { background-image: url("PANTS_URI:Anim/Transition/frame-18.png"); background-position: left -60px top 0px; }
+  48.7209% { background-image: url("PANTS_URI:Anim/Transition/frame-19.png"); background-position: left -60px top 0px; }
+  48.8372% { background-image: url("PANTS_URI:Anim/Transition/frame-20.png"); background-position: left -60px top 0px; }
+  48.9535% { background-image: url("PANTS_URI:Anim/Transition/frame-21.png"); background-position: left -60px top 0px; }
+  49.0698% { background-image: url("PANTS_URI:Anim/Transition/frame-22.png"); background-position: left -60px top 0px; }
+  49.1860% { background-image: url("PANTS_URI:Anim/Transition/frame-23.png"); background-position: left -60px top 0px; }
+  49.3023% { background-image: url("PANTS_URI:Anim/Transition/frame-24.png"); background-position: left -60px top 0px; }
+  49.4186% { background-image: url("PANTS_URI:Anim/Transition/frame-25.png"); background-position: left -60px top 0px; }
+  49.5349% { background-image: url("PANTS_URI:Anim/Transition/frame-26.png"); background-position: left -60px top 0px; }
+  49.6512% { background-image: url("PANTS_URI:Anim/Transition/frame-27.png"); background-position: left -60px top 0px; }
+  49.7674% { background-image: url("PANTS_URI:Anim/Transition/frame-28.png"); background-position: left -60px top 0px; }
+  49.8837% { background-image: url("PANTS_URI:Anim/Transition/frame-29.png"); background-position: left -60px top 0px; }
   50.0000% { background-image: url("PANTS_URI:Anim/breath-eyes-sleep.apng"), url("PANTS_URI:Anim/breath-head-sleep.apng"); background-position: left -60px top 0px; }
-  93.4783% { background-image: url("PANTS_URI:Anim/Transition/frame-29.png"); background-position: left -60px top 0px; }
-  93.6957% { background-image: url("PANTS_URI:Anim/Transition/frame-28.png"); background-position: left -60px top 0px; }
-  93.9130% { background-image: url("PANTS_URI:Anim/Transition/frame-27.png"); background-position: left -60px top 0px; }
-  94.1304% { background-image: url("PANTS_URI:Anim/Transition/frame-26.png"); background-position: left -60px top 0px; }
-  94.3478% { background-image: url("PANTS_URI:Anim/Transition/frame-25.png"); background-position: left -60px top 0px; }
-  94.5652% { background-image: url("PANTS_URI:Anim/Transition/frame-24.png"); background-position: left -60px top 0px; }
-  94.7826% { background-image: url("PANTS_URI:Anim/Transition/frame-23.png"); background-position: left -60px top 0px; }
-  95.0000% { background-image: url("PANTS_URI:Anim/Transition/frame-22.png"); background-position: left -60px top 0px; }
-  95.2174% { background-image: url("PANTS_URI:Anim/Transition/frame-21.png"); background-position: left -60px top 0px; }
-  95.4348% { background-image: url("PANTS_URI:Anim/Transition/frame-20.png"); background-position: left -60px top 0px; }
-  95.6522% { background-image: url("PANTS_URI:Anim/Transition/frame-19.png"); background-position: left -60px top 0px; }
-  95.8696% { background-image: url("PANTS_URI:Anim/Transition/frame-18.png"); background-position: left -60px top 0px; }
-  96.0870% { background-image: url("PANTS_URI:Anim/Transition/frame-17.png"); background-position: left -60px top 0px; }
-  96.3043% { background-image: url("PANTS_URI:Anim/Transition/frame-16.png"); background-position: left -60px top 0px; }
-  96.5217% { background-image: url("PANTS_URI:Anim/Transition/frame-15.png"); background-position: left -60px top 0px; }
-  96.7391% { background-image: url("PANTS_URI:Anim/Transition/frame-14.png"); background-position: left -60px top 0px; }
-  96.9565% { background-image: url("PANTS_URI:Anim/Transition/frame-13.png"); background-position: left -60px top 0px; }
-  97.1739% { background-image: url("PANTS_URI:Anim/Transition/frame-12.png"); background-position: left -60px top 0px; }
-  97.3913% { background-image: url("PANTS_URI:Anim/Transition/frame-11.png"); background-position: left -60px top 0px; }
-  97.6087% { background-image: url("PANTS_URI:Anim/Transition/frame-10.png"); background-position: left -60px top 0px; }
-  97.8261% { background-image: url("PANTS_URI:Anim/Transition/frame-09.png"); background-position: left -60px top 0px; }
-  98.0435% { background-image: url("PANTS_URI:Anim/Transition/frame-08.png"); background-position: left -60px top 0px; }
-  98.2609% { background-image: url("PANTS_URI:Anim/Transition/frame-07.png"); background-position: left -60px top 0px; }
-  98.4783% { background-image: url("PANTS_URI:Anim/Transition/frame-06.png"); background-position: left -60px top 0px; }
-  98.6957% { background-image: url("PANTS_URI:Anim/Transition/frame-05.png"); background-position: left -60px top 0px; }
-  98.9130% { background-image: url("PANTS_URI:Anim/Transition/frame-04.png"); background-position: left -60px top 0px; }
-  99.1304% { background-image: url("PANTS_URI:Anim/Transition/frame-03.png"); background-position: left -60px top 0px; }
-  99.3478% { background-image: url("PANTS_URI:Anim/Transition/frame-02.png"); background-position: left -60px top 0px; }
-  99.5652% { background-image: url("PANTS_URI:Anim/Transition/frame-01.png"); background-position: left -60px top 0px; }
-  99.7826% { background-image: url("PANTS_URI:Anim/Transition/frame-00.png"); background-position: left -60px top 0px; }
+  96.5116% { background-image: url("PANTS_URI:Anim/Transition/frame-29.png"); background-position: left -60px top 0px; }
+  96.6279% { background-image: url("PANTS_URI:Anim/Transition/frame-28.png"); background-position: left -60px top 0px; }
+  96.7442% { background-image: url("PANTS_URI:Anim/Transition/frame-27.png"); background-position: left -60px top 0px; }
+  96.8605% { background-image: url("PANTS_URI:Anim/Transition/frame-26.png"); background-position: left -60px top 0px; }
+  96.9767% { background-image: url("PANTS_URI:Anim/Transition/frame-25.png"); background-position: left -60px top 0px; }
+  97.0930% { background-image: url("PANTS_URI:Anim/Transition/frame-24.png"); background-position: left -60px top 0px; }
+  97.2093% { background-image: url("PANTS_URI:Anim/Transition/frame-23.png"); background-position: left -60px top 0px; }
+  97.3256% { background-image: url("PANTS_URI:Anim/Transition/frame-22.png"); background-position: left -60px top 0px; }
+  97.4419% { background-image: url("PANTS_URI:Anim/Transition/frame-21.png"); background-position: left -60px top 0px; }
+  97.5581% { background-image: url("PANTS_URI:Anim/Transition/frame-20.png"); background-position: left -60px top 0px; }
+  97.6744% { background-image: url("PANTS_URI:Anim/Transition/frame-19.png"); background-position: left -60px top 0px; }
+  97.7907% { background-image: url("PANTS_URI:Anim/Transition/frame-18.png"); background-position: left -60px top 0px; }
+  97.9070% { background-image: url("PANTS_URI:Anim/Transition/frame-17.png"); background-position: left -60px top 0px; }
+  98.0233% { background-image: url("PANTS_URI:Anim/Transition/frame-16.png"); background-position: left -60px top 0px; }
+  98.1395% { background-image: url("PANTS_URI:Anim/Transition/frame-15.png"); background-position: left -60px top 0px; }
+  98.2558% { background-image: url("PANTS_URI:Anim/Transition/frame-14.png"); background-position: left -60px top 0px; }
+  98.3721% { background-image: url("PANTS_URI:Anim/Transition/frame-13.png"); background-position: left -60px top 0px; }
+  98.4884% { background-image: url("PANTS_URI:Anim/Transition/frame-12.png"); background-position: left -60px top 0px; }
+  98.6047% { background-image: url("PANTS_URI:Anim/Transition/frame-11.png"); background-position: left -60px top 0px; }
+  98.7209% { background-image: url("PANTS_URI:Anim/Transition/frame-10.png"); background-position: left -60px top 0px; }
+  98.8372% { background-image: url("PANTS_URI:Anim/Transition/frame-09.png"); background-position: left -60px top 0px; }
+  98.9535% { background-image: url("PANTS_URI:Anim/Transition/frame-08.png"); background-position: left -60px top 0px; }
+  99.0698% { background-image: url("PANTS_URI:Anim/Transition/frame-07.png"); background-position: left -60px top 0px; }
+  99.1860% { background-image: url("PANTS_URI:Anim/Transition/frame-06.png"); background-position: left -60px top 0px; }
+  99.3023% { background-image: url("PANTS_URI:Anim/Transition/frame-05.png"); background-position: left -60px top 0px; }
+  99.4186% { background-image: url("PANTS_URI:Anim/Transition/frame-04.png"); background-position: left -60px top 0px; }
+  99.5349% { background-image: url("PANTS_URI:Anim/Transition/frame-03.png"); background-position: left -60px top 0px; }
+  99.6512% { background-image: url("PANTS_URI:Anim/Transition/frame-02.png"); background-position: left -60px top 0px; }
+  99.7674% { background-image: url("PANTS_URI:Anim/Transition/frame-01.png"); background-position: left -60px top 0px; }
+  99.8837% { background-image: url("PANTS_URI:Anim/Transition/frame-00.png"); background-position: left -60px top 0px; }
   100.0000% { background-image: url("PANTS_URI:Anim/blink-overlay.apng"), url("PANTS_URI:Anim/breath-eyes.apng"), url("PANTS_URI:Anim/breath-head.apng"); background-position: left -60px top 0px; }
 }
 
@@ -116,9 +116,9 @@
 
 @keyframes pants-ear-y-loop {
   0.0000% { --ear-y: 0px; }
-  43.4783% { --ear-y: 0px; animation-timing-function: ease-in-out; }
+  46.5116% { --ear-y: 0px; animation-timing-function: ease-in-out; }
   50.0000% { --ear-y: 35px; }
-  93.4783% { --ear-y: 35px; animation-timing-function: ease-in-out; }
+  96.5116% { --ear-y: 35px; animation-timing-function: ease-in-out; }
   100.0000% { --ear-y: 0px; }
 }
 
@@ -173,7 +173,7 @@
   background-position: left -60px top 10px;
   background-size:   364px 266px;
   background-repeat: no-repeat;
-  animation:         pants-ear-y-loop 23.0s linear infinite 1.0s;
+  animation:         pants-ear-y-loop 43.0s linear infinite 1.0s;
 }
 
 /* ::before = cushion-appear then head; ::after = ear layer */
@@ -197,7 +197,7 @@
 
 :is(#sidebar-container, html|sidebar-main)::before { height: 266px; }
 
-:is(#sidebar-container, html|sidebar-main)::before             { background-image: url("PANTS_URI:Anim/blink-overlay.apng"), url("PANTS_URI:Anim/breath-eyes.apng"), url("PANTS_URI:Anim/breath-head.apng"); background-position: left -60px top 0px; animation: pants-head-loop 23.0s steps(1) infinite 1.0s, pants-head-warmup 1.5s steps(1) 1 7.0s; }
+:is(#sidebar-container, html|sidebar-main)::before             { background-image: url("PANTS_URI:Anim/blink-overlay.apng"), url("PANTS_URI:Anim/breath-eyes.apng"), url("PANTS_URI:Anim/breath-head.apng"); background-position: left -60px top 0px; animation: pants-head-loop 43.0s steps(1) infinite 1.0s, pants-head-warmup 1.5s steps(1) 1 17.0s; }
 :is(#sidebar-container, html|sidebar-main)::after              { background-image: url("PANTS_URI:Anim/breath-ear-L.apng"), url("PANTS_URI:Anim/breath-ear-R.apng");  background-position: left -60px top 0px; animation: pants-ear-random 90.0s steps(1) infinite 1.0s; }
 :is(#sidebar-container, html|sidebar-main):hover::after        { animation: pants-ear-random 90.0s steps(1) infinite 1.0s, ear-flick 275ms 200ms linear 1 forwards; background-position: left -60px top 0px; }
 :is(#sidebar-container, html|sidebar-main):has(:active)::after { animation: pants-ear-random 90.0s steps(1) infinite 1.0s, ear-flick 275ms linear 1 forwards; background-position: left -60px top 0px; }

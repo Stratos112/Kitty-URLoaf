@@ -36,10 +36,10 @@ OUT_SIDEBAR = ROOT / "static" / "userChrome-sidebar.css"
 # Shared animation constants
 # ---------------------------------------------------------------------------
 
-HOLD_SECONDS      = 10
+HOLD_SECONDS      = 20
 PRELOAD_OFFSET    = 300   # px — warmup renders this far below the real cat
 APPEAR_SECONDS    = 1.0   # delay before animation loops start
-WARMUP_HEAD_START_S = 7.0
+WARMUP_HEAD_START_S = 17.0
 TRANS_SECONDS     = 1.5
 TRANS_FRAME_COUNT = 30
 SLEEP_DROP        = 35        # px ear drops during sleep
