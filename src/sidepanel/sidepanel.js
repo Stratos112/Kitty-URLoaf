@@ -56,6 +56,14 @@ const DOOR_PATHS  = Array.from({ length: 38 }, (_, i) =>
   `${BASE}Accessories/Entrance_appear/entrance_door${String(i).padStart(2, '0')}.png`);
 const DOOR_PATHS_REV = [...DOOR_PATHS].reverse();
 
+const CUSH_DURATIONS = [
+  ...Array(6).fill(Math.round(CUSH_FRAME_MS * 0.49)),
+  ...Array(5).fill(CUSH_FRAME_MS),
+];
+const DOOR_SLOW_MS         = Math.round(DOOR_FRAME_MS * 4);
+const DOOR_OPEN_DURATIONS  = [...Array(33).fill(DOOR_FRAME_MS), ...Array(5).fill(DOOR_SLOW_MS)];
+const DOOR_CLOSE_DURATIONS = [...Array(5).fill(DOOR_SLOW_MS),  ...Array(33).fill(DOOR_FRAME_MS)];
+
 const TRANS_PATHS = Array.from({ length: FRAME_COUNT }, (_, i) =>
   `${BASE}Anim/Transition/frame-${String(i).padStart(2, '0')}.png`);
 const TRANS_PATHS_REV = [...TRANS_PATHS].reverse();
@@ -105,14 +113,16 @@ let cycleGen  = 0;
 let gpuWarmed = false;
 
 // rAF-based frame player — self-cancels when gen no longer matches cycleGen
+// ms may be a number or per-frame array
 function playFrames(el, paths, ms, gen, onDone) {
-  let i = 0, last = 0;
+  let i = 0, last = 0, curMs = 0;
   function step(now) {
     if (gen !== cycleGen) return;
-    if (now - last >= ms) {
+    if (now - last >= curMs) {
       if (i >= paths.length) { if (onDone) onDone(); return; }
-      el.style.backgroundImage = u(paths[i++]);
-      last = now;
+      el.style.backgroundImage = u(paths[i]);
+      curMs = Array.isArray(ms) ? (ms[i] ?? ms[ms.length - 1]) : ms;
+      i++; last = now;
     }
     requestAnimationFrame(step);
   }
@@ -318,7 +328,9 @@ function playCushWithFade(paths, frameDuration, fadeMs, gen, onDone) {
     if (i >= paths.length) { onDone?.(); return; }
     cush2.style.transition      = 'none';
     cush2.style.opacity         = '0';
-    cush2.style.backgroundImage = u(paths[i++]);
+    cush2.style.backgroundImage = u(paths[i]);
+    const dur = Array.isArray(frameDuration) ? (frameDuration[i] ?? frameDuration[frameDuration.length - 1]) : frameDuration;
+    i++;
     void cush2.offsetWidth;
     cush2.style.transition = `opacity ${fadeMs}ms`;
     cush2.style.opacity    = '1';
@@ -328,7 +340,7 @@ function playCushWithFade(paths, frameDuration, fadeMs, gen, onDone) {
       cush2.style.transition      = 'none';
       cush2.style.opacity         = '0';
       step();
-    }, frameDuration);
+    }, dur);
   }
   step();
 }
@@ -362,7 +374,7 @@ function runEntrance() {
   debugBtn.hidden = false;
 
   // 1. Cushion appear (crossfade between frames); clears itself when done
-  playCushWithFade(CUSH_PATHS, CUSH_FRAME_MS, CUSH_FADE_MS, gen, () => {
+  playCushWithFade(CUSH_PATHS, CUSH_DURATIONS, CUSH_FADE_MS, gen, () => {
     if (gen !== cycleGen) return;
     cush.style.backgroundImage  = '';
     cush2.style.backgroundImage = '';
@@ -372,7 +384,7 @@ function runEntrance() {
   setTimeout(() => {
     if (gen !== cycleGen) return;
     entranceAnim.style.opacity = '1';
-    playFrames(entranceAnim, DOOR_PATHS, DOOR_FRAME_MS, gen, () => {
+    playFrames(entranceAnim, DOOR_PATHS, DOOR_OPEN_DURATIONS, gen, () => {
       if (gen !== cycleGen) return;
 
       // 3. Crossfade: anim → static bg + fg
@@ -399,7 +411,7 @@ function runEntrance() {
               if (gen !== cycleGen) return;
 
               // 6. Door closes (reverse) — below cat
-              playFrames(entranceAnim, DOOR_PATHS_REV, DOOR_FRAME_MS, gen, () => {
+              playFrames(entranceAnim, DOOR_PATHS_REV, DOOR_CLOSE_DURATIONS, gen, () => {
                 if (gen !== cycleGen) return;
 
                 // 7. Fade out, shift stage left, begin idle
@@ -416,7 +428,7 @@ function runEntrance() {
         }, 300);
       });
     });
-  }, (CUSH_PATHS.length - CUSH_OVERLAP) * CUSH_FRAME_MS);
+  }, CUSH_DURATIONS.slice(0, CUSH_PATHS.length - CUSH_OVERLAP).reduce((a, b) => a + b, 0));
 }
 
 // ── init ─────────────────────────────────────────────────────────────────────
