@@ -21,7 +21,7 @@ const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
 const CUSH_FRAME_MS  = 90;    // 11 × 90 ≈ 1s
 const CUSH_FADE_MS   = 60;
 const CUSH_OVERLAP   = 3;     // door starts this many frames before cushion ends
-const DOOR_FRAME_MS  = 27;    // 38 × 27 ≈ 1s each way (another 30% faster)
+const DOOR_FRAME_MS  = 14;    // 38 × 14 ≈ 0.5s each way
 const CROSSFADE_MS   = 350;
 const SLIDE_MS       = 1400;
 
