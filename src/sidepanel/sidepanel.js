@@ -268,7 +268,7 @@ function gpuWarmup(onDone) {
   entranceAnim.style.transition = 'none';
   entranceAnim.style.opacity    = '1';
 
-  const warmPaths = [...CUSH_PATHS, ...DOOR_PATHS];
+  const warmPaths = [...CUSH_PATHS, ...DOOR_PATHS, P.entrBg, P.entrFg];
   let i = 0;
   function step() {
     if (i < CUSH_PATHS.length) {
@@ -298,6 +298,7 @@ function runEntrance() {
   pants.removeEventListener('click', flickEars);
 
   gazing = false;
+  stage.style.transform = '';
   if (!gpuWarmed) { gpuWarmup(runEntrance); return; }
 
   // reset entrance layers
@@ -354,9 +355,10 @@ function runEntrance() {
               playFrames(entranceAnim, DOOR_PATHS_REV, DOOR_FRAME_MS, gen, () => {
                 if (gen !== cycleGen) return;
 
-                // 7. Fade out, begin idle
+                // 7. Fade out, shift stage left, begin idle
                 fade([entranceAnim], 0, CROSSFADE_MS, () => {
                   if (gen !== cycleGen) return;
+                  stage.style.transform = 'translateX(-10%)';
                   cycle(gen);
                   pants.addEventListener('click', flickEars);
                 });
