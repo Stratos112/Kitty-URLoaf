@@ -21,7 +21,7 @@ const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
 const CUSH_FRAME_MS  = 90;    // 11 × 90 ≈ 1s
 const CUSH_FADE_MS   = 60;
 const CUSH_OVERLAP   = 3;     // door starts this many frames before cushion ends
-const DOOR_FRAME_MS  = 39;    // 38 × 39 ≈ 1.5s each way (30% faster again)
+const DOOR_FRAME_MS  = 27;    // 38 × 27 ≈ 1s each way (another 30% faster)
 const CROSSFADE_MS   = 350;
 const SLIDE_MS       = 1400;
 
@@ -72,7 +72,8 @@ const FLICK_R_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/R_${n}.png`);
 const ALL_PATHS = [
   ...CUSH_PATHS, ...DOOR_PATHS,
   ...TRANS_PATHS, ...FLICK_L_PATHS, ...FLICK_R_PATHS,
-  P.entrBg, P.entrFg,
+  ...Object.values(EYE_PATHS),
+  P.entrBg, P.entrFg, P.sleepHead, P.sleepEyes,
 ];
 
 const ready = new Promise(resolve => {
