@@ -125,6 +125,22 @@ function easeInOutCubic(t) {
 let transitioning = false;
 let flickTimer    = null;
 let gazing        = false;
+let gazeTimer     = null;
+
+function startGaze() {
+  if (gazeTimer !== null) clearTimeout(gazeTimer);
+  gazing    = true;
+  gazeTimer = setTimeout(() => {
+    gazing    = false;
+    gazeTimer = null;
+    l8.style.backgroundImage = '';
+  }, 7000);
+}
+
+function cancelGaze() {
+  if (gazeTimer !== null) { clearTimeout(gazeTimer); gazeTimer = null; }
+  gazing = false;
+}
 
 function dirFromAngle(dx, dy) {
   const deg = ((Math.atan2(dy, dx) * 180 / Math.PI) + 360) % 360;
@@ -164,7 +180,6 @@ function cancelFlick() {
 }
 
 function setAwake() {
-  gazing = true;
   pants.classList.remove('sleeping');
   l7.style.backgroundImage  = u(P.awakeHead);
   l8.style.backgroundImage  = '';
@@ -174,7 +189,7 @@ function setAwake() {
 }
 
 function setAsleep() {
-  gazing = false;
+  cancelGaze();
   pants.classList.add('sleeping');
   l7.style.backgroundImage  = u(P.sleepHead);
   l8.style.backgroundImage  = u(P.sleepEyes);
@@ -184,7 +199,7 @@ function setAsleep() {
 }
 
 function runTransition(paths, gen, onDone, toSleep = false) {
-  gazing = false;
+  cancelGaze();
   cancelFlick();
   transitioning = true;
   l8.style.backgroundImage = 'none';
@@ -209,6 +224,7 @@ function runTransition(paths, gen, onDone, toSleep = false) {
 }
 
 function flickEars() {
+  startGaze();
   if (transitioning || flickTimer !== null) return;
   let i = 0;
   (function step() {
@@ -297,7 +313,7 @@ function runEntrance() {
   cancelFlick();
   pants.removeEventListener('click', flickEars);
 
-  gazing = false;
+  cancelGaze();
   stage.style.transition = 'none';
   stage.style.transform  = '';
   if (!gpuWarmed) { gpuWarmup(runEntrance); return; }
