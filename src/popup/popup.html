@@ -104,7 +104,16 @@
       text-transform: uppercase; color: var(--muted);
       border: 1px solid currentColor; border-radius: 99px; padding: 1px 6px;
     }
-    .card .tog-wrap { margin-bottom: 0; margin-top: 12px; }
+    .card .tog-wrap { margin-bottom: 0; margin-top: 10px; }
+    #locPreview {
+      width: 100%; aspect-ratio: 1;
+      border-radius: 8px; margin-top: 10px;
+      background-size: cover; background-position: center;
+      background-repeat: no-repeat;
+      background-image: url('../../static/icons/sidebaroption.png');
+      transition: opacity 0.2s;
+    }
+    #cardSimple:not(.on) #locPreview { opacity: 0; pointer-events: none; }
 
     /* download box */
     .dl-box {
@@ -220,6 +229,7 @@
               <button class="tog on" id="togSidebar">sidebar</button>
               <button class="tog"    id="togNav">nav bar</button>
             </div>
+            <div id="locPreview"></div>
             <div class="card-tip" id="tipSimple">
               <span class="card-tip-x">×</span>
               A lightweight animation baked into your browser theme. Completely passive — no scripts, no overhead. The cat is simply there whenever Firefox is open.

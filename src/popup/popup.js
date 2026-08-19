@@ -38,12 +38,21 @@ cards.deluxe.addEventListener('click', () => selectEdition('deluxe'));
 // ── location toggle ──────────────────────────────────────────────────────────
 
 let cssLocation = 'sidebar';
+const locPreview = document.getElementById('locPreview');
+const LOC_IMGS = {
+  sidebar: "url('../../static/icons/sidebaroption.png')",
+  nav:     "url('../../static/icons/urlbaroption.png')",
+};
+function setLocPreview(loc) {
+  locPreview.style.backgroundImage = LOC_IMGS[loc] ?? LOC_IMGS.sidebar;
+}
 const togs = { sidebar: document.getElementById('togSidebar'), nav: document.getElementById('togNav') };
 Object.entries(togs).forEach(([loc, btn]) => btn.addEventListener('click', e => {
   e.stopPropagation();
   cssLocation = loc;
   Object.values(togs).forEach(t => t.classList.remove('on'));
   btn.classList.add('on');
+  setLocPreview(loc);
   chrome.storage.local.set({ cssLocation: loc });
   delete dlBtn.dataset.ready;
   dlBtn.textContent = 'generate ↓';
@@ -102,6 +111,7 @@ chrome.storage.local.get({ wizardPage: 0, downloaded: false, version: '', cssLoc
   cssLocation = data.cssLocation;
   Object.values(togs).forEach(t => t.classList.remove('on'));
   (togs[cssLocation] ?? togs.sidebar).classList.add('on');
+  setLocPreview(cssLocation);
 
   selectEdition(data.edition ?? 'simple');
 
