@@ -298,7 +298,8 @@ function runEntrance() {
   pants.removeEventListener('click', flickEars);
 
   gazing = false;
-  stage.style.transform = '';
+  stage.style.transition = 'none';
+  stage.style.transform  = '';
   if (!gpuWarmed) { gpuWarmup(runEntrance); return; }
 
   // reset entrance layers
@@ -358,7 +359,8 @@ function runEntrance() {
                 // 7. Fade out, shift stage left, begin idle
                 fade([entranceAnim], 0, CROSSFADE_MS, () => {
                   if (gen !== cycleGen) return;
-                  stage.style.transform = 'translateX(-10%)';
+                  stage.style.transition = 'transform 600ms cubic-bezier(0.22, 1, 0.36, 1)';
+                  stage.style.transform  = 'translateX(-10%)';
                   cycle(gen);
                   pants.addEventListener('click', flickEars);
                 });
