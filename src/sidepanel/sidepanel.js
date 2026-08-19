@@ -60,7 +60,7 @@ const CUSH_DURATIONS = [
   ...Array(6).fill(Math.round(CUSH_FRAME_MS * 0.49)),
   ...Array(5).fill(CUSH_FRAME_MS),
 ];
-const DOOR_SLOW_MS         = Math.round(DOOR_FRAME_MS * 4);
+const DOOR_SLOW_MS         = Math.round(DOOR_FRAME_MS * 2);
 const DOOR_OPEN_DURATIONS  = [...Array(33).fill(DOOR_FRAME_MS), ...Array(5).fill(DOOR_SLOW_MS)];
 const DOOR_CLOSE_DURATIONS = [...Array(5).fill(DOOR_SLOW_MS),  ...Array(33).fill(DOOR_FRAME_MS)];
 
