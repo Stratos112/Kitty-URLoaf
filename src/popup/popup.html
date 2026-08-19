@@ -6,7 +6,7 @@
   <style>
     :root {
       --bg:      #120a0f;
-      --surface: #1f0d18;
+      --surface: #2a1222;
       --deep:    #2d1220;
       --pink:    #ff44bb;
       --pink-lo: #8c1f4e;
@@ -56,19 +56,22 @@
     .cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
     .card {
       background: var(--surface);
-      border: 1px solid rgba(255,68,187,0.08);
+      border: 1.5px solid rgba(255,255,255,0.10);
       border-radius: 14px;
       padding: 14px 16px;
       cursor: pointer;
-      opacity: 0.42;
       position: relative;
       overflow: hidden;
-      transition: opacity 0.25s, border-color 0.25s, box-shadow 0.25s;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .card:not(.on):hover {
+      border-color: rgba(255,68,187,0.35);
+      box-shadow: 0 2px 12px rgba(255,68,187,0.10);
+      transform: translateY(-1px);
     }
     .card.on {
       border-color: var(--pink);
       box-shadow: 0 0 0 1px var(--pink-lo), 0 4px 18px var(--glow);
-      opacity: 1;
       cursor: default;
     }
     .card-head { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
