@@ -3,6 +3,7 @@ const stage       = document.getElementById('stage');
 const debugBtn    = document.getElementById('debugBtn');
 const pants       = document.getElementById('pants');
 const cush        = document.getElementById('cush');
+const cush2       = document.getElementById('cush2');
 const entranceBg  = document.getElementById('entrance-bg');
 const entranceFg  = document.getElementById('entrance-fg');
 const entranceAnim = document.getElementById('entrance-anim');
@@ -17,8 +18,10 @@ const l11 = pants.querySelector('.l11');
 const HOLD_MS        = 20000;
 const FRAME_COUNT    = 30;
 const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
-const CUSH_FRAME_MS  = 100;   // 10 × 100 = 1s
-const DOOR_FRAME_MS  = 80;    // 38 × 80  = 3s each way
+const CUSH_FRAME_MS  = 90;    // 11 × 90 ≈ 1s
+const CUSH_FADE_MS   = 60;
+const CUSH_OVERLAP   = 3;     // door starts this many frames before cushion ends
+const DOOR_FRAME_MS  = 56;    // 38 × 56 ≈ 2.1s each way (30% faster)
 const CROSSFADE_MS   = 350;
 const SLIDE_MS       = 1400;
 
@@ -46,8 +49,8 @@ const EYE_PATHS = {
 const EYE_X_PCT = 0.57;
 const EYE_Y_PCT = 0.25;
 
-const CUSH_PATHS  = Array.from({ length: 10 }, (_, i) =>
-  `${BASE}Accessories/Cushion appear/cush_appear_${i}.png`);
+const CUSH_PATHS  = ['0','1','2','3','4','5','6','7','8','9','9B'].map(n =>
+  `${BASE}Accessories/Cushion appear/cush_appear_${n}.png`);
 
 const DOOR_PATHS  = Array.from({ length: 38 }, (_, i) =>
   `${BASE}Accessories/Entrance_appear/entrance_door${String(i).padStart(2, '0')}.png`);
@@ -307,6 +310,28 @@ function gpuWarmup(onDone) {
 
 // ── entrance sequence ────────────────────────────────────────────────────────
 
+function playCushWithFade(paths, frameDuration, fadeMs, gen, onDone) {
+  let i = 0;
+  function step() {
+    if (gen !== cycleGen) return;
+    if (i >= paths.length) { onDone?.(); return; }
+    cush2.style.transition      = 'none';
+    cush2.style.opacity         = '0';
+    cush2.style.backgroundImage = u(paths[i++]);
+    void cush2.offsetWidth;
+    cush2.style.transition = `opacity ${fadeMs}ms`;
+    cush2.style.opacity    = '1';
+    setTimeout(() => {
+      if (gen !== cycleGen) return;
+      cush.style.backgroundImage  = cush2.style.backgroundImage;
+      cush2.style.transition      = 'none';
+      cush2.style.opacity         = '0';
+      step();
+    }, frameDuration);
+  }
+  step();
+}
+
 function runEntrance() {
   cycleGen++;
   const gen = cycleGen;
@@ -325,20 +350,26 @@ function runEntrance() {
     el.style.backgroundImage = '';
     el.style.zIndex          = '';   // restore CSS z-index
   });
-  pants.style.transition = 'none';
-  pants.style.transform  = 'translateX(-110%)';
-  cush.style.backgroundImage = '';
+  pants.style.transition      = 'none';
+  pants.style.transform       = 'translateX(-110%)';
+  cush.style.backgroundImage  = '';
+  cush2.style.backgroundImage = '';
+  cush2.style.opacity         = '0';
   void pants.offsetWidth;
 
   stage.hidden    = false;
   debugBtn.hidden = false;
 
-  // 1. Cushion appear
-  playFrames(cush, CUSH_PATHS, CUSH_FRAME_MS, gen, () => {
+  // 1. Cushion appear (crossfade between frames); clears itself when done
+  playCushWithFade(CUSH_PATHS, CUSH_FRAME_MS, CUSH_FADE_MS, gen, () => {
     if (gen !== cycleGen) return;
-    cush.style.backgroundImage = '';
+    cush.style.backgroundImage  = '';
+    cush2.style.backgroundImage = '';
+  });
 
-    // 2. Door opens (forward) — above cat (CSS z:11)
+  // 2. Door opens — starts CUSH_OVERLAP frames before cushion ends
+  setTimeout(() => {
+    if (gen !== cycleGen) return;
     entranceAnim.style.opacity = '1';
     playFrames(entranceAnim, DOOR_PATHS, DOOR_FRAME_MS, gen, () => {
       if (gen !== cycleGen) return;
@@ -359,8 +390,6 @@ function runEntrance() {
           // 5. Cat settled → drop anim BELOW cat, crossfade static → closing anim
           setTimeout(() => {
             if (gen !== cycleGen) return;
-
-            // Drop anim below cat before it becomes visible
             entranceAnim.style.zIndex          = '1';
             entranceAnim.style.backgroundImage = u(DOOR_PATHS[DOOR_PATHS.length - 1]);
 
@@ -382,13 +411,11 @@ function runEntrance() {
                 });
               });
             });
-
           }, SLIDE_MS + 400);
-
         }, 300);
       });
     });
-  });
+  }, (CUSH_PATHS.length - CUSH_OVERLAP) * CUSH_FRAME_MS);
 }
 
 // ── init ─────────────────────────────────────────────────────────────────────
