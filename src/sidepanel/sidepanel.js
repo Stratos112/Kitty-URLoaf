@@ -224,7 +224,7 @@ function runTransition(paths, gen, onDone, toSleep = false) {
 }
 
 function flickEars() {
-  startGaze();
+  if (!pants.classList.contains('sleeping')) startGaze();
   if (transitioning || flickTimer !== null) return;
   let i = 0;
   (function step() {
