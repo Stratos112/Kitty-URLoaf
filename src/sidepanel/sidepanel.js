@@ -15,10 +15,9 @@ const l11 = pants.querySelector('.l11');
 
 // ── timing ───────────────────────────────────────────────────────────────────
 
-const HOLD_MS        = 20000;
-const FRAME_COUNT    = 30;
-const TRANS_FRAME_MS = 1500 / FRAME_COUNT;
-const CUSH_FRAME_MS  = 90;    // 11 × 90 ≈ 1s
+const HOLD_MS           = 20000;
+const TRANS_DURATION_MS = 1500;
+const CUSH_FRAME_MS     = 90;    // 11 × 90 ≈ 1s
 const CUSH_FADE_MS   = 60;
 const CUSH_OVERLAP   = 3;     // door starts this many frames before cushion ends
 const DOOR_FRAME_MS  = 14;    // 38 × 14 ≈ 0.5s each way
@@ -64,9 +63,22 @@ const DOOR_SLOW_MS         = Math.round(DOOR_FRAME_MS * 2);
 const DOOR_OPEN_DURATIONS  = [...Array(33).fill(DOOR_FRAME_MS), ...Array(5).fill(DOOR_SLOW_MS)];
 const DOOR_CLOSE_DURATIONS = [...Array(5).fill(DOOR_SLOW_MS),  ...Array(33).fill(DOOR_FRAME_MS)];
 
-const TRANS_PATHS = Array.from({ length: FRAME_COUNT }, (_, i) =>
-  `${BASE}Anim/Transition/frame-${String(i).padStart(2, '0')}.png`);
-const TRANS_PATHS_REV = [...TRANS_PATHS].reverse();
+const BLINK_STAGES = [
+  `${BASE}Head/Eyes/eyes_open.png`,
+  `${BASE}Head/Eyes/Blink/eyes_blink_1.png`,
+  `${BASE}Head/Eyes/Blink/eyes_blink_2.png`,
+  `${BASE}Head/Eyes/Blink/eyes_blink_3.png`,
+  `${BASE}Head/Eyes/Blink/eyes_blink_4.png`,
+  `${BASE}Head/Eyes/eyes_closed.png`,
+];
+
+function inverseEaseInOutCubic(e) {
+  return e < 0.5 ? Math.cbrt(e / 4) : 1 - Math.cbrt(2 * (1 - e)) / 2;
+}
+const EYE_STAGE_TIMES = BLINK_STAGES.slice(1, -1).map((_, i) => {
+  const e = (i + 1) / (BLINK_STAGES.length - 1);
+  return Math.round(inverseEaseInOutCubic(e) * TRANS_DURATION_MS);
+});
 
 const FLICK_SEQ     = ['01', '02', '03', '02', '01'];
 const FLICK_MS      = 275 / FLICK_SEQ.length;
@@ -79,7 +91,7 @@ const FLICK_R_PATHS = FLICK_SEQ.map(n => `${BASE}Anim/EarFlick/R_${n}.png`);
 
 const ALL_PATHS = [
   ...CUSH_PATHS, ...DOOR_PATHS,
-  ...TRANS_PATHS, ...FLICK_L_PATHS, ...FLICK_R_PATHS,
+  ...BLINK_STAGES, ...FLICK_L_PATHS, ...FLICK_R_PATHS,
   ...Object.values(EYE_PATHS),
   P.entrBg, P.entrFg, P.sleepHead, P.sleepEyes,
 ];
@@ -130,9 +142,6 @@ function playFrames(el, paths, ms, gen, onDone) {
 }
 
 const SLEEP_PCT = 70 / 530 * 100;
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
 
 // ── idle cycle ───────────────────────────────────────────────────────────────
 
@@ -212,29 +221,51 @@ function setAsleep() {
   l11.style.backgroundImage = '';
 }
 
-function runTransition(paths, gen, onDone, toSleep = false) {
+function runTransition(gen, toSleep, onDone) {
   cancelGaze();
   cancelFlick();
   transitioning = true;
-  l8.style.backgroundImage = 'none';
+
+  const stages  = toSleep ? BLINK_STAGES : [...BLINK_STAGES].reverse();
+  const sleepTY = `translateY(${SLEEP_PCT}%)`;
+
+  if (toSleep) {
+    l8.style.backgroundImage = u(stages[0]);
+  } else {
+    // pin ears at sleep position before removing sleeping class
+    l10.style.transform = l11.style.transform = sleepTY;
+    pants.classList.remove('sleeping');
+    // swap to awake assets positioned at sleep Y so the visual position is unchanged
+    l7.style.backgroundImage = u(P.awakeHead);
+    l7.style.transform       = sleepTY;
+    l8.style.backgroundImage = u(stages[0]);
+    l8.style.transform       = sleepTY;
+  }
+
   l9.style.backgroundImage = 'none';
-  let i = 0;
-  (function step() {
+  void l7.offsetWidth;
+
+  const trans    = `transform ${TRANS_DURATION_MS}ms cubic-bezier(0.37, 0, 0.63, 1)`;
+  const targetTY = toSleep ? sleepTY : '';
+  [l7, l8, l10, l11].forEach(el => {
+    el.style.transition = trans;
+    el.style.transform  = targetTY;
+  });
+
+  EYE_STAGE_TIMES.forEach((t, i) => {
+    setTimeout(() => {
+      if (gen !== cycleGen) return;
+      l8.style.backgroundImage = u(stages[i + 1]);
+    }, t);
+  });
+
+  setTimeout(() => {
     if (gen !== cycleGen) return;
-    if (i >= paths.length) {
-      l10.style.transform = '';
-      l11.style.transform = '';
-      transitioning = false;
-      onDone();
-      return;
-    }
-    const progress = toSleep ? i / FRAME_COUNT : (FRAME_COUNT - i) / FRAME_COUNT;
-    const ty = `translateY(${easeInOutCubic(progress) * SLEEP_PCT}%)`;
-    l10.style.transform      = ty;
-    l11.style.transform      = ty;
-    l7.style.backgroundImage = u(paths[i++]);
-    setTimeout(step, TRANS_FRAME_MS);
-  })();
+    [l7, l8, l10, l11].forEach(el => el.style.transition = '');
+    transitioning = false;
+    onDone();
+    [l7, l8, l10, l11].forEach(el => el.style.transform = '');
+  }, TRANS_DURATION_MS);
 }
 
 function flickEars() {
@@ -255,36 +286,19 @@ function flickEars() {
   })();
 }
 
-function warmupTrans(gen) {
-  if (gen !== cycleGen) return;
-  entranceAnim.style.transition = 'none';
-  entranceAnim.style.opacity    = '0.001';
-  let i = 0;
-  (function step() {
-    if (gen !== cycleGen || i >= TRANS_PATHS.length) {
-      entranceAnim.style.opacity         = '0';
-      entranceAnim.style.backgroundImage = '';
-      return;
-    }
-    entranceAnim.style.backgroundImage = u(TRANS_PATHS[i++]);
-    requestAnimationFrame(step);
-  })();
-}
-
 function cycle(gen) {
   if (gen !== cycleGen) return;
   setAwake();
-  setTimeout(() => warmupTrans(gen), HOLD_MS - 2000);
   setTimeout(() => {
     if (gen !== cycleGen) return;
-    runTransition(TRANS_PATHS, gen, () => {
+    runTransition(gen, true, () => {
       if (gen !== cycleGen) return;
       setAsleep();
       setTimeout(() => {
         if (gen !== cycleGen) return;
-        runTransition(TRANS_PATHS_REV, gen, () => cycle(gen));
+        runTransition(gen, false, () => cycle(gen));
       }, HOLD_MS);
-    }, true);
+    });
   }, HOLD_MS);
 }
 

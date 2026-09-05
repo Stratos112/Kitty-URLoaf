@@ -11,11 +11,9 @@ Layers (background-image z-order, topmost first):
   asleep (no blink-overlay; eyes_closed replaces breath-eyes, head/eyes dropped):
     breath-eyes-sleep.apng
     breath-head-sleep.apng
-  transitions (one-shot, no blink-overlay; replace the head/eyes layer only
-  while she's nodding off or rousing, then hand off to the awake/asleep pair) —
-  exported as static per-frame PNGs, not an APNG, and stepped through by
-  src/popup/popup.js itself; see the comment above TRANS_FRAMES for why:
-    Transition/frame-00.png … frame-29.png  (head+eyes pre-composited)
+  transitions handled by CSS translateY + JS eye-stage swaps in sidepanel.js
+  (no pre-rendered frames needed — head/ear/eye layers CSS-eased, eye images
+  stepped through BLINK_STAGES via setTimeout timed to inverseEaseInOutCubic)
   shared by both:
     tail-flick.apng
     breath-rpaw.apng    — right front paw, slightly behind head
@@ -225,94 +223,30 @@ for name, fname in _gaze_src.items():
               [shifted([img], s) for s in HEAD_SHIFTS],
               HEAD_DELAYS)
 
-# ── sleeping head bob (same breath timing, dropped for the lying-down pose) ───
+# ── sleeping head/eyes (same position as awake — Y-drop applied by CSS/JS transform) ──
+# Both Simple CSS (--head-y variable) and Deluxe JS (.sleeping class translateY)
+# shift these layers at runtime, so no baked offset is needed here.
 print("=== breath-head-sleep.apng ===")
 save_apng(OUT / "breath-head-sleep.apng",
-          [shifted([head_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          [shifted([head_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
-
-
-# ── sleeping ears (pre-shifted — used by userChrome.css flat-stack approach) ──
 print("=== breath-ear-L-sleep.apng ===")
 save_apng(OUT / "breath-ear-L-sleep.apng",
-          [shifted([ear_L_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          [shifted([ear_L_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
 print("=== breath-ear-R-sleep.apng ===")
 save_apng(OUT / "breath-ear-R-sleep.apng",
-          [shifted([ear_R_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          [shifted([ear_R_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
-
-# ── sleeping eyes (eyes_closed, no blink — same drop/timing as sleeping head) ─
 print("=== breath-eyes-sleep.apng ===")
 eyes_closed_img = load(EYES / "eyes_closed.png")
 save_apng(OUT / "breath-eyes-sleep.apng",
-          [shifted([eyes_closed_img], s - SLEEP_DROP) for s in HEAD_SHIFTS],
+          [shifted([eyes_closed_img], s) for s in HEAD_SHIFTS],
           HEAD_DELAYS)
 
-
-# ── fall-asleep / wake-up transitions ──────────────────────────────────────────
-# These used to be exported as one-shot APNGs (fall-asleep-head.apng etc).
-# That was the source of the "chops back to the top" / "dropped frames" glitch:
-# an embedded animated PNG's own playback clock in Gecko is tied to the shared
-# image decoder, not to whichever CSS keyframe last swapped it in — so each
-# time she revisits a location, the animation could resume mid-loop instead of
-# restarting at frame 0, occasionally looping back to the *top* frame right in
-# the middle of a window that should be holding at the bottom.
-# Fixed by not using an embedded clock at all: each frame is exported as its
-# own static PNG (head+eyes pre-composited, since they always move together),
-# and src/popup/popup.js steps through them itself as individual CSS keyframe
-# stops — the exact same steps(1)-per-percentage mechanism already proven
-# reliable for the sprite pop and the margin ease, driven by one outer clock.
-# TRANS_FRAMES must match TRANS_FRAME_COUNT in popup.js (kept in sync by hand).
-TRANS_FRAMES = 30
-TRANS_DIR    = OUT / "Transition"
-TRANS_DIR.mkdir(exist_ok=True)
-
-
-def ease_in_out_cubic(t: float) -> float:
-    return 4 * t ** 3 if t < 0.5 else 1 - ((-2 * t + 2) ** 3) / 2
-
-
-# eased *progress* (0..1) per frame — both the head shift and the eye stage
-# are derived from this same sequence so they're always in lockstep, not
-# racing each other on independent curves.
-FALL_EASE   = [ease_in_out_cubic(i / (TRANS_FRAMES - 1)) for i in range(TRANS_FRAMES)]
-# no round() here — fractional shifts flow through shifted()'s sub-pixel
-# blending (same trick the breathing bob uses) instead of snapping between
-# whole pixels, which is what made this choppy with only a few big jumps.
-FALL_SHIFTS = [SLEEP_DROP * e for e in FALL_EASE]
-
-# eyes ease through the same blink art already used for the awake blink, just
-# stretched across the transition and held shut/open at the ends instead of
-# snapping back — stage picked from the *same eased progress* as the head
-# shift (not a plain linear frame count) so they stay paced together instead
-# of the eyes visibly running ahead/behind the head's motion.
-EYE_CLOSE_STAGES = [
-    EYES / "eyes_open.png",
-    BLINK / "eyes_blink_1.png",
-    BLINK / "eyes_blink_2.png",
-    BLINK / "eyes_blink_3.png",
-    BLINK / "eyes_blink_4.png",
-    EYES / "eyes_closed.png",
-]
-
-
-def stage_index(progress: float, n_stages: int) -> int:
-    return min(n_stages - 1, int(progress * n_stages))
-
-
-fall_eye_frames = [load(EYE_CLOSE_STAGES[stage_index(e, len(EYE_CLOSE_STAGES))])
-                    for e in FALL_EASE]
-
-print(f"=== transition frames ({TRANS_FRAMES}, static — used forward for falling asleep, reversed for waking up) ===")
-for i in range(TRANS_FRAMES):
-    # ears excluded — ::after ear_keyframes shows none during transitions, preventing double-ears
-    frame = shifted([head_img, fall_eye_frames[i]], -FALL_SHIFTS[i])
-    frame.save(TRANS_DIR / f"frame-{i:02d}.png")
-print(f"  {TRANS_FRAMES} frames written to {TRANS_DIR.relative_to(ROOT)}")
 
 # ── cushion appear animation ──────────────────────────────────────────────────
 print("=== cushion-appear.apng ===")

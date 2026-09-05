@@ -18,6 +18,7 @@ Outputs:
   static/userChrome-sidebar.css — sidebar location
 """
 
+import math
 import random
 from datetime import date
 from pathlib import Path
@@ -42,8 +43,7 @@ PRELOAD_OFFSET    = 300   # px — warmup renders this far below the real cat
 APPEAR_SECONDS    = 1.0   # delay before animation loops start
 WARMUP_HEAD_START_S = 17.0
 TRANS_SECONDS     = 1.5
-TRANS_FRAME_COUNT = 30
-SLEEP_DROP        = 35        # px ear drops during sleep
+SLEEP_DROP        = 35        # px head/ear drops during sleep (applied via CSS transform)
 C_H               = 166       # cat canvas height
 PT_H              = 34        # PersonalToolbar height (nav-bar only)
 W, H              = "364px", "266px"
@@ -104,7 +104,16 @@ SLEEP_HEAD_PATHS = [
     ANIM / "breath-head-sleep.apng",
 ]
 AWAKE_EAR_PATHS   = [ANIM / "breath-ear-L.apng", ANIM / "breath-ear-R.apng"]
-TRANS_FRAME_PATHS = [ANIM / "Transition" / f"frame-{i:02d}.png" for i in range(TRANS_FRAME_COUNT)]
+_EYES             = PANTS / "Head" / "Eyes"
+_BLINK            = _EYES  / "Blink"
+EYE_STAGE_PATHS   = [
+    _EYES  / "eyes_open.png",
+    _BLINK / "eyes_blink_1.png",
+    _BLINK / "eyes_blink_2.png",
+    _BLINK / "eyes_blink_3.png",
+    _BLINK / "eyes_blink_4.png",
+    _EYES  / "eyes_closed.png",
+]
 EAR_FLICK_DIR     = ANIM / "EarFlick"
 EAR_FLICK_SEQ     = ["01", "02", "03", "02", "01"]
 EAR_FLICK_L       = [EAR_FLICK_DIR / f"L_{n}.png" for n in EAR_FLICK_SEQ]
@@ -119,11 +128,20 @@ def imgs(ps): return ", ".join(url(p) for p in ps)
 def lp(t):    return t / LOOP_CYCLE * 100
 def px(n):    return f"{n:.2f}px"
 
-rest_imgs       = imgs(REST_PATHS)
-awake_head_imgs = imgs(AWAKE_HEAD_PATHS)
-sleep_head_imgs = imgs(SLEEP_HEAD_PATHS)
-awake_ear_imgs  = imgs(AWAKE_EAR_PATHS)
-trans_urls      = [url(p) for p in TRANS_FRAME_PATHS]
+rest_imgs        = imgs(REST_PATHS)
+awake_head_imgs  = imgs(AWAKE_HEAD_PATHS)
+sleep_head_imgs  = imgs(SLEEP_HEAD_PATHS)
+awake_ear_imgs   = imgs(AWAKE_EAR_PATHS)
+eye_stage_urls   = [url(p) for p in EYE_STAGE_PATHS]
+
+# inverse of ease-in-out-cubic: maps eased progress → real-time fraction
+def _inv_ease(e):
+    return (e / 4) ** (1/3) if e < 0.5 else 1 - (2 * (1 - e)) ** (1/3) / 2
+
+N_STAGES      = len(EYE_STAGE_PATHS)          # 6
+# real-time offsets (within TRANS_SECONDS) for stage boundaries 1→4
+STAGE_OFFSETS = [_inv_ease((i + 1) / (N_STAGES - 1)) * TRANS_SECONDS
+                 for i in range(N_STAGES - 2)]
 
 SIZE        = f"{W} {H}"
 RPT         = "no-repeat"
@@ -141,20 +159,28 @@ ear_spec    = f"{RANDOM_CYCLE}s steps(1) infinite {APPEAR_SECONDS}s"
 def head_loop_keyframes(pos):
     awake  = f"background-image: {awake_head_imgs}; background-position: {pos};"
     asleep = f"background-image: {sleep_head_imgs}; background-position: {pos};"
-    span   = TRANS_SECONDS
+    head   = url(ANIM / "breath-head.apng")
 
-    def trans(t_start, reverse=False):
+    def stage_img(i):
+        return f"none, {eye_stage_urls[i]}, {head}"
+
+    def eye_pts(t_start, reverse=False):
+        idxs = list(range(N_STAGES - 2))  # 0..3 → stages 1..4
+        if reverse:
+            idxs = idxs[::-1]
         return [
-            (f"{lp(t_start + span * i / TRANS_FRAME_COUNT):.4f}",
-             f"background-image: {trans_urls[TRANS_FRAME_COUNT-1-i if reverse else i]}; background-position: {pos};")
-            for i in range(TRANS_FRAME_COUNT)
+            (f"{lp(t_start + off):.4f}",
+             f"background-image: {stage_img(N_STAGES - 2 - i if reverse else i + 1)}; background-position: {pos};")
+            for i, off in zip(idxs, STAGE_OFFSETS)
         ]
 
     pts = (
-        [("0.0000", awake)]
-        + trans(t_falling)
-        + [(f"{lp(t_asleep):.4f}", asleep)]
-        + trans(t_waking, reverse=True)
+        [("0.0000", awake),
+         (f"{lp(t_falling):.4f}", f"background-image: {stage_img(0)}; background-position: {pos};")]
+        + eye_pts(t_falling)
+        + [(f"{lp(t_asleep):.4f}", asleep),
+           (f"{lp(t_waking):.4f}", f"background-image: {stage_img(N_STAGES - 1)}; background-position: {pos};")]
+        + eye_pts(t_waking, reverse=True)
         + [("100.0000", awake)]
     )
     return "\n".join(["@keyframes pants-head-loop {",
