@@ -232,14 +232,14 @@ function runTransition(gen, toSleep, onDone) {
   if (toSleep) {
     l8.style.backgroundImage = u(stages[0]);
   } else {
-    // pin ears at sleep position before removing sleeping class
-    l10.style.transform = l11.style.transform = sleepTY;
-    pants.classList.remove('sleeping');
-    // swap to awake assets positioned at sleep Y so the visual position is unchanged
+    // pin all four at sleep position BEFORE removing class to avoid flash
     l7.style.backgroundImage = u(P.awakeHead);
     l7.style.transform       = sleepTY;
     l8.style.backgroundImage = u(stages[0]);
     l8.style.transform       = sleepTY;
+    l10.style.transform      = sleepTY;
+    l11.style.transform      = sleepTY;
+    pants.classList.remove('sleeping');
   }
 
   l9.style.backgroundImage = 'none';

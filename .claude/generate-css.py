@@ -165,13 +165,10 @@ def head_loop_keyframes(pos):
         return f"none, {eye_stage_urls[i]}, {head}"
 
     def eye_pts(t_start, reverse=False):
-        idxs = list(range(N_STAGES - 2))  # 0..3 → stages 1..4
-        if reverse:
-            idxs = idxs[::-1]
         return [
-            (f"{lp(t_start + off):.4f}",
+            (f"{lp(t_start + STAGE_OFFSETS[i]):.4f}",
              f"background-image: {stage_img(N_STAGES - 2 - i if reverse else i + 1)}; background-position: {pos};")
-            for i, off in zip(idxs, STAGE_OFFSETS)
+            for i in range(N_STAGES - 2)
         ]
 
     pts = (
@@ -225,6 +222,21 @@ def ear_y_loop_keyframes():
                       "}"])
 
 
+def head_y_loop_keyframes():
+    ease = "animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);"
+    sy   = f"{SLEEP_DROP}px"
+    pts  = {
+        "0.0000":               "--head-y: 0px;",
+        f"{lp(t_falling):.4f}": f"--head-y: 0px; {ease}",
+        f"{lp(t_asleep):.4f}":  f"--head-y: {sy};",
+        f"{lp(t_waking):.4f}":  f"--head-y: {sy}; {ease}",
+        "100.0000":             "--head-y: 0px;",
+    }
+    return "\n".join(["@keyframes pants-head-y-loop {",
+                      *[f"  {p}% {{ {d} }}" for p, d in sorted(pts.items(), key=lambda x: float(x[0]))],
+                      "}"])
+
+
 def ear_flick_keyframes(pos):
     lines = ["@keyframes ear-flick {"]
     for i, (l, r) in enumerate(zip(EAR_FLICK_L, EAR_FLICK_R)):
@@ -235,20 +247,15 @@ def ear_flick_keyframes(pos):
 
 
 def head_warmup_keyframes(preload_pos, pos):
-    awake_pos = ", ".join([pos] * len(AWAKE_HEAD_PATHS))
+    awake_pos = ", ".join([pos]        * len(AWAKE_HEAD_PATHS))
     sleep_pos = ", ".join([preload_pos] * len(SLEEP_HEAD_PATHS))
-    def wkf(frame_url):
-        return (f"background-image: {frame_url}, {awake_head_imgs}; "
-                f"background-position: {preload_pos}, {awake_pos};")
-    def sleep_wkf():
-        return (f"background-image: {sleep_head_imgs}, {awake_head_imgs}; "
-                f"background-position: {sleep_pos}, {awake_pos};")
-    pts = [("0.0000", sleep_wkf())]
-    pts += [(f"{i / TRANS_FRAME_COUNT * 100:.4f}", wkf(trans_urls[i]))
-            for i in range(1, TRANS_FRAME_COUNT)]
-    pts.append(("100.0000", wkf(trans_urls[-1])))
+    blink_pos = ", ".join([preload_pos] * (N_STAGES - 2))
+    blink_imgs_str = ", ".join(eye_stage_urls[1:N_STAGES - 1])
+    state = (f"background-image: {sleep_head_imgs}, {blink_imgs_str}, {awake_head_imgs}; "
+             f"background-position: {sleep_pos}, {blink_pos}, {awake_pos};")
     return "\n".join(["@keyframes pants-head-warmup {",
-                      *[f"  {p}% {{ {d} }}" for p, d in pts],
+                      f"  0%    {{ {state} }}",
+                      f"  100%  {{ {state} }}",
                       "}"])
 
 
@@ -289,7 +296,10 @@ def pseudo_base_rules(el, top):
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
               f"}}",
-        f"/* ::after inherits --ear-y; translateY snaps ear to sleep position */",
+        f"/* ::before inherits --head-y; ::after inherits --ear-y */",
+        f"{el}::before {{",
+        f"  transform: translateY(var(--head-y, 0px));",
+        f"}}",
         f"{el}::after {{",
         f"  transform: translateY(var(--ear-y, 0px));",
         f"}}",
@@ -320,6 +330,7 @@ def generate_nav_bar():
         head_loop_keyframes(NAV_POS),
         ear_random_keyframes(NAV_POS),
         ear_y_loop_keyframes(),
+        head_y_loop_keyframes(),
         ear_flick_keyframes(NAV_POS),
         head_warmup_keyframes(NAV_PRELOAD_POS, NAV_POS),
     ])
@@ -330,6 +341,11 @@ def generate_nav_bar():
     css = "\n".join([
         css_header(), "",
         "@property --ear-y {",
+        "  syntax: '<length>';",
+        "  initial-value: 0px;",
+        "  inherits: true;",
+        "}", "",
+        "@property --head-y {",
         "  syntax: '<length>';",
         "  initial-value: 0px;",
         "  inherits: true;",
@@ -349,7 +365,7 @@ def generate_nav_bar():
         f"  background-position: {NAV_REST_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth}, pants-head-y-loop {loop_smooth};",
         f"  min-height:        {px(C_H + PT_H)} !important;",
         f"  align-items:       flex-end !important;",
         f"  transition:        min-height 0.3s ease, padding-bottom 0.3s ease;",
@@ -386,6 +402,7 @@ def generate_sidebar():
         head_loop_keyframes(SIDEBAR_POS),
         ear_random_keyframes(SIDEBAR_POS),
         ear_y_loop_keyframes(),
+        head_y_loop_keyframes(),
         ear_flick_keyframes(SIDEBAR_POS),
         head_warmup_keyframes(SIDEBAR_PRELOAD_POS, SIDEBAR_POS),
     ])
@@ -395,6 +412,11 @@ def generate_sidebar():
     css = "\n".join([
         css_header(), "",
         "@property --ear-y {",
+        "  syntax: '<length>';",
+        "  initial-value: 0px;",
+        "  inherits: true;",
+        "}", "",
+        "@property --head-y {",
         "  syntax: '<length>';",
         "  initial-value: 0px;",
         "  inherits: true;",
@@ -409,7 +431,7 @@ def generate_sidebar():
         f"  background-position: {SIDEBAR_REST_POS};",
         f"  background-size:   {SIZE};",
         f"  background-repeat: {RPT};",
-        f"  animation:         pants-ear-y-loop {loop_smooth};",
+        f"  animation:         pants-ear-y-loop {loop_smooth}, pants-head-y-loop {loop_smooth};",
         f"}}", "",
         pseudo_base_rules(el, SIDEBAR_TOP), "",
         f"{el}::before {{ height: {H}; }}", "",
