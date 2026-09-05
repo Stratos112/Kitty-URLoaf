@@ -208,7 +208,7 @@ def ear_random_keyframes(pos):
 
 
 def ear_y_loop_keyframes():
-    ease = "animation-timing-function: ease-in-out;"
+    ease = "animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1);"
     sy   = f"{SLEEP_DROP}px"
     pts  = {
         "0.0000":               "--ear-y: 0px;",

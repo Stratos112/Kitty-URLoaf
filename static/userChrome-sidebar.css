@@ -72,9 +72,9 @@
 
 @keyframes pants-ear-y-loop {
   0.0000% { --ear-y: 0px; }
-  46.5116% { --ear-y: 0px; animation-timing-function: ease-in-out; }
+  46.5116% { --ear-y: 0px; animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
   50.0000% { --ear-y: 35px; }
-  96.5116% { --ear-y: 35px; animation-timing-function: ease-in-out; }
+  96.5116% { --ear-y: 35px; animation-timing-function: cubic-bezier(0.37, 0, 0.63, 1); }
   100.0000% { --ear-y: 0px; }
 }
 
