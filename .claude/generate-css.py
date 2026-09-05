@@ -249,8 +249,8 @@ def ear_flick_keyframes(pos):
 def head_warmup_keyframes(preload_pos, pos):
     awake_pos = ", ".join([pos]        * len(AWAKE_HEAD_PATHS))
     sleep_pos = ", ".join([preload_pos] * len(SLEEP_HEAD_PATHS))
-    blink_pos = ", ".join([preload_pos] * (N_STAGES - 2))
-    blink_imgs_str = ", ".join(eye_stage_urls[1:N_STAGES - 1])
+    blink_pos = ", ".join([preload_pos] * N_STAGES)
+    blink_imgs_str = ", ".join(eye_stage_urls)
     state = (f"background-image: {sleep_head_imgs}, {blink_imgs_str}, {awake_head_imgs}; "
              f"background-position: {sleep_pos}, {blink_pos}, {awake_pos};")
     return "\n".join(["@keyframes pants-head-warmup {",
