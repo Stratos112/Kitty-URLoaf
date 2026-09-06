@@ -1,2 +1,5 @@
 .claude/credentials.json
 .claude/token.json
+.claude/token-push.json
+.claude/push-drive.py
+.claude/__pycache__/
