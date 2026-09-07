@@ -118,7 +118,7 @@ def _breath_pulse(phase: float, max_shift: float = 1.0,
 # by ~1/16 of the cycle (the original frame-to-frame lag, preserved in time
 # rather than frame count) — at 32 frames that's ~2 frames, still "just behind".
 RPAW_LAG_PHASE = 1 / 16
-HEAD_SHIFTS = [_breath_pulse(i / HEAD_FRAMES) for i in range(HEAD_FRAMES)]
+HEAD_SHIFTS = [0.0] * HEAD_FRAMES
 RPAW_SHIFTS = [_breath_pulse(i / HEAD_FRAMES - RPAW_LAG_PHASE) for i in range(HEAD_FRAMES)]
 
 # how far the head/eyes drop for the sleeping pose, in display px. Positive = down.
