@@ -23,8 +23,6 @@ const CUSH_OVERLAP   = 3;     // door starts this many frames before cushion end
 const DOOR_FRAME_MS  = 14;    // 38 × 14 ≈ 0.5s each way
 const CROSSFADE_MS   = 350;
 const SLIDE_MS       = 1400;
-const BLINK_HOLD_MS  = 4350;  // transparent hold before eyelids close
-const BLINK_DUR_MS   = 440;   // 8 frames × 55ms
 
 // ── raw asset paths ──────────────────────────────────────────────────────────
 
@@ -143,7 +141,7 @@ function playFrames(el, paths, ms, gen, onDone) {
   requestAnimationFrame(step);
 }
 
-const SLEEP_PCT = 70 / 530 * 100;
+const SLEEP_PCT = 95 / 530 * 100;
 
 // ── idle cycle ───────────────────────────────────────────────────────────────
 
@@ -151,7 +149,6 @@ let transitioning = false;
 let flickTimer    = null;
 let gazing        = false;
 let gazeTimer     = null;
-let blinkTimer    = null;
 
 function startGaze() {
   if (gazeTimer !== null) clearTimeout(gazeTimer);
@@ -197,27 +194,6 @@ browser.runtime.onMessage.addListener(msg => {
   l8.style.backgroundImage = u(EYE_PATHS[dir]);
 });
 
-function stopBlinkSync() {
-  clearTimeout(blinkTimer);
-  blinkTimer = null;
-  l7.style.visibility = '';
-}
-
-function startBlinkSync() {
-  stopBlinkSync();
-  const cycle = BLINK_HOLD_MS + BLINK_DUR_MS;
-  function tick() {
-    blinkTimer = setTimeout(() => {
-      l7.style.visibility = 'hidden';
-      blinkTimer = setTimeout(() => {
-        l7.style.visibility = '';
-        tick();
-      }, BLINK_DUR_MS);
-    }, BLINK_HOLD_MS);
-  }
-  tick();
-}
-
 function cancelFlick() {
   if (flickTimer === null) return;
   clearTimeout(flickTimer);
@@ -233,11 +209,9 @@ function setAwake() {
   l9.style.backgroundImage  = u(P.blink);
   l10.style.backgroundImage = '';
   l11.style.backgroundImage = '';
-  startBlinkSync();
 }
 
 function setAsleep() {
-  stopBlinkSync();
   cancelGaze();
   pants.classList.add('sleeping');
   l7.style.backgroundImage  = u(P.sleepHead);
@@ -248,7 +222,6 @@ function setAsleep() {
 }
 
 function runTransition(gen, toSleep, onDone) {
-  stopBlinkSync();
   cancelGaze();
   cancelFlick();
   transitioning = true;
